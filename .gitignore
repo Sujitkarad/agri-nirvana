@@ -30,3 +30,5 @@ pnpm-debug.log*
 # Antigravity IDE Scratch & Internal System Files
 .system_generated/
 brain/
+
+.vercel
