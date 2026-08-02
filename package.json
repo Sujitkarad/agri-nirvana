@@ -1,20 +1,50 @@
 {
-  "name": "agricure-ai",
+  "name": "agri-nirvana",
   "private": true,
-  "version": "0.0.0",
+  "version": "3.4.0",
+  "description": "Enterprise Precision Agriculture, AI Vision Diagnostics, 3D WebGL Telemetry & AgFintech Platform",
   "type": "module",
+  "author": "Sujit Karad <sujitkarad@github.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Sujitkarad/agri-nirvana.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Sujitkarad/agri-nirvana/issues"
+  },
+  "homepage": "https://github.com/Sujitkarad/agri-nirvana#readme",
+  "keywords": [
+    "precision-agriculture",
+    "ai-vision",
+    "threejs",
+    "webgl",
+    "resnet50",
+    "huggingface",
+    "sentinel-2",
+    "ndvi-satellite",
+    "agtech",
+    "fintech",
+    "kisan-credit"
+  ],
   "scripts": {
     "dev": "vite",
-    "build": "vite build"
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "dependencies": {
-    "@tailwindcss/vite": "latest",
-    "@vitejs/plugin-react": "latest",
-    "lucide-react": "latest",
-    "react": "latest",
-    "react-dom": "latest",
-    "tailwindcss": "latest",
-    "three": "^0.185.1",
-    "vite": "latest"
+    "lucide-react": "^0.474.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "three": "^0.173.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.5.1",
+    "tailwindcss": "^4.0.0",
+    "vite": "^8.2.0"
   }
 }
