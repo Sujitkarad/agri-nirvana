@@ -34,6 +34,21 @@ Over 60% of Indian farmers struggle with delayed crop disease detection, unorgan
 
 ---
 
+### 📸 Attach These 5 Image Screenshots to Your LinkedIn Post:
+
+1. **Hero 3D Interactive Crop Model**:  
+   `https://raw.githubusercontent.com/Sujitkarad/agri-nirvana/main/public/screenshots/hero-3d-model.png`
+2. **AI Leaf Diagnostics & 3D Disease Zone Highlight**:  
+   `https://raw.githubusercontent.com/Sujitkarad/agri-nirvana/main/public/screenshots/ai-leaf-diagnostics-3d.png`
+3. **Satellite NDVI 3D Field Terrain & Autonomous Drone Flyover**:  
+   `https://raw.githubusercontent.com/Sujitkarad/agri-nirvana/main/public/screenshots/satellite-ndvi-3d-drone.png`
+4. **Multi-Year Predictive Yield Analytics Engine**:  
+   `https://raw.githubusercontent.com/Sujitkarad/agri-nirvana/main/public/screenshots/yield-analytics-dashboard.png`
+5. **e-NAM Live Mandi Prices & Direct Harvest Linkage**:  
+   `https://raw.githubusercontent.com/Sujitkarad/agri-nirvana/main/public/screenshots/enam-mandi-linkage.png`
+
+---
+
 ### 📈 Technical Stack:
 - **Frontend**: React 18, Tailwind CSS v4, Lucide Icons, Vanilla Three.js (code-split dynamic chunks).
 - **AI/ML**: Hugging Face Inference API, ResNet-50 Vision, Web Speech Synthesis API.

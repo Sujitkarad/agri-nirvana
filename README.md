@@ -7,11 +7,34 @@
 [![Vite](https://img.shields.io/badge/Vite-8.2-purple.svg?logo=vite)](https://vitejs.dev/)
 [![Three.js](https://img.shields.io/badge/Three.js-WebGL-black.svg?logo=three.js)](https://threejs.org/)
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-AI%20Inference-yellow.svg)](https://huggingface.co/)
-[![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen.svg)]()
+[![Vercel Deployment](https://img.shields.io/badge/Vercel-Live%20Demo-brightgreen.svg?logo=vercel)](https://agri-nirvana.vercel.app)
 
 **Agri Nirvana** is a production-ready **Precision Agriculture, AI Crop Care, AgFintech, Market Linkage, and GIS Outbreak Radar Platform** equipped with **4 Production 3D Visual Systems**, powered by Three.js, Hugging Face AI, and pre-processed Kaggle datasets.
 
-[Live Demo](https://agri-nirvana.vercel.app) • [Architecture](#-architecture) • [3D Visual Features](#-3d-visual-systems) • [Getting Started](#-getting-started)
+[Live Demo](https://agri-nirvana.vercel.app) • [GitHub Repo](https://github.com/Sujitkarad/agri-nirvana) • [Architecture](#-architecture) • [3D Visual Features](#-3d-visual-systems) • [Getting Started](#-getting-started)
+
+</div>
+
+---
+
+## 📸 Platform Visual Showcase
+
+<div align="center">
+
+### 1. Hero 3D Interactive Crop Model
+![Hero 3D Interactive Crop Model](https://raw.githubusercontent.com/Sujitkarad/agri-nirvana/main/public/screenshots/hero-3d-model.png)
+
+### 2. AI Leaf Diagnostics & 3D Infection Zone Highlight
+![AI Leaf Diagnostics & 3D Infection Zone Highlight](https://raw.githubusercontent.com/Sujitkarad/agri-nirvana/main/public/screenshots/ai-leaf-diagnostics-3d.png)
+
+### 3. Satellite NDVI 3D Field Terrain & Autonomous Drone Flyover
+![Satellite NDVI 3D Field Terrain & Autonomous Drone Flyover](https://raw.githubusercontent.com/Sujitkarad/agri-nirvana/main/public/screenshots/satellite-ndvi-3d-drone.png)
+
+### 4. Multi-Year Predictive Yield Analytics Engine
+![Multi-Year Predictive Yield Analytics Engine](https://raw.githubusercontent.com/Sujitkarad/agri-nirvana/main/public/screenshots/yield-analytics-dashboard.png)
+
+### 5. e-NAM Live Mandi Prices & Direct Harvest Linkage
+![e-NAM Live Mandi Prices & Direct Harvest Linkage](https://raw.githubusercontent.com/Sujitkarad/agri-nirvana/main/public/screenshots/enam-mandi-linkage.png)
 
 </div>
 
@@ -83,13 +106,6 @@ npm run dev
 ```
 
 The application will be accessible at `http://localhost:5173/`.
-
-### Production Build
-
-```bash
-# Build production bundle
-npm run build
-```
 
 ---
 
