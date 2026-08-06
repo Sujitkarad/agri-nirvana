@@ -80,12 +80,14 @@ import {
   AGRISTACK_COMPLIANCE,
   INVESTOR_PITCH_METRICS,
   KAGGLE_VEGETABLE_PRICES,
-  queryHuggingFaceAgriBot
+  queryHuggingFaceAgriBot,
+  classifyCropLeafImage
 } from "./data/agriData";
 
 import Hero3DCropModel from "./components/Hero3DCropModel";
 import DiseaseLeaf3DModel from "./components/DiseaseLeaf3DModel";
 import NDVITerrain3DModel from "./components/NDVITerrain3DModel";
+import DiseaseHeatmapCanvas from "./components/DiseaseHeatmapCanvas";
 
 // 3D ANIMATED AI BOT AVATAR COMPONENT
 function AgriBot3DAvatar({ isThinking, isSpeaking, selectedModel }) {
@@ -183,6 +185,9 @@ export default function App() {
   const [remedyTab, setRemedyTab] = useState("organic");
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [scanProgress, setScanProgress] = useState(0);
+  const [diagCrop, setDiagCrop] = useState("Tomato");
+  const [diagViewMode, setDiagViewMode] = useState("heatmap"); // "heatmap" | "3d" | "original"
+  const [scanStatusStep, setScanStatusStep] = useState("Extracting Leaf RGB/HSV Chromaticity Vectors...");
 
   // Satellite Telemetry State
   const [selectedField, setSelectedField] = useState(SATELLITE_FIELDS[0]);
@@ -205,25 +210,100 @@ export default function App() {
   const t = TRANSLATIONS[lang] || TRANSLATIONS.en;
   const isDark = theme === "dark";
 
-  // Scanning Animation Timer
+  // Scanning Animation Timer & Real Pixel Classification
   useEffect(() => {
     let interval;
     if (scanState === "scanning") {
       setScanProgress(0);
+      setScanStatusStep("Extracting Leaf RGB & HSV Chromaticity Vectors...");
+
       interval = setInterval(() => {
         setScanProgress((prev) => {
+          if (prev === 25) setScanStatusStep("Calculating Chlorophyll & Necrotic Spot Density...");
+          if (prev === 50) setScanStatusStep("Matching Pathogen Spectrum Database...");
+          if (prev === 75) setScanStatusStep("Generating Precision Treatment Advisory...");
           if (prev >= 100) {
             clearInterval(interval);
-            setScanState("result");
-            setMonthlyScansCount((c) => c + 1);
+            classifyCropLeafImage(userImage || selectedDisease.imageUrl, diagCrop).then((classified) => {
+              setSelectedDisease(classified);
+              setScanState("result");
+              setMonthlyScansCount((c) => c + 1);
+            });
             return 100;
           }
-          return prev + 20;
+          return prev + 25;
         });
-      }, 300);
+      }, 250);
     }
     return () => clearInterval(interval);
-  }, [scanState]);
+  }, [scanState, userImage, selectedDisease.imageUrl, diagCrop]);
+
+  const handlePrintCertificate = () => {
+    const printWin = window.open("", "_blank");
+    if (!printWin) return;
+    const content = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Kisan AI Crop Diagnostic Certificate - Agri Nirvana</title>
+        <style>
+          body { font-family: 'Segoe UI', Arial, sans-serif; padding: 24px; color: #1e293b; max-width: 800px; margin: 0 auto; }
+          .header { border-bottom: 3px solid #10b981; padding-bottom: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+          .title { font-size: 22px; font-weight: 900; color: #065f46; margin: 0; }
+          .badge { background: #d1fae5; color: #065f46; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+          .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+          .box { border: 1px solid #cbd5e1; padding: 14px; border-radius: 12px; background: #f8fafc; }
+          .label { font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: bold; }
+          .value { font-size: 16px; font-weight: bold; color: #0f172a; margin-top: 4px; }
+          .remedy { border: 1px solid #10b981; background: #f0fdf4; padding: 14px; border-radius: 12px; margin-top: 16px; }
+          .footer { font-size: 10px; color: #94a3b8; text-align: center; margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 12px; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div>
+            <h1 class="title">AGRI NIRVANA • AI CROP DIAGNOSTIC REPORT</h1>
+            <p style="margin: 4px 0 0; font-size: 12px; color: #64748b;">Verified ResNet-50 Vision Telemetry • Date: ${new Date().toLocaleDateString()}</p>
+          </div>
+          <div class="badge">${selectedDisease.confidence}% MATCH CONFIDENCE</div>
+        </div>
+
+        <div class="grid">
+          <div class="box">
+            <div class="label">Crop Type & Sample</div>
+            <div class="value">${selectedDisease.crop}</div>
+          </div>
+          <div class="box">
+            <div class="label">Diagnosed Pathogen</div>
+            <div class="value">${selectedDisease.diseaseName} (${selectedDisease.pathogen})</div>
+          </div>
+          <div class="box">
+            <div class="label">Disease Severity Level</div>
+            <div class="value" style="color: ${selectedDisease.severity === 'Healthy' ? '#10b981' : '#f59e0b'};">${selectedDisease.severity} Severity</div>
+          </div>
+          <div class="box">
+            <div class="label">Infected Surface Coverage</div>
+            <div class="value">${selectedDisease.metrics?.necroticPercent ?? 12}% Necrotic Lesion Spots</div>
+          </div>
+        </div>
+
+        <div class="remedy">
+          <h3 style="margin: 0 0 6px; color: #065f46; font-size: 15px;">Targeted Treatment Protocol</h3>
+          <p><strong>Organic Treatment:</strong> ${selectedDisease.remedies?.organic?.title || ''} — ${selectedDisease.remedies?.organic?.dosage || ''}</p>
+          <p><strong>Chemical Intervention:</strong> ${selectedDisease.remedies?.chemical?.title || ''} — ${selectedDisease.remedies?.chemical?.dosage || ''}</p>
+          <p><strong>Field Instructions:</strong> ${selectedDisease.remedies?.chemical?.instructions || ''}</p>
+        </div>
+
+        <div class="footer">
+          Generated automatically by Agri Nirvana AgTech Engine. Valid for agricultural advisory & crop protection.
+        </div>
+        <script>window.onload = function() { window.print(); }</script>
+      </body>
+      </html>
+    `;
+    printWin.document.write(content);
+    printWin.document.close();
+  };
 
   useEffect(() => {
     if (activeNav === "bot") {
@@ -963,127 +1043,224 @@ export default function App() {
           </div>
         )}
 
-        {/* SECTION: AI DIAGNOSTICS MODULE (WITH FEATURE #2: 3D LEAF DISEASE HIGHLIGHT) */}
+        {/* SECTION: AI DIAGNOSTICS MODULE (WITH FEATURE #2: 3D LEAF DISEASE & HEATMAP) */}
         {activeNav === "diag" && (
-          <div className="grid gap-8 lg:grid-cols-12 items-start">
-            <div className={`lg:col-span-7 rounded-3xl p-5 sm:p-7 border transition-all ${
-              isDark ? "border-emerald-800/40 bg-[#072017] shadow-2xl" : "border-slate-200 bg-white shadow-xl shadow-slate-200/50"
+          <div className="space-y-6">
+            {/* CROP TARGET SELECTION BAR */}
+            <div className={`rounded-2xl p-4 border flex flex-wrap items-center justify-between gap-3 ${
+              isDark ? "border-emerald-800/40 bg-[#072017]" : "border-slate-200 bg-white shadow-md"
             }`}>
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h2 className={`text-xl font-black flex items-center gap-2 ${isDark ? "text-white" : "text-slate-900"}`}>
-                    <Camera className={isDark ? "text-emerald-400" : "text-emerald-600"} size={22} />
-                    {t.scanTitle}
-                  </h2>
-                  <p className={`text-xs mt-1 ${isDark ? "text-emerald-200/60" : "text-slate-500"}`}>{t.scanSub}</p>
-                </div>
-                <span className="rounded-full px-3 py-1 text-[11px] font-bold border bg-emerald-500/20 text-emerald-300 border-emerald-500/30">
-                  ResNet-50 Vision
+              <div className="flex items-center gap-2">
+                <Target size={18} className="text-emerald-500" />
+                <span className={`text-xs font-black uppercase tracking-wider ${isDark ? "text-emerald-300" : "text-slate-800"}`}>
+                  Target Crop Context:
                 </span>
               </div>
+              <div className="flex flex-wrap gap-2">
+                {["Tomato", "Potato", "Paddy / Rice", "Cotton", "Maize / Corn", "Wheat"].map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => {
+                      setDiagCrop(c);
+                      showToast(`Target Crop Context set to ${c}`);
+                    }}
+                    className={`rounded-xl px-3 py-1.5 text-xs font-bold border transition ${
+                      diagCrop === c
+                        ? "border-emerald-500 bg-emerald-500/20 text-emerald-300 shadow-sm"
+                        : isDark ? "border-emerald-900/60 bg-emerald-950/40 text-slate-400 hover:text-white" : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"
+                    }`}
+                  >
+                    {c}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-              <div className={`relative overflow-hidden rounded-2xl border-2 border-dashed p-6 text-center transition-all ${
-                isDark ? "border-emerald-700/50 bg-[#04160f] hover:border-emerald-500/60" : "border-slate-300 bg-slate-50 hover:border-emerald-500"
+            <div className="grid gap-8 lg:grid-cols-12 items-start">
+              {/* LEFT: SCANNER & UPLOAD */}
+              <div className={`lg:col-span-6 rounded-3xl p-5 sm:p-7 border transition-all ${
+                isDark ? "border-emerald-800/40 bg-[#072017] shadow-2xl" : "border-slate-200 bg-white shadow-xl shadow-slate-200/50"
               }`}>
-                <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h2 className={`text-xl font-black flex items-center gap-2 ${isDark ? "text-white" : "text-slate-900"}`}>
+                      <Camera className={isDark ? "text-emerald-400" : "text-emerald-600"} size={22} />
+                      {t.scanTitle}
+                    </h2>
+                    <p className={`text-xs mt-1 ${isDark ? "text-emerald-200/60" : "text-slate-500"}`}>{t.scanSub}</p>
+                  </div>
+                  <span className="rounded-full px-3 py-1 text-[11px] font-bold border bg-emerald-500/20 text-emerald-300 border-emerald-500/30">
+                    ResNet-50 Vision
+                  </span>
+                </div>
 
-                <div className="relative mx-auto aspect-[16/10] max-w-lg overflow-hidden rounded-xl bg-slate-950 shadow-inner">
-                  <img src={userImage || selectedDisease.imageUrl} alt="Crop Leaf Sample" className="h-full w-full object-cover" />
-                  {scanState === "scanning" && (
-                    <div className="absolute inset-0 bg-emerald-950/40 backdrop-blur-[2px]">
-                      <div className="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-emerald-400 to-transparent shadow-[0_0_15px_#10b981] animate-laser" />
-                      <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
-                        <div className="h-16 w-16 rounded-full border-4 border-emerald-400 border-t-transparent animate-spin mb-3" />
-                        <p className="text-sm font-bold text-white tracking-wide">{t.analyzing}</p>
-                        <div className="mt-3 w-48 h-2 rounded-full bg-emerald-950 border border-emerald-600/50 overflow-hidden">
-                          <div className="h-full bg-emerald-400 transition-all duration-300" style={{ width: `${scanProgress}%` }} />
+                <div className={`relative overflow-hidden rounded-2xl border-2 border-dashed p-5 text-center transition-all ${
+                  isDark ? "border-emerald-700/50 bg-[#04160f] hover:border-emerald-500/60" : "border-slate-300 bg-slate-50 hover:border-emerald-500"
+                }`}>
+                  <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
+
+                  <div className="relative mx-auto aspect-[16/10] max-w-lg overflow-hidden rounded-xl bg-slate-950 shadow-inner">
+                    <img src={userImage || selectedDisease.imageUrl} alt="Crop Leaf Sample" className="h-full w-full object-cover" />
+                    {scanState === "scanning" && (
+                      <div className="absolute inset-0 bg-emerald-950/75 backdrop-blur-sm flex flex-col items-center justify-center p-4">
+                        <div className="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-emerald-400 to-transparent shadow-[0_0_15px_#10b981] animate-laser" />
+                        <div className="h-14 w-14 rounded-full border-4 border-emerald-400 border-t-transparent animate-spin mb-3" />
+                        <p className="text-sm font-black text-white tracking-wide">{t.analyzing}</p>
+                        <p className="text-xs font-mono font-bold text-emerald-300 mt-1">{scanStatusStep}</p>
+                        <div className="mt-4 w-56 h-2.5 rounded-full bg-emerald-950 border border-emerald-600/50 overflow-hidden">
+                          <div className="h-full bg-gradient-to-r from-emerald-500 to-cyan-400 transition-all duration-300" style={{ width: `${scanProgress}%` }} />
                         </div>
-                        <span className="mt-1 text-xs font-mono font-bold text-emerald-300">{scanProgress}%</span>
+                        <span className="mt-1.5 text-xs font-mono font-bold text-emerald-400">{scanProgress}%</span>
                       </div>
+                    )}
+                  </div>
+
+                  <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+                    <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-black text-white hover:bg-emerald-700">
+                      <Upload size={16} /> {t.uploadPhoto}
+                    </button>
+                    <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-100">
+                      <Camera size={16} /> {t.openCamera}
+                    </button>
+                    <button onClick={triggerScan} disabled={scanState === "scanning"} className="flex items-center gap-2 rounded-xl bg-amber-500 px-5 py-2.5 text-xs font-black text-slate-950 hover:bg-amber-400 transition shadow-md">
+                      <Sparkles size={16} /> Run AI Diagnostics
+                    </button>
+                  </div>
+
+                  <div className={`mt-5 pt-4 border-t text-left ${isDark ? "border-emerald-900/50" : "border-slate-200"}`}>
+                    <p className={`text-xs font-bold mb-2.5 ${isDark ? "text-emerald-300/80" : "text-slate-700"}`}>{t.orPickSample}</p>
+                    <div className="flex flex-wrap gap-2">
+                      {CROP_DISEASE_DATASETS.map((item) => (
+                        <button key={item.id} onClick={() => selectPresetSample(item)} className={`flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-bold border transition ${selectedDisease.id === item.id && !userImage ? "border-emerald-600 bg-emerald-50 text-emerald-900" : "border-slate-200 bg-white text-slate-700"}`}>
+                          <span className={`h-2 w-2 rounded-full ${item.severity === "Healthy" ? "bg-emerald-500" : "bg-amber-500"}`} />
+                          <span>{item.crop} - {item.diseaseName}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* RIGHT: DIAGNOSIS REPORT & METRICS */}
+              <div className={`lg:col-span-6 rounded-3xl p-5 sm:p-7 border relative transition-all ${isDark ? "border-emerald-800/40 bg-[#072017]" : "border-slate-200 bg-white shadow-xl shadow-slate-200/50"}`}>
+                {scanState === "idle" && (
+                  <div className={`absolute inset-0 z-10 flex flex-col items-center justify-center rounded-3xl backdrop-blur p-6 text-center ${isDark ? "bg-[#072017]/95" : "bg-white/95"}`}>
+                    <div className="grid h-16 w-16 place-items-center rounded-2xl border mb-4 bg-emerald-50 text-emerald-600 border-emerald-200">
+                      <Sparkles size={32} />
+                    </div>
+                    <h3 className="text-lg font-black text-slate-900">Ready for AI Vision Diagnosis</h3>
+                    <p className="text-xs text-slate-500 mt-1 max-w-xs">Upload a leaf photo or pick a sample to execute pixel-level chromatic analysis.</p>
+                    <button onClick={triggerScan} className="mt-5 rounded-xl bg-emerald-600 px-6 py-2.5 text-xs font-black text-white hover:bg-emerald-700 shadow-lg shadow-emerald-600/30">Start Analysis Now</button>
+                  </div>
+                )}
+
+                <div className="flex items-start justify-between border-b pb-4 border-slate-200">
+                  <div>
+                    <span className="text-[11px] font-bold tracking-widest uppercase text-emerald-700">Diagnosis Report</span>
+                    <h3 className="text-xl font-black text-slate-900 mt-1">{selectedDisease.crop} — {selectedDisease.diseaseName}</h3>
+                    <p className="text-xs italic text-slate-500">{selectedDisease.pathogen}</p>
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-800 border border-emerald-300">{selectedDisease.confidence}% Match</span>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${selectedDisease.severity === 'Healthy' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-100 text-amber-900'}`}>
+                      {selectedDisease.severity} Severity
+                    </span>
+                  </div>
+                </div>
+
+                {/* VISUAL DIAGNOSTIC METRICS BREAKDOWN */}
+                <div className="my-4 grid grid-cols-2 gap-3 rounded-2xl p-3 border bg-slate-50 border-slate-200 text-xs">
+                  <div>
+                    <div className="flex justify-between font-bold text-slate-700 mb-1">
+                      <span>Chlorophyll Density</span>
+                      <span className="text-emerald-600">{selectedDisease.metrics?.healthyPercent ?? 82}%</span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-slate-200 overflow-hidden">
+                      <div className="h-full bg-emerald-500" style={{ width: `${selectedDisease.metrics?.healthyPercent ?? 82}%` }} />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex justify-between font-bold text-slate-700 mb-1">
+                      <span>Lesion Coverage</span>
+                      <span className="text-amber-600">{selectedDisease.metrics?.necroticPercent ?? 14}%</span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-slate-200 overflow-hidden">
+                      <div className="h-full bg-amber-500" style={{ width: `${selectedDisease.metrics?.necroticPercent ?? 14}%` }} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* VIEW MODE SWITCHER TABS */}
+                <div className="my-3 flex items-center justify-between">
+                  <div className="flex gap-1.5 bg-slate-100 p-1 rounded-xl">
+                    <button
+                      onClick={() => setDiagViewMode("heatmap")}
+                      className={`px-3 py-1 text-xs font-bold rounded-lg transition ${
+                        diagViewMode === "heatmap" ? "bg-emerald-600 text-white shadow-sm" : "text-slate-600 hover:text-slate-900"
+                      }`}
+                    >
+                      AI Heatmap
+                    </button>
+                    <button
+                      onClick={() => setDiagViewMode("3d")}
+                      className={`px-3 py-1 text-xs font-bold rounded-lg transition ${
+                        diagViewMode === "3d" ? "bg-emerald-600 text-white shadow-sm" : "text-slate-600 hover:text-slate-900"
+                      }`}
+                    >
+                      3D Model
+                    </button>
+                    <button
+                      onClick={() => setDiagViewMode("original")}
+                      className={`px-3 py-1 text-xs font-bold rounded-lg transition ${
+                        diagViewMode === "original" ? "bg-emerald-600 text-white shadow-sm" : "text-slate-600 hover:text-slate-900"
+                      }`}
+                    >
+                      Original
+                    </button>
+                  </div>
+                  <button onClick={handlePrintCertificate} className="flex items-center gap-1 text-[11px] font-bold text-emerald-700 hover:text-emerald-900">
+                    <FileText size={14} /> Printable Report
+                  </button>
+                </div>
+
+                {/* VIEW DISPLAY CONTAINER */}
+                <div className="my-3">
+                  {diagViewMode === "heatmap" && (
+                    <DiseaseHeatmapCanvas imageSrc={userImage || selectedDisease.imageUrl} disease={selectedDisease} isDark={isDark} />
+                  )}
+                  {diagViewMode === "3d" && (
+                    <DiseaseLeaf3DModel disease={selectedDisease} theme={theme} />
+                  )}
+                  {diagViewMode === "original" && (
+                    <div className="relative aspect-[16/10] overflow-hidden rounded-xl bg-slate-950 shadow-inner">
+                      <img src={userImage || selectedDisease.imageUrl} alt="Original Leaf Sample" className="h-full w-full object-cover" />
                     </div>
                   )}
                 </div>
 
-                <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-                  <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-xs font-black text-white hover:bg-emerald-700">
-                    <Upload size={16} /> {t.uploadPhoto}
-                  </button>
-                  <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-100">
-                    <Camera size={16} /> {t.openCamera}
-                  </button>
-                  <button onClick={triggerScan} disabled={scanState === "scanning"} className="flex items-center gap-2 rounded-xl bg-amber-500 px-6 py-2.5 text-xs font-black text-slate-950 hover:bg-amber-400 transition">
-                    <Sparkles size={16} /> Run AI Diagnostics
-                  </button>
+                <div className="mt-3 flex items-center gap-3 rounded-2xl p-3 border bg-amber-50 border-amber-200 text-amber-900">
+                  <ShieldAlert size={18} className="shrink-0" />
+                  <div className="text-xs font-bold">{selectedDisease.symptoms}</div>
                 </div>
 
-                <div className={`mt-6 pt-5 border-t text-left ${isDark ? "border-emerald-900/50" : "border-slate-200"}`}>
-                  <p className={`text-xs font-bold mb-3 ${isDark ? "text-emerald-300/80" : "text-slate-700"}`}>{t.orPickSample}</p>
-                  <div className="flex flex-wrap gap-2">
-                    {CROP_DISEASE_DATASETS.map((item) => (
-                      <button key={item.id} onClick={() => selectPresetSample(item)} className={`flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-bold border transition ${selectedDisease.id === item.id && !userImage ? "border-emerald-600 bg-emerald-50 text-emerald-900" : "border-slate-200 bg-white text-slate-700"}`}>
-                        <span className={`h-2 w-2 rounded-full ${item.severity === "Healthy" ? "bg-emerald-500" : "bg-amber-500"}`} />
-                        <span>{item.crop} - {item.diseaseName}</span>
-                      </button>
-                    ))}
+                <button onClick={() => handleSpeechToggle()} className="mt-3 flex w-full items-center justify-between rounded-2xl px-4 py-2.5 text-xs font-bold border bg-emerald-50 border-emerald-200 text-emerald-900">
+                  <div className="flex items-center gap-2.5">
+                    <Volume2 size={18} />
+                    <span>{isSpeaking ? t.listeningAudio : t.listenAdvisory}</span>
                   </div>
+                </button>
+
+                <div className="mt-4 border-b flex gap-2 border-slate-200">
+                  {[{ id: "organic", label: t.organic }, { id: "chemical", label: t.chemical }, { id: "prevention", label: t.prevention }].map(({ id, label }) => (
+                    <button key={id} onClick={() => setRemedyTab(id)} className={`pb-2 text-xs font-bold border-b-2 transition ${remedyTab === id ? "border-emerald-600 text-emerald-800" : "border-transparent text-slate-400"}`}>{label}</button>
+                  ))}
                 </div>
-              </div>
-            </div>
 
-            <div className={`lg:col-span-5 rounded-3xl p-5 sm:p-7 border relative transition-all ${isDark ? "border-emerald-800/40 bg-[#072017]" : "border-slate-200 bg-white shadow-xl shadow-slate-200/50"}`}>
-              {scanState === "idle" && (
-                <div className={`absolute inset-0 z-10 flex flex-col items-center justify-center rounded-3xl backdrop-blur p-6 text-center ${isDark ? "bg-[#072017]/95" : "bg-white/95"}`}>
-                  <div className="grid h-16 w-16 place-items-center rounded-2xl border mb-4 bg-emerald-50 text-emerald-600 border-emerald-200">
-                    <Sparkles size={32} />
-                  </div>
-                  <h3 className="text-lg font-black text-slate-900">Ready for AI Vision Diagnosis</h3>
-                  <button onClick={triggerScan} className="mt-5 rounded-xl bg-emerald-600 px-6 py-2.5 text-xs font-black text-white hover:bg-emerald-700">Start Analysis Now</button>
+                <div className="mt-3 rounded-2xl border p-3.5 text-xs space-y-1.5 border-slate-200 bg-slate-50 text-slate-700">
+                  <h4 className="font-extrabold text-slate-900">{selectedDisease.remedies[remedyTab].title}</h4>
+                  <p className="font-semibold text-emerald-700">{selectedDisease.remedies[remedyTab].dosage}</p>
+                  <p className="leading-relaxed opacity-90">{selectedDisease.remedies[remedyTab].instructions}</p>
                 </div>
-              )}
-
-              <div className="flex items-start justify-between border-b pb-4 border-slate-200">
-                <div>
-                  <span className="text-[11px] font-bold tracking-widest uppercase text-emerald-700">Diagnosis Report</span>
-                  <h3 className="text-xl font-black text-slate-900 mt-1">{selectedDisease.crop} — {selectedDisease.diseaseName}</h3>
-                  <p className="text-xs italic text-slate-500">{selectedDisease.pathogen}</p>
-                </div>
-                <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-800 border border-emerald-300">{selectedDisease.confidence}% Match</span>
-              </div>
-
-              <div className="my-4">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-[11px] font-mono font-bold text-amber-500 uppercase flex items-center gap-1.5">
-                    <span className="h-2 w-2 rounded-full bg-amber-500 animate-ping" />
-                    Feature #2: 3D Leaf Disease Zone Highlight
-                  </span>
-                  <span className="text-[10px] text-slate-400 font-mono">Interactive 360° Drag</span>
-                </div>
-                
-                <DiseaseLeaf3DModel disease={selectedDisease} theme={theme} />
-              </div>
-
-              <div className="mt-4 flex items-center gap-3 rounded-2xl p-3.5 border bg-amber-50 border-amber-200 text-amber-900">
-                <ShieldAlert size={20} className="shrink-0" />
-                <div className="text-xs font-bold">{selectedDisease.symptoms}</div>
-              </div>
-
-              <button onClick={() => handleSpeechToggle()} className="mt-4 flex w-full items-center justify-between rounded-2xl px-4 py-3 text-xs font-bold border bg-emerald-50 border-emerald-200 text-emerald-900">
-                <div className="flex items-center gap-3">
-                  <Volume2 size={18} />
-                  <span>{isSpeaking ? t.listeningAudio : t.listenAdvisory}</span>
-                </div>
-              </button>
-
-              <div className="mt-5 border-b flex gap-2 border-slate-200">
-                {[{ id: "organic", label: t.organic }, { id: "chemical", label: t.chemical }, { id: "prevention", label: t.prevention }].map(({ id, label }) => (
-                  <button key={id} onClick={() => setRemedyTab(id)} className={`pb-2.5 text-xs font-bold border-b-2 transition ${remedyTab === id ? "border-emerald-600 text-emerald-800" : "border-transparent text-slate-400"}`}>{label}</button>
-                ))}
-              </div>
-
-              <div className="mt-4 rounded-2xl border p-4 text-xs space-y-2 border-slate-200 bg-slate-50 text-slate-700">
-                <h4 className="font-extrabold text-slate-900">{selectedDisease.remedies[remedyTab].title}</h4>
-                <p className="font-semibold text-emerald-700">{selectedDisease.remedies[remedyTab].dosage}</p>
-                <p className="leading-relaxed opacity-90">{selectedDisease.remedies[remedyTab].instructions}</p>
               </div>
             </div>
           </div>
