@@ -74,10 +74,6 @@ import {
   AGRI_PRODUCTS,
   MANDI_PRICES_FEED,
   DIRECT_BUYERS_LIST,
-  KISAN_CREDIT_FINTECH_PROFILE,
-  PARAMETRIC_INSURANCE_POLICY,
-  SUSTAINABILITY_METRICS,
-  AGRISTACK_COMPLIANCE,
   KAGGLE_VEGETABLE_PRICES,
   queryHuggingFaceAgriBot,
   classifyCropLeafImage,
@@ -441,11 +437,6 @@ export default function App() {
     showToast(`Community Outbreak Reported for ${reportCrop}! Nearby agronomists and farmers alerted.`);
   };
 
-  const handleSimulateInsuranceClaim = () => {
-    setInsuranceClaimTriggered(true);
-    showToast("PMFBY Weather Drought Threshold Met! Claim Payout of ₹15,000 initiated to bank account.");
-  };
-
   // NPK Calculation Logic
   const currentCropConfig = CROPS_CONFIG.find((c) => c.id === calcCrop) || CROPS_CONFIG[0];
   const multN = soilN === "low" ? 1.25 : soilN === "high" ? 0.75 : 1.0;
@@ -551,10 +542,7 @@ export default function App() {
               { id: "analytics", label: t.navAnalytics, icon: LineChart },
               { id: "calc", label: t.navCalc, icon: Calculator },
               { id: "mandi", label: t.navMandi, icon: TrendingUp },
-              { id: "fintech", label: t.navFintech, icon: CreditCard },
               { id: "market", label: t.navMarket, icon: ShoppingCart },
-              { id: "esg", label: t.navESG, icon: Award },
-              { id: "gov", label: t.navGov, icon: Landmark },
               { id: "pricing", label: t.navPricing, icon: Zap },
             ].map(({ id, label, icon: Icon, badge }) => (
               <button
@@ -744,11 +732,7 @@ export default function App() {
             { id: "analytics", label: t.navAnalytics, icon: LineChart },
             { id: "calc", label: t.navCalc, icon: Calculator },
             { id: "mandi", label: t.navMandi, icon: TrendingUp },
-            { id: "fintech", label: t.navFintech, icon: CreditCard },
             { id: "market", label: t.navMarket, icon: ShoppingCart },
-            { id: "esg", label: t.navESG, icon: Award },
-            { id: "gov", label: t.navGov, icon: Landmark },
-            { id: "admin", label: t.navAdmin, icon: PieChart },
             { id: "pricing", label: t.navPricing, icon: Zap },
           ].map(({ id, label, icon: Icon, badge }) => (
             <button
@@ -1311,54 +1295,7 @@ export default function App() {
           </div>
         )}
 
-        {/* SECTION: KISAN CREDIT SCORE & PARAMETRIC INSURANCE */}
-        {activeNav === "fintech" && (
-          <div className="space-y-6">
-            <div className={`rounded-3xl p-6 border transition-all ${
-              isDark ? "border-emerald-800/40 bg-[#072017]" : "border-slate-200 bg-white shadow-xl"
-            }`}>
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                <div className="lg:col-span-7 rounded-3xl border border-emerald-500/30 bg-gradient-to-br from-[#062419] to-[#04160f] p-6 text-white shadow-2xl">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <span className="text-xs text-emerald-400 font-mono font-bold uppercase">{KISAN_CREDIT_FINTECH_PROFILE.agriStackId}</span>
-                      <h3 className="text-2xl font-black mt-1">{KISAN_CREDIT_FINTECH_PROFILE.farmerName}</h3>
-                      <span className="inline-block mt-2 rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-bold text-emerald-300 border border-emerald-500/40">
-                        {KISAN_CREDIT_FINTECH_PROFILE.scoreTier}
-                      </span>
-                    </div>
-                    <div className="text-right">
-                      <div className="h-16 w-16 rounded-full border-4 border-emerald-400 flex items-center justify-center font-black text-2xl text-emerald-300">
-                        {KISAN_CREDIT_FINTECH_PROFILE.creditScore}
-                      </div>
-                      <span className="text-[10px] text-slate-400 font-mono">Credit Score</span>
-                    </div>
-                  </div>
 
-                  <div className="mt-6 pt-4 border-t border-slate-700/50">
-                    <p className="text-xs text-slate-400">Pre-Approved PM-Kisan KCC Loan Eligibility:</p>
-                    <p className="text-3xl font-black text-emerald-400 mt-1">₹{(KISAN_CREDIT_FINTECH_PROFILE.maxLoanEligibilityINR / 100000).toFixed(2)} Lakhs @ {KISAN_CREDIT_FINTECH_PROFILE.interestRatePct}% p.a.</p>
-                  </div>
-                </div>
-
-                <div className="lg:col-span-5 rounded-3xl border border-amber-500/30 bg-gradient-to-br from-[#241a06] to-[#160f04] p-6 text-white shadow-2xl">
-                  <span className="text-xs text-amber-400 font-mono font-bold uppercase">{PARAMETRIC_INSURANCE_POLICY.policyNumber}</span>
-                  <h3 className="text-xl font-black mt-1">{PARAMETRIC_INSURANCE_POLICY.insurer}</h3>
-                  <p className="text-xs text-amber-200 mt-1">{PARAMETRIC_INSURANCE_POLICY.insuredCrop}</p>
-
-                  <div className="my-4 space-y-2 text-xs">
-                    <div className="flex justify-between"><span>NDVI Threshold: &lt;{PARAMETRIC_INSURANCE_POLICY.payoutThresholds.ndviDropTrigger}</span><span className="font-bold text-amber-400">{PARAMETRIC_INSURANCE_POLICY.currentSensorState.currentNDVI}</span></div>
-                    <div className="flex justify-between"><span>Dry Spell Threshold: &gt;{PARAMETRIC_INSURANCE_POLICY.payoutThresholds.drySpellDaysTrigger} days</span><span className="font-bold text-amber-400">{PARAMETRIC_INSURANCE_POLICY.currentSensorState.drySpellDays} days</span></div>
-                  </div>
-
-                  <button onClick={handleSimulateInsuranceClaim} className="w-full rounded-2xl bg-amber-500 py-3 text-xs font-black text-slate-950 hover:bg-amber-400 transition shadow">
-                    {insuranceClaimTriggered ? "Claim Processed (₹15,000 Direct Deposit)" : t.triggerInsuranceDemo}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* SECTION: AGRI-INPUT MARKETPLACE */}
         {activeNav === "market" && (
@@ -1410,74 +1347,7 @@ export default function App() {
           </div>
         )}
 
-        {/* SECTION: CARBON & ESG SUSTAINABILITY */}
-        {activeNav === "esg" && (
-          <div className="space-y-6">
-            <div className={`rounded-3xl p-6 border transition-all ${
-              isDark ? "border-emerald-800/40 bg-[#072017]" : "border-slate-200 bg-white shadow-xl"
-            }`}>
-              <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-                <div>
-                  <h2 className={`text-2xl font-black flex items-center gap-2 ${isDark ? "text-white" : "text-slate-900"}`}>
-                    <Award className="text-emerald-500" size={26} />
-                    {t.carbonTitle}
-                  </h2>
-                  <p className="text-xs text-slate-400">Track precision agriculture resource conservation and carbon offset potential</p>
-                </div>
-                <button onClick={() => window.print()} className="flex items-center gap-2 rounded-2xl bg-emerald-500 px-5 py-2.5 text-xs font-black text-slate-950 hover:bg-emerald-400 shadow">
-                  <Printer size={16} /> {t.downloadCertificate}
-                </button>
-              </div>
 
-              {/* ESG Metrics Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 my-6">
-                <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-center">
-                  <Droplets size={24} className="mx-auto text-emerald-400 mb-2" />
-                  <p className="text-2xl font-black text-white">{SUSTAINABILITY_METRICS.waterSavedLiters.toLocaleString()} L</p>
-                  <p className="text-xs text-emerald-300 font-bold mt-1">Water Conserved</p>
-                </div>
-                <div className="rounded-2xl border border-cyan-500/30 bg-cyan-500/10 p-4 text-center">
-                  <Zap size={24} className="mx-auto text-cyan-400 mb-2" />
-                  <p className="text-2xl font-black text-white">{SUSTAINABILITY_METRICS.fertilizerReductionKg} kg</p>
-                  <p className="text-xs text-cyan-300 font-bold mt-1">Chemical Reduction</p>
-                </div>
-                <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-center">
-                  <Award size={24} className="mx-auto text-amber-400 mb-2" />
-                  <p className="text-2xl font-black text-white">{SUSTAINABILITY_METRICS.carbonCreditPotentialCO2eKg} kg</p>
-                  <p className="text-xs text-amber-300 font-bold mt-1">CO2e Offset Potential</p>
-                </div>
-                <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-center">
-                  <Coins size={24} className="mx-auto text-emerald-400 mb-2" />
-                  <p className="text-2xl font-black text-white">₹{SUSTAINABILITY_METRICS.carbonValueINR}</p>
-                  <p className="text-xs text-emerald-300 font-bold mt-1">Carbon Offsetting Revenue</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* SECTION: AGRISTACK GOVERNMENT ALIGNMENT */}
-        {activeNav === "gov" && (
-          <div className="space-y-6">
-            <div className={`rounded-3xl p-6 border transition-all ${
-              isDark ? "border-emerald-800/40 bg-[#072017]" : "border-slate-200 bg-white shadow-xl"
-            }`}>
-              <h2 className={`text-2xl font-black flex items-center gap-2 mb-4 ${isDark ? "text-white" : "text-slate-900"}`}>
-                <Landmark className="text-emerald-500" size={26} />
-                {t.agriStackTitle}
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 my-6">
-                {AGRISTACK_COMPLIANCE.complianceBadges.map((badge, idx) => (
-                  <div key={idx} className="rounded-2xl border border-emerald-500/30 bg-[#04160f] p-4 text-white">
-                    <span className="rounded bg-emerald-500/20 text-emerald-400 px-2 py-0.5 text-[10px] font-mono font-bold uppercase">{badge.status}</span>
-                    <h3 className="font-black text-base mt-2">{badge.title}</h3>
-                    <p className="text-xs text-slate-400 mt-1">{badge.subtitle}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
 
 
 

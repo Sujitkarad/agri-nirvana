@@ -18,7 +18,6 @@ import DiagnosisHistoryView from "./DiagnosisHistoryView";
 import LiveCameraModal from "../LiveCameraModal";
 import DosageCalculatorModal from "../DosageCalculatorModal";
 import DroneMissionGeneratorModal from "../DroneMissionGeneratorModal";
-import ParametricClaimModal from "../ParametricClaimModal";
 import AgronomistDispatchModal from "../AgronomistDispatchModal";
 
 export default function CropDiagnosticsWorkspace({
@@ -61,7 +60,6 @@ export default function CropDiagnosticsWorkspace({
   const [isCameraModalOpen, setIsCameraModalOpen] = useState(false);
   const [isDosageModalOpen, setIsDosageModalOpen] = useState(false);
   const [isDroneModalOpen, setIsDroneModalOpen] = useState(false);
-  const [isClaimModalOpen, setIsClaimModalOpen] = useState(false);
   const [isAgronomistModalOpen, setIsAgronomistModalOpen] = useState(false);
 
   useEffect(() => {
@@ -192,9 +190,6 @@ export default function CropDiagnosticsWorkspace({
                     <button onClick={() => setIsDroneModalOpen(true)} className="flex items-center gap-1 text-xs font-bold text-cyan-400 bg-cyan-950/60 px-3 py-1.5 rounded-xl border border-cyan-800/60 hover:bg-cyan-900/60">
                       <Cpu size={14} /> Drone Mission
                     </button>
-                    <button onClick={() => setIsClaimModalOpen(true)} className="flex items-center gap-1 text-xs font-bold text-emerald-400 bg-emerald-950/60 px-3 py-1.5 rounded-xl border border-emerald-800/60 hover:bg-emerald-900/60">
-                      <Landmark size={14} /> Auto-Claim Payout
-                    </button>
                     <button onClick={() => setIsAgronomistModalOpen(true)} className="flex items-center gap-1 text-xs font-bold text-emerald-300 bg-emerald-900/60 px-3 py-1.5 rounded-xl border border-emerald-700/60 hover:bg-emerald-800/60">
                       <UserCheck size={14} /> Dispatch Agronomist
                     </button>
@@ -290,14 +285,6 @@ export default function CropDiagnosticsWorkspace({
         isOpen={isDroneModalOpen}
         onClose={() => setIsDroneModalOpen(false)}
         disease={currentDiagnosis || { crop: selectedCrop, diseaseName: "Early Blight" }}
-        isDark={isDark}
-      />
-
-      <ParametricClaimModal
-        isOpen={isClaimModalOpen}
-        onClose={() => setIsClaimModalOpen(false)}
-        disease={currentDiagnosis || { crop: selectedCrop, diseaseName: "Early Blight" }}
-        selectedField={selectedField}
         isDark={isDark}
       />
 

@@ -708,66 +708,6 @@ export const DIRECT_BUYERS_LIST = [
   }
 ];
 
-export const KISAN_CREDIT_FINTECH_PROFILE = {
-  farmerName: "Rameshwar Rao Patil",
-  agriStackId: "FID-2026-8849-MH-NAGPUR",
-  creditScore: 82,
-  scoreTier: "Prime Credit Grade A+",
-  maxLoanEligibilityINR: 250000,
-  interestRatePct: 4.0,
-  scoreBreakdown: [
-    { factor: "Consistent Leaf Vision Scanning & Early Disease Detection", points: 25, maxPoints: 25 },
-    { factor: "Sentinel-2 NDVI Soil Vegetation Index (>0.70 Average)", points: 22, maxPoints: 25 },
-    { factor: "NPK Balanced Fertilizer Compliance & Soil Health Card", points: 18, maxPoints: 20 },
-    { factor: "Zero Disease Outbreak Spread Contribution", points: 17, maxPoints: 30 }
-  ]
-};
-
-export const PARAMETRIC_INSURANCE_POLICY = {
-  policyNumber: "PMFBY-PARAMETRIC-2026-7782",
-  insurer: "Agricultural Insurance Company of India (AIC)",
-  insuredCrop: "Tomato & Wheat (Block A)",
-  sumInsuredINR: 45000,
-  payoutThresholds: {
-    ndviDropTrigger: 0.35,
-    drySpellDaysTrigger: 14,
-    heatwaveTempTrigger: 41.5
-  },
-  currentSensorState: {
-    currentNDVI: 0.31,
-    drySpellDays: 16,
-    currentTemp: 38.2
-  },
-  claimPayoutINR: 15000,
-  claimStatus: "Eligible for Automatic Smart-Contract Payout"
-};
-
-export const SUSTAINABILITY_METRICS = {
-  waterSavedLiters: 42800,
-  fertilizerReductionKg: 145,
-  carbonCreditPotentialCO2eKg: 1850,
-  carbonValueINR: 2450,
-  certificatePayload: {
-    issuedTo: "Rameshwar Rao Patil",
-    farmLocation: "Nagpur Sector 4, Maharashtra",
-    issueDate: "August 2, 2026",
-    verificationAuthority: "Agri Nirvana ESG Precision Agronomy Engine",
-    impactBadge: "Green Farmer Gold Level 1"
-  }
-};
-
-export const AGRISTACK_COMPLIANCE = {
-  farmerDigitalId: "FID-2026-8849-MH-NAGPUR",
-  soilHealthCardId: "SHC-MH-2026-09412",
-  aadhaarLinked: true,
-  landRecordKhasra: "Khasra No. 142/2A (4.2 Acres)",
-  pmfbyCropInsuranceId: "PMFBY-2026-991204",
-  complianceBadges: [
-    { title: "AgriStack Ready", subtitle: "Compatible with India Digital Agri Mission Schema", status: "Verified" },
-    { title: "Soil Health Card API v2", subtitle: "Direct Micronutrient JSON Interchange", status: "Verified" },
-    { title: "PMFBY Parametric API", subtitle: "Automated Weather Data Claim Trigger", status: "Active" }
-  ]
-};
 
 export const CROP_DISEASE_DATASETS = [
   {
@@ -1350,38 +1290,6 @@ M30 ; Program End`;
     spotSprayLiters,
     savingsPct: 68,
     savingsINR: chemicalSavingsINR,
-  };
-}
-
-// KISAN PARAMETRIC INSURANCE CRYPTOGRAPHIC TELEMETRY CERTIFICATE GENERATOR
-export function generateKisanCryptographicCertificate(disease, field, weather) {
-  const timestamp = new Date().toISOString();
-  const seed = `${disease.id}-${field?.id || 'f1'}-${timestamp}-${disease.confidence}`;
-  
-  // Simple SHA-256 simulation hash
-  let hash = 0;
-  for (let i = 0; i < seed.length; i++) {
-    const char = seed.charCodeAt(i);
-    hash = (hash << 5) - hash + char;
-    hash |= 0;
-  }
-  const hashHex = "0x" + Math.abs(hash).toString(16).padStart(16, "a7f893b10c42e") + "940e2b";
-
-  const claimEligible = disease.severity === "High" || disease.severity === "Critical";
-  const claimPayoutINR = claimEligible ? 18500 : 0;
-
-  return {
-    certId: `PMFBY-CERT-2026-${Math.floor(100000 + Math.random() * 900000)}`,
-    timestamp,
-    hashHex,
-    crop: disease.crop,
-    diseaseName: disease.diseaseName,
-    pathogen: disease.pathogen,
-    severity: disease.severity,
-    locationCoordinates: field?.coordinates || "21.1458° N, 79.0882° E",
-    claimEligible,
-    claimPayoutINR,
-    insurerName: "Pradhan Mantri Fasal Bima Yojana (PMFBY) Smart Contract",
   };
 }
 
