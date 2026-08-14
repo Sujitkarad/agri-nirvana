@@ -1,0 +1,81 @@
+import io
+import numpy as np
+from PIL import Image, ImageStat
+from backend.config import settings
+
+try:
+    import cv2
+    HAS_CV2 = True
+except ImportError:
+    HAS_CV2 = False
+
+class ImageQualityResult:
+    def __init__(self, is_valid: bool, error_message: str = None, warnings: list = None, image_np: np.ndarray = None, pil_image: Image.Image = None):
+        self.is_valid = is_valid
+        self.error_message = error_message
+        self.warnings = warnings or []
+        self.image_np = image_np
+        self.pil_image = pil_image
+
+def validate_and_preprocess_image(file_bytes: bytes, filename: str) -> ImageQualityResult:
+    # 1. Size Check
+    size_mb = len(file_bytes) / (1024 * 1024)
+    if size_mb > settings.MAX_IMAGE_SIZE_MB:
+        return ImageQualityResult(
+            is_valid=False,
+            error_message=f"File size ({size_mb:.1f} MB) exceeds maximum allowed limit of {settings.MAX_IMAGE_SIZE_MB} MB."
+        )
+
+    # 2. Format Extension Check
+    ext = filename.split(".")[-1].lower() if "." in filename else ""
+    if ext not in settings.ALLOWED_EXTENSIONS:
+        return ImageQualityResult(
+            is_valid=False,
+            error_message=f"Unsupported image format '.{ext}'. Supported formats: {', '.join(settings.ALLOWED_EXTENSIONS)}."
+        )
+
+    # 3. Decode Image with Pillow & OpenCV
+    try:
+        pil_img = Image.open(io.BytesIO(file_bytes)).convert("RGB")
+        img_np = np.array(pil_img)
+    except Exception as e:
+        return ImageQualityResult(
+            is_valid=False,
+            error_message="Corrupted or unreadable image file. Please re-capture or upload a valid photo."
+        )
+
+    height, width, _ = img_np.shape
+
+    # 4. Dimension Resolution Check
+    if width < 150 or height < 150:
+        return ImageQualityResult(
+            is_valid=False,
+            error_message="Image resolution is too low (<150x150 px) for accurate AI computer vision diagnosis. Please upload a higher resolution photo."
+        )
+
+    warnings = []
+
+    # 5. Darkness & Blur Check (OpenCV or Pillow fallback)
+    if HAS_CV2:
+        gray = cv2.cvtColor(img_np, cv2.COLOR_RGB2GRAY)
+        mean_brightness = float(np.mean(gray))
+        laplacian_var = float(cv2.Laplacian(gray, cv2.CV_64F).var())
+    else:
+        gray_pil = pil_img.convert("L")
+        stat = ImageStat.Stat(gray_pil)
+        mean_brightness = float(stat.mean[0])
+        # Approximate variance
+        laplacian_var = float(stat.stddev[0] ** 2)
+
+    if mean_brightness < 40.0:
+        warnings.append("Image is extremely dark. Capture under clear natural sunlight for better accuracy.")
+
+    if laplacian_var < 80.0:
+        warnings.append("Image appears blurry. Ensure the crop leaf is sharply in focus.")
+
+    return ImageQualityResult(
+        is_valid=True,
+        warnings=warnings,
+        image_np=img_np,
+        pil_image=pil_img
+    )
