@@ -32,3 +32,15 @@ pnpm-debug.log*
 brain/
 
 .vercel
+
+# Python & ML
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+venv/
+.venv/
+env/
+*.sqlite3
+*.db
+!backend/db/schema.sql

@@ -38,7 +38,32 @@ class Database:
     def save_diagnosis(self, record: Dict[str, Any]) -> Dict[str, Any]:
         doc_id = str(uuid.uuid4())
         created_at = datetime.utcnow().isoformat()
-        
+
+        # Extract safe scalar values whether they are strings or dicts
+        crop_val = record.get("cropType") or record.get("crop")
+        if isinstance(crop_val, dict):
+            crop_name = crop_val.get("name", "Tomato")
+        else:
+            crop_name = str(crop_val or "Tomato")
+
+        cond_val = record.get("condition") or record.get("diagnosis")
+        if isinstance(cond_val, dict):
+            cond_name = cond_val.get("name", "Healthy")
+        else:
+            cond_name = str(cond_val or "Healthy")
+
+        sev_val = record.get("severity")
+        if isinstance(sev_val, dict):
+            sev_name = sev_val.get("tier", "Moderate")
+        else:
+            sev_name = str(sev_val or "Moderate")
+
+        conf_val = record.get("confidence", 0.90)
+        try:
+            conf_float = float(conf_val)
+        except (ValueError, TypeError):
+            conf_float = 0.85
+
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         cursor.execute("""
@@ -48,17 +73,17 @@ class Database:
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             doc_id,
-            record.get("userId", "anonymous_farmer"),
-            record.get("crop", record.get("cropType", "Tomato")),
-            record.get("imageUrl", ""),
-            record.get("condition", "Healthy"),
-            float(record.get("confidence", 0.90)),
-            record.get("severity", "Moderate"),
+            str(record.get("userId", "anonymous_farmer")),
+            crop_name,
+            str(record.get("imageUrl", "")),
+            cond_name,
+            conf_float,
+            sev_name,
             json.dumps(record.get("symptoms", [])),
             json.dumps(record.get("recommendations", {})),
-            record.get("model_name", "AI Vision"),
-            record.get("model_version", "v1.0"),
-            1 if record.get("is_mock", False) else 0,
+            str(record.get("modelName", record.get("model_name", "AI Vision"))),
+            str(record.get("modelVersion", record.get("model_version", "v1.0"))),
+            1 if record.get("isMock", record.get("is_mock", False)) else 0,
             created_at
         ))
         conn.commit()

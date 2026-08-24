@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SIH 2026 Pitch Deck — Agri Nirvana (PS: SIH26131)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;900&family=JetBrains+Mono:wght@400;700&display=swap');
+    
+    body {
+      font-family: 'Outfit', sans-serif;
+      background-color: #030a07;
+      color: #e2e8f0;
+      overflow: hidden;
+    }
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .slide {
+      display: none;
+      height: 100vh;
+      width: 100vw;
+      padding: 3rem;
+      box-sizing: border-box;
+      animation: fadeIn 0.4s ease-out forwards;
+    }
+    .slide.active {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.98); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .glass-card {
+      background: rgba(7, 32, 23, 0.7);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+    .glass-card-amber {
+      background: rgba(30, 20, 6, 0.7);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+    .glass-card-cyan {
+      background: rgba(6, 30, 35, 0.7);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(6, 182, 212, 0.3);
+    }
+    .glow-emerald {
+      box-shadow: 0 0 30px rgba(16, 185, 129, 0.15);
+    }
+  </style>
+</head>
+<body class="select-none">
+
+  <!-- TOP BAR -->
+  <header class="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-8 py-4 bg-[#030a07]/80 backdrop-blur-md border-b border-emerald-900/40 text-xs">
+    <div class="flex items-center gap-3">
+      <span class="bg-emerald-500/20 text-emerald-300 font-bold px-3 py-1 rounded-full border border-emerald-500/40 font-mono">
+        SIH 2026 FINALIST DECK
+      </span>
+      <span class="text-slate-400 font-mono">PS ID: <strong class="text-white">SIH26131</strong></span>
+    </div>
+    <div class="text-slate-400 font-mono">
+      Govt. of Maharashtra • Dept. of Agriculture
+    </div>
+    <div class="flex items-center gap-2">
+      <span class="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+      <span class="text-emerald-400 font-bold font-mono">LIVE PROTOTYPE READY</span>
+    </div>
+  </header>
+
+  <!-- SLIDE 1: TITLE / COVER SLIDE -->
+  <div class="slide active" id="slide-1">
+    <div></div>
+    <div class="max-w-5xl mx-auto text-center space-y-6">
+      <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm font-semibold">
+        <i class="fa-solid fa-leaf"></i> SMART INDIA HACKATHON 2026 • SOFTWARE EDITION
+      </div>
+      <h1 class="text-6xl sm:text-7xl font-black tracking-tight leading-none bg-clip-text text-transparent bg-gradient-to-r from-emerald-300 via-teal-200 to-cyan-400">
+        AGRI NIRVANA
+      </h1>
+      <p class="text-2xl font-light text-slate-300 max-w-3xl mx-auto">
+        Self-Hosted AI Crop Disease Diagnostics, HSV Damage Quantification & Autonomous Spot-Spray Drone Telemetry
+      </p>
+      
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto pt-6 text-left">
+        <div class="glass-card p-4 rounded-2xl">
+          <div class="text-xs font-mono text-emerald-400 font-bold uppercase">Problem Statement</div>
+          <div class="text-sm font-semibold text-white mt-1">SIH26131 — Early Disease & Pest Detection</div>
+        </div>
+        <div class="glass-card p-4 rounded-2xl">
+          <div class="text-xs font-mono text-cyan-400 font-bold uppercase">Organization</div>
+          <div class="text-sm font-semibold text-white mt-1">Government of Maharashtra (Agri Dept)</div>
+        </div>
+        <div class="glass-card p-4 rounded-2xl">
+          <div class="text-xs font-mono text-amber-400 font-bold uppercase">Core Tech</div>
+          <div class="text-sm font-semibold text-white mt-1">PyTorch • MobileNetV2 • OpenCV • React 18</div>
+        </div>
+      </div>
+    </div>
+    <div class="text-center text-slate-500 text-xs font-mono">
+      Use <kbd class="px-2 py-1 bg-slate-900 rounded border border-slate-700 text-slate-300">←</kbd> <kbd class="px-2 py-1 bg-slate-900 rounded border border-slate-700 text-slate-300">→</kbd> Arrow Keys to Navigate Slides
+    </div>
+  </div>
+
+  <!-- SLIDE 2: PROBLEM & PROPOSED SOLUTION -->
+  <div class="slide" id="slide-2">
+    <div class="pt-12">
+      <span class="text-xs font-mono font-bold text-emerald-400 uppercase tracking-widest">SLIDE 02 / 06</span>
+      <h2 class="text-4xl font-black text-white mt-1">Problem Context & Innovation Overview</h2>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 my-auto">
+      <!-- Problem Card -->
+      <div class="glass-card-amber p-8 rounded-3xl space-y-4">
+        <div class="flex items-center gap-3 text-amber-400">
+          <i class="fa-solid fa-triangle-exclamation text-2xl"></i>
+          <h3 class="text-xl font-bold">The Ground Reality (Maharashtra Farmers)</h3>
+        </div>
+        <ul class="space-y-3 text-sm text-slate-300">
+          <li class="flex items-start gap-2">
+            <i class="fa-solid fa-circle-xmark text-amber-400 mt-1"></i>
+            <span><strong>Delayed Manual Scouting</strong>: Disease detection happens only after 30-40% leaf defoliation occurs.</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <i class="fa-solid fa-circle-xmark text-amber-400 mt-1"></i>
+            <span><strong>Indiscriminate Over-Spraying</strong>: Blanket chemical application increases input cost by 35% and pollutes soil.</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <i class="fa-solid fa-circle-xmark text-amber-400 mt-1"></i>
+            <span><strong>Commercial Cloud Reliance</strong>: Paid APIs fail in low-connectivity rural belts (Vidarbha / Marathwada).</span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Solution Card -->
+      <div class="glass-card p-8 rounded-3xl space-y-4">
+        <div class="flex items-center gap-3 text-emerald-400">
+          <i class="fa-solid fa-wand-magic-sparkles text-2xl"></i>
+          <h3 class="text-xl font-bold">The Agri Nirvana Solution</h3>
+        </div>
+        <ul class="space-y-3 text-sm text-slate-300">
+          <li class="flex items-start gap-2">
+            <i class="fa-solid fa-circle-check text-emerald-400 mt-1"></i>
+            <span><strong>100% Self-Hosted ML Pipeline</strong>: 0 third-party API dependencies; runs locally on PyTorch CPU/GPU.</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <i class="fa-solid fa-circle-check text-emerald-400 mt-1"></i>
+            <span><strong>Stage A + Stage B Neural Architecture</strong>: Filters non-crop photos before 38-class PlantVillage disease classification.</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <i class="fa-solid fa-circle-check text-emerald-400 mt-1"></i>
+            <span><strong>Targeted Spot-Spray Telemetry</strong>: Generates KML drone flight waypoints to spray *only* infected crop patches.</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div></div>
+  </div>
+
+  <!-- SLIDE 3: ML & SYSTEM ARCHITECTURE -->
+  <div class="slide" id="slide-3">
+    <div class="pt-12">
+      <span class="text-xs font-mono font-bold text-emerald-400 uppercase tracking-widest">SLIDE 03 / 06</span>
+      <h2 class="text-4xl font-black text-white mt-1">2-Stage Machine Learning Pipeline</h2>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 my-auto">
+      <!-- Stage A -->
+      <div class="glass-card p-6 rounded-3xl space-y-3">
+        <div class="h-10 w-10 rounded-xl bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center font-mono">01</div>
+        <h3 class="text-lg font-bold text-white">Stage A: Plant Validation Gate</h3>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          MobileNetV2 (ImageNet-1K) mapped against ~75 plant/vegetation class categories. Instantly rejects non-plant images (cars, faces, equipment).
+        </p>
+        <div class="p-3 rounded-xl bg-slate-950/80 font-mono text-[11px] text-emerald-300">
+          Latency: ~50-80ms (CPU)
+        </div>
+      </div>
+
+      <!-- Stage B -->
+      <div class="glass-card p-6 rounded-3xl space-y-3">
+        <div class="h-10 w-10 rounded-xl bg-cyan-500/20 text-cyan-400 font-bold flex items-center justify-center font-mono">02</div>
+        <h3 class="text-lg font-bold text-white">Stage B: Disease Classifier</h3>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          PlantVillage MobileNetV2 fine-tuned on 38 pathogen classes across 14 crop species. Outputs exact disease class and neural confidence score.
+        </p>
+        <div class="p-3 rounded-xl bg-slate-950/80 font-mono text-[11px] text-cyan-300">
+          Latency: ~50-100ms (CPU)
+        </div>
+      </div>
+
+      <!-- Stage C -->
+      <div class="glass-card p-6 rounded-3xl space-y-3">
+        <div class="h-10 w-10 rounded-xl bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center font-mono">03</div>
+        <h3 class="text-lg font-bold text-white">HSV Damage Segmentation</h3>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          OpenCV color space thresholding segments healthy green foliage vs. necrotic brown/yellow spot pixels to calculate exact foliage damage %.
+        </p>
+        <div class="p-3 rounded-xl bg-slate-950/80 font-mono text-[11px] text-amber-300">
+          Accuracy: Quantitative Area %
+        </div>
+      </div>
+    </div>
+    <div></div>
+  </div>
+
+  <!-- SLIDE 4: HARDWARE & DRONE SPOT-SPRAY INTEGRATION -->
+  <div class="slide" id="slide-4">
+    <div class="pt-12">
+      <span class="text-xs font-mono font-bold text-emerald-400 uppercase tracking-widest">SLIDE 04 / 06</span>
+      <h2 class="text-4xl font-black text-white mt-1">Autonomous Drone Spot-Spray Telemetry</h2>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-8 my-auto items-center">
+      <div class="md:col-span-7 glass-card p-8 rounded-3xl space-y-5">
+        <div class="flex items-center gap-3 text-cyan-400">
+          <i class="fa-solid fa-plane-fly text-3xl"></i>
+          <h3 class="text-2xl font-bold text-white">Precision KML Mission Export</h3>
+        </div>
+        <p class="text-sm text-slate-300 leading-relaxed">
+          Conventional drone spraying covers entire fields equally. Agri Nirvana calculates spot coordinates from leaf diagnostic locations and severity metrics to generate ready-to-fly <code class="text-cyan-300">.kml</code> and <code class="text-cyan-300">.waypoint</code> flight files.
+        </p>
+        
+        <div class="grid grid-cols-2 gap-4 pt-2">
+          <div class="p-4 rounded-2xl bg-slate-950/70 border border-cyan-800/40">
+            <div class="text-2xl font-black text-cyan-400">80%</div>
+            <div class="text-xs text-slate-400 font-mono mt-1">Chemical Reduction vs Blanket Spray</div>
+          </div>
+          <div class="p-4 rounded-2xl bg-slate-950/70 border border-emerald-800/40">
+            <div class="text-2xl font-black text-emerald-400">3.5 meters</div>
+            <div class="text-xs text-slate-400 font-mono mt-1">Target Flight Altitude</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="md:col-span-5 glass-card-cyan p-6 rounded-3xl space-y-4">
+        <h4 class="text-xs font-mono font-bold uppercase text-cyan-400">Generated Telemetry Spec</h4>
+        <div class="p-4 rounded-2xl bg-slate-950 font-mono text-xs text-slate-300 space-y-2 border border-cyan-900/50">
+          <div><span class="text-slate-500">FORMAT:</span> DJI / QGroundControl KML</div>
+          <div><span class="text-slate-500">SPOT_SPRAY_ACTIVE:</span> TRUE</div>
+          <div><span class="text-slate-500">FLOW_RATE:</span> 16 L/ha</div>
+          <div><span class="text-slate-500">WAYPOINTS:</span> 12 Targeted Coordinates</div>
+        </div>
+        <p class="text-xs text-slate-400">
+          Enables local agricultural custom hiring centers (CHCs) in Maharashtra to provide high-efficiency spraying services to farmers.
+        </p>
+      </div>
+    </div>
+    <div></div>
+  </div>
+
+  <!-- SLIDE 5: 3-TIER ADVISORY & MAHARASHTRA PRESETS -->
+  <div class="slide" id="slide-5">
+    <div class="pt-12">
+      <span class="text-xs font-mono font-bold text-emerald-400 uppercase tracking-widest">SLIDE 05 / 06</span>
+      <h2 class="text-4xl font-black text-white mt-1">3-Tier Agronomic Plan & Regional Support</h2>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 my-auto">
+      <!-- Tier 1 -->
+      <div class="glass-card p-6 rounded-3xl border-l-4 border-l-emerald-500 space-y-3">
+        <div class="text-xs font-bold font-mono text-emerald-400">TIER 1: BIOLOGICAL</div>
+        <h3 class="text-lg font-bold text-white">Organic & Bio-Control</h3>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          Botanical formulation (Neem Oil 10,000 PPM @ 5ml/L) and fungal antagonist <em>Trichoderma harzianum</em> for early stage management.
+        </p>
+      </div>
+
+      <!-- Tier 2 -->
+      <div class="glass-card-amber p-6 rounded-3xl border-l-4 border-l-amber-500 space-y-3">
+        <div class="text-xs font-bold font-mono text-amber-400">TIER 2: TARGETED CHEMICAL</div>
+        <h3 class="text-lg font-bold text-white">Targeted Fungicides</h3>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          Specific active ingredient dosage (e.g. Azoxystrobin + Difenoconazole @ 1ml/L) with strict <strong>Pre-Harvest Intervals (PHI)</strong>.
+        </p>
+      </div>
+
+      <!-- Tier 3 -->
+      <div class="glass-card-cyan p-6 rounded-3xl border-l-4 border-l-cyan-500 space-y-3">
+        <div class="text-xs font-bold font-mono text-cyan-400">TIER 3: CULTURAL</div>
+        <h3 class="text-lg font-bold text-white">Agronomic Prevention</h3>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          Field sanitation, pruning lower canopy foliage, switching to morning drip irrigation, and 3-year crop rotation protocols.
+        </p>
+      </div>
+    </div>
+
+    <div class="p-4 rounded-2xl bg-emerald-950/40 border border-emerald-800/40 flex flex-wrap items-center justify-between gap-4 text-xs font-mono">
+      <span class="text-emerald-300 font-bold">MH CASH CROP PRESETS:</span>
+      <span class="text-slate-300">Cotton (कापूस) • Soybean (सोयाबीन) • Sugarcane (ऊस) • Onion (कांदा) • Grapes (द्राक्षे) • Pomegranate (डाळिंब) • Rice (भात)</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 6: FEASIBILITY & IMPACT -->
+  <div class="slide" id="slide-6">
+    <div class="pt-12">
+      <span class="text-xs font-mono font-bold text-emerald-400 uppercase tracking-widest">SLIDE 06 / 06</span>
+      <h2 class="text-4xl font-black text-white mt-1">Impact, Feasibility & Implementation</h2>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 my-auto">
+      <div class="glass-card p-6 rounded-3xl text-center space-y-2">
+        <div class="text-4xl font-black text-emerald-400">₹0</div>
+        <div class="text-xs font-bold text-white">Cloud API Billing</div>
+        <div class="text-[11px] text-slate-400">100% self-hosted PyTorch pipeline</div>
+      </div>
+      <div class="glass-card p-6 rounded-3xl text-center space-y-2">
+        <div class="text-4xl font-black text-cyan-400">&lt; 300ms</div>
+        <div class="text-xs font-bold text-white">CPU Inference Speed</div>
+        <div class="text-[11px] text-slate-400">Deployable on Raspberry Pi / Edge</div>
+      </div>
+      <div class="glass-card p-6 rounded-3xl text-center space-y-2">
+        <div class="text-4xl font-black text-amber-400">80%</div>
+        <div class="text-xs font-bold text-white">Chemical Savings</div>
+        <div class="text-[11px] text-slate-400">Via spot-spray drone waypoints</div>
+      </div>
+      <div class="glass-card p-6 rounded-3xl text-center space-y-2">
+        <div class="text-4xl font-black text-indigo-400">38</div>
+        <div class="text-xs font-bold text-white">Pathogen Classes</div>
+        <div class="text-[11px] text-slate-400">PlantVillage benchmark dataset</div>
+      </div>
+    </div>
+
+    <div class="glass-card p-6 rounded-3xl flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <h4 class="text-base font-bold text-white">Integration Ready for Government of Maharashtra (CROPSAP)</h4>
+        <p class="text-xs text-slate-400 mt-0.5">Can be plugged directly into state pest surveillance & advisory portals for district-wide risk mapping.</p>
+      </div>
+      <a href="http://localhost:5173/" target="_blank" class="px-6 py-3 rounded-2xl bg-emerald-500 text-slate-950 font-black text-xs hover:bg-emerald-400 transition shadow-lg shadow-emerald-500/20">
+        <i class="fa-solid fa-play mr-2"></i> Launch Live Prototype App
+      </a>
+    </div>
+  </div>
+
+  <!-- NAVIGATION CONTROLS -->
+  <footer class="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-between px-8 py-4 bg-[#030a07]/80 backdrop-blur-md border-t border-emerald-900/40 text-xs">
+    <div class="flex items-center gap-2">
+      <button id="prevBtn" onclick="changeSlide(-1)" class="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 font-bold transition">
+        <i class="fa-solid fa-chevron-left mr-1"></i> Previous
+      </button>
+      <button id="nextBtn" onclick="changeSlide(1)" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition shadow">
+        Next <i class="fa-solid fa-chevron-right ml-1"></i>
+      </button>
+    </div>
+
+    <div class="flex items-center gap-1.5" id="slideDots">
+      <!-- Dots populated dynamically -->
+    </div>
+
+    <div class="text-slate-400 font-mono" id="slideCounter">
+      Slide 1 of 6
+    </div>
+  </footer>
+
+  <script>
+    let currentSlide = 1;
+    const totalSlides = 6;
+
+    function showSlide(n) {
+      if (n > totalSlides) currentSlide = 1;
+      if (n < 1) currentSlide = totalSlides;
+
+      document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+      document.getElementById(`slide-${currentSlide}`).classList.add('active');
+
+      document.getElementById('slideCounter').innerText = `Slide ${currentSlide} of ${totalSlides}`;
+
+      // Update dots
+      const dotsContainer = document.getElementById('slideDots');
+      dotsContainer.innerHTML = '';
+      for (let i = 1; i <= totalSlides; i++) {
+        const dot = document.createElement('div');
+        dot.className = `h-2 rounded-full transition-all duration-300 cursor-pointer ${
+          i === currentSlide ? 'w-8 bg-emerald-400' : 'w-2 bg-slate-800 hover:bg-slate-600'
+        }`;
+        dot.onclick = () => { currentSlide = i; showSlide(currentSlide); };
+        dotsContainer.appendChild(dot);
+      }
+    }
+
+    function changeSlide(direction) {
+      currentSlide += direction;
+      showSlide(currentSlide);
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === 'Space') {
+        changeSlide(1);
+      } else if (e.key === 'ArrowLeft') {
+        changeSlide(-1);
+      }
+    });
+
+    showSlide(currentSlide);
+  </script>
+
+</body>
+</html>

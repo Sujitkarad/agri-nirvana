@@ -38,7 +38,26 @@ async def analyze_crop_leaf(
     prediction["userId"] = userId
     prediction["warnings"] = val_result.warnings
 
-    # 4. Save Record to History Database
+    # 4. Confidence threshold check
+    confidence = prediction.get("confidence", 0.0)
+    is_invalid = not prediction.get("is_valid_crop_image", True)
+
+    if is_invalid:
+        prediction["is_low_confidence"] = False
+        prediction["condition_label"] = "Invalid Image"
+    elif confidence < settings.AI_CONFIDENCE_THRESHOLD:
+        prediction["is_low_confidence"] = True
+        prediction["condition_label"] = "Uncertain Result"
+        prediction["low_confidence_notice"] = (
+            f"The AI confidence ({int(confidence*100)}%) is below the reliable threshold "
+            f"({int(settings.AI_CONFIDENCE_THRESHOLD*100)}%). "
+            "Please retake a sharper photo in bright, natural light, or consult a local agricultural expert."
+        )
+    else:
+        prediction["is_low_confidence"] = False
+        prediction["condition_label"] = prediction.get("condition", "Analyzed")
+
+    # 5. Save Record to History Database
     saved_doc = db.save_diagnosis(prediction)
 
     return {

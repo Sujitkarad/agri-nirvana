@@ -17,7 +17,7 @@ class ImageQualityResult:
         self.image_np = image_np
         self.pil_image = pil_image
 
-def validate_and_preprocess_image(file_bytes: bytes, filename: str) -> ImageQualityResult:
+def validate_and_preprocess_image(file_bytes: bytes, filename: str = "") -> ImageQualityResult:
     # 1. Size Check
     size_mb = len(file_bytes) / (1024 * 1024)
     if size_mb > settings.MAX_IMAGE_SIZE_MB:
@@ -26,15 +26,7 @@ def validate_and_preprocess_image(file_bytes: bytes, filename: str) -> ImageQual
             error_message=f"File size ({size_mb:.1f} MB) exceeds maximum allowed limit of {settings.MAX_IMAGE_SIZE_MB} MB."
         )
 
-    # 2. Format Extension Check
-    ext = filename.split(".")[-1].lower() if "." in filename else ""
-    if ext not in settings.ALLOWED_EXTENSIONS:
-        return ImageQualityResult(
-            is_valid=False,
-            error_message=f"Unsupported image format '.{ext}'. Supported formats: {', '.join(settings.ALLOWED_EXTENSIONS)}."
-        )
-
-    # 3. Decode Image with Pillow & OpenCV
+    # 2. Decode Image with Pillow (robust format detection by content, not just extension)
     try:
         pil_img = Image.open(io.BytesIO(file_bytes)).convert("RGB")
         img_np = np.array(pil_img)
@@ -46,12 +38,16 @@ def validate_and_preprocess_image(file_bytes: bytes, filename: str) -> ImageQual
 
     height, width, _ = img_np.shape
 
-    # 4. Dimension Resolution Check
-    if width < 150 or height < 150:
+    # 3. Dimension Resolution Check
+    if width < 50 or height < 50:
         return ImageQualityResult(
             is_valid=False,
-            error_message="Image resolution is too low (<150x150 px) for accurate AI computer vision diagnosis. Please upload a higher resolution photo."
+            error_message="Image resolution is too low (<50x50 px) for accurate AI computer vision diagnosis. Please upload a clearer photo."
         )
+    elif width < 150 or height < 150:
+        # Gracefully upscale small previews to 224x224 for MobileNetV2
+        pil_img = pil_img.resize((224, 224), Image.Resampling.BILINEAR)
+        img_np = np.array(pil_img)
 
     warnings = []
 

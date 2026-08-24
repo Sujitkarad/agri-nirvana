@@ -3,13 +3,20 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Agri Nirvana - Crop AI Health Diagnostic API"
-    VERSION: str = "1.0.0"
+    VERSION: str = "2.0.0"
     API_V1_STR: str = "/api/v1"
     
     # ML Model Configuration
-    AI_MODEL_PROVIDER: str = os.getenv("AI_MODEL_PROVIDER", "mock")  # "mock" | "efficientnet"
-    AI_MODEL_PATH: str = os.getenv("AI_MODEL_PATH", "backend/ml/models/checkpoints/efficientnet_b3.pth")
-    AI_CONFIDENCE_THRESHOLD: float = float(os.getenv("AI_CONFIDENCE_THRESHOLD", "0.70"))
+    # "real" = real ML inference pipeline (MobileNetV2 + PlantVillage)
+    # "mock" = mock fallback (clearly labelled, for dev without ML deps)
+    AI_MODEL_PROVIDER: str = os.getenv("AI_MODEL_PROVIDER", "real")
+    AI_CONFIDENCE_THRESHOLD: float = float(os.getenv("AI_CONFIDENCE_THRESHOLD", "0.50"))
+    
+    # HuggingFace model ID for disease classification (Stage B)
+    HF_MODEL_ID: str = os.getenv(
+        "HF_MODEL_ID",
+        "linkanjarad/mobilenet_v2_1.0_224-plant-disease-identification"
+    )
     
     # Image Upload Configuration
     MAX_IMAGE_SIZE_MB: int = int(os.getenv("MAX_IMAGE_SIZE_MB", "10"))

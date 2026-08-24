@@ -9,12 +9,12 @@ export default function AnalysisProgressScreen({
   const [currentStep, setCurrentStep] = useState(0);
 
   const steps = [
-    { label: "Image uploaded & validated", sub: "MIME type, file size and resolution checked" },
-    { label: "Image quality checked", sub: "Checking brightness contrast & sharpness variance" },
-    { label: `Crop context set to ${crop}`, sub: "Loading crop-specific disease taxonomy" },
-    { label: "Analyzing leaf chromatic patterns", sub: "Extracting HSV vectors & necrotic spot density" },
-    { label: "Estimating disease severity & confidence", sub: "Cross-referencing knowledge base threshold" },
-    { label: "Preparing farmer-friendly recommendations", sub: "Structuring immediate action & preventative steps" }
+    { label: "Image uploaded & validated", sub: "File type, resolution, and quality checks passed" },
+    { label: "Stage A: Plant validation", sub: "MobileNetV2 (ImageNet) — verifying this is a crop/leaf image" },
+    { label: `Running disease classification for ${crop}`, sub: "PlantVillage MobileNetV2 — analyzing 38 disease classes" },
+    { label: "Estimating disease severity", sub: "HSV color segmentation — measuring affected leaf area" },
+    { label: "Looking up treatment data", sub: "Matching diagnosis to agronomic knowledge base" },
+    { label: "Preparing structured report", sub: "Generating organic, chemical, and prevention recommendations" }
   ];
 
   useEffect(() => {
@@ -27,7 +27,7 @@ export default function AnalysisProgressScreen({
         }
         return prev + 1;
       });
-    }, 450);
+    }, 700);
 
     return () => clearInterval(timer);
   }, []);
@@ -42,8 +42,8 @@ export default function AnalysisProgressScreen({
       </div>
 
       <div>
-        <h3 className="text-xl font-black">AI Computer Vision Analysis in Progress</h3>
-        <p className="text-xs text-emerald-300/80 mt-1 font-mono">EfficientNet-B3 • Neural Inference Pipeline</p>
+        <h3 className="text-xl font-black">Real-Time ML Inference Pipeline</h3>
+        <p className="text-xs text-emerald-300/80 mt-1 font-mono">MobileNetV2 • PlantVillage 38-Class • HSV Severity</p>
       </div>
 
       <div className="max-w-md mx-auto space-y-3 text-left">
