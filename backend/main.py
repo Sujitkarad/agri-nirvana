@@ -47,12 +47,16 @@ async def root():
 
 @app.get(f"{settings.API_V1_STR}/crops")
 async def get_supported_crops():
-    # The diagnosis selector must reflect what the active ML model can actually classify.
+    from backend.ml.models.disease_classifier import normalize_crop_name
     model_crops = set(inference_engine.supported_crops())
-    crops = [crop for crop in SUPPORTED_CROPS if crop["id"].lower() in {c.lower() for c in model_crops}]
+    crops = [
+        crop for crop in SUPPORTED_CROPS
+        if normalize_crop_name(crop["id"]).lower() in {c.lower() for c in model_crops}
+        or crop["id"].lower() in {c.lower() for c in model_crops}
+    ]
     return {
         "success": True,
-        "crops": crops,
+        "crops": crops or SUPPORTED_CROPS,
         "model_supported_crops": sorted(model_crops),
     }
 

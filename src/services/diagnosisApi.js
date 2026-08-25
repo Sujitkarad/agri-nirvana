@@ -135,6 +135,52 @@ export async function analyzeCropImageApi(imageFile, cropType = "Tomato", userIm
 }
 
 /**
+ * Sends a natural language / voice symptom description to the backend for pathology analysis.
+ */
+export async function analyzeCropSymptomsApi(symptomsText, cropType = "Tomato") {
+  const formData = new FormData();
+  formData.append("cropType", cropType);
+  formData.append("symptomsText", symptomsText);
+
+  const endpoints = [
+    `${API_BASE}/api/v1/diagnosis/symptoms`,
+    "/api/v1/diagnosis/symptoms",
+    "http://127.0.0.1:8000/api/v1/diagnosis/symptoms"
+  ];
+
+  let lastError = null;
+  for (const endpoint of endpoints) {
+    try {
+      const res = await fetch(endpoint, {
+        method: "POST",
+        body: formData
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        const detail = errorData.detail || `Server error (HTTP ${res.status})`;
+        throw new Error(detail);
+      }
+
+      const data = await res.json();
+      if (!data || !data.diagnosis) {
+        throw new Error("Invalid response from server — no diagnosis data returned.");
+      }
+
+      return data;
+    } catch (err) {
+      lastError = err;
+      if (err.name === "TypeError" || err.message.includes("Failed to fetch") || err.message.includes("NetworkError")) {
+        continue;
+      }
+      throw err;
+    }
+  }
+
+  throw lastError || new Error("Failed to connect to backend server. Please verify FastAPI is running on port 8000.");
+}
+
+/**
  * Fetches diagnosis history from backend, falls back to localStorage.
  */
 export async function fetchDiagnosisHistoryApi(cropFilter = null) {

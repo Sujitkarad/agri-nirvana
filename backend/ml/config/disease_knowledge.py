@@ -1525,16 +1525,24 @@ DISEASE_KNOWLEDGE = {
 
 def get_disease_info(raw_label: str) -> dict:
     """
-    Look up disease knowledge by raw PlantVillage class label.
+    Look up disease knowledge by raw PlantVillage class label or human-readable model label.
     Includes 15L knapsack tank dosages, FRAC/IRAC codes, rotation partners,
     PHI safety days, and regional Marathi/Hindi terms.
     """
     info = DISEASE_KNOWLEDGE.get(raw_label)
     if not info:
+        # Check if mapped via LABEL_PARSER_MAP
+        clean_k = str(raw_label).lower().strip()
+        from backend.ml.models.disease_classifier import LABEL_PARSER_MAP
+        if clean_k in LABEL_PARSER_MAP:
+            pv_key = LABEL_PARSER_MAP[clean_k][2]
+            info = DISEASE_KNOWLEDGE.get(pv_key)
+
+    if not info:
         # Try partial matching
-        label_lower = raw_label.lower().replace(" ", "_")
+        label_lower = str(raw_label).lower().replace(" ", "_")
         for key, value in DISEASE_KNOWLEDGE.items():
-            if key.lower().replace(" ", "_") == label_lower:
+            if key.lower().replace(" ", "_") == label_lower or label_lower in key.lower():
                 info = value
                 break
 

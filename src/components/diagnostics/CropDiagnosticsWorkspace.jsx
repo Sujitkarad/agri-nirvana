@@ -5,6 +5,7 @@ import {
   fetchModelStatus,
   fetchSupportedCrops,
   analyzeCropImageApi,
+  analyzeCropSymptomsApi,
   fetchDiagnosisHistoryApi
 } from "../../services/diagnosisApi";
 
@@ -41,16 +42,16 @@ export default function CropDiagnosticsWorkspace({
 
   // Crop & Image State
   const [crops, setCrops] = useState([
-    { id: "Cotton", name: "Cotton (कापूस)", icon: "☁️" },
-    { id: "Soybean", name: "Soybean (सोयाबीन)", icon: "🌱" },
-    { id: "Sugarcane", name: "Sugarcane (ऊस)", icon: "🎋" },
-    { id: "Onion", name: "Onion (कांदा)", icon: "🧅" },
-    { id: "Grapes", name: "Grapes (द्राक्षे)", icon: "🍇" },
-    { id: "Pomegranate", name: "Pomegranate (डाळिंब)", icon: "🍎" },
-    { id: "Rice", name: "Paddy / Rice (भात)", icon: "🌾" },
     { id: "Tomato", name: "Tomato (टोमॅटो)", icon: "🍅" },
     { id: "Potato", name: "Potato (बटाटा)", icon: "🥔" },
-    { id: "Maize", name: "Maize / Corn (मका)", icon: "🌽" }
+    { id: "Corn", name: "Maize / Corn (मका)", icon: "🌽" },
+    { id: "Soybean", name: "Soybean (सोयाबीन)", icon: "🌱" },
+    { id: "Grape", name: "Grapes (द्राक्षे)", icon: "🍇" },
+    { id: "Apple", name: "Apple (सफरचंद)", icon: "🍎" },
+    { id: "Pepper", name: "Bell Pepper (ढोबळी मिरची)", icon: "🫑" },
+    { id: "Cotton", name: "Cotton (कापूस)", icon: "☁️" },
+    { id: "Rice", name: "Paddy / Rice (भात)", icon: "🌾" },
+    { id: "Onion", name: "Onion (कांदा)", icon: "🧅" }
   ]);
   const [selectedCrop, setSelectedCrop] = useState("Tomato");
   const [selectedFile, setSelectedFile] = useState(null);
@@ -73,7 +74,7 @@ export default function CropDiagnosticsWorkspace({
       if (res && res.success) setModelStatus(res);
     });
     fetchSupportedCrops().then((res) => {
-      if (res && res.crops) setCrops(res.crops);
+      if (res && res.crops && res.crops.length > 0) setCrops(res.crops);
     });
   }, []);
 
@@ -108,13 +109,19 @@ export default function CropDiagnosticsWorkspace({
   const handleAnalysisProgressComplete = async () => {
     try {
       setAnalysisError(null);
-      const res = await analyzeCropImageApi(selectedFile, selectedCrop, imagePreview);
+      let res;
+      if (inputMode === "symptoms") {
+        res = await analyzeCropSymptomsApi(symptomText, selectedCrop);
+      } else {
+        res = await analyzeCropImageApi(selectedFile, selectedCrop, imagePreview);
+      }
+
       if (res && res.diagnosis) {
         const diag = res.diagnosis;
         setCurrentDiagnosis(diag);
 
         // Check if the image was rejected as non-crop
-        if (diag.is_valid_crop_image === false) {
+        if (diag.is_valid_crop_image === false && diag.status === "invalid_image") {
           setWorkflowState("invalid_image");
           showToast("Image rejected — not a crop/leaf photo.");
           return;

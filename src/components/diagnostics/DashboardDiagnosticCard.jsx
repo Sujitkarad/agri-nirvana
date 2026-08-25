@@ -16,8 +16,12 @@ export default function DashboardDiagnosticCard({
 
       <div className="relative flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div className="space-y-2 max-w-xl">
-          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/15 px-3.5 py-1 text-xs font-bold text-emerald-300">
-            <Sparkles size={14} className="text-amber-400 animate-pulse" />
+          <div className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-1 text-xs font-bold ${
+            isDark
+              ? "border-emerald-500/30 bg-emerald-500/15 text-emerald-300"
+              : "border-emerald-300 bg-emerald-100 text-emerald-900"
+          }`}>
+            <Sparkles size={14} className="text-amber-500 animate-pulse" />
             <span>EfficientNet-B3 Vision Telemetry</span>
           </div>
 
@@ -29,7 +33,7 @@ export default function DashboardDiagnosticCard({
             Upload a crop photo and get an instant AI-assisted preliminary health assessment, disease severity analysis, and verified treatment advisory.
           </p>
 
-          <div className="flex flex-wrap items-center gap-4 text-xs font-mono text-emerald-400 pt-1">
+          <div className={`flex flex-wrap items-center gap-4 text-xs font-mono pt-1 ${isDark ? "text-emerald-400" : "text-emerald-700 font-semibold"}`}>
             <span className="flex items-center gap-1"><ShieldCheck size={14} /> Preliminary Guidance Standard</span>
             <span className="flex items-center gap-1"><Camera size={14} /> Quality Pre-check</span>
           </div>

@@ -74,37 +74,114 @@ PLANTVILLAGE_CLASSES = [
 ]
 
 
+# Canonical mapping from human-readable class names to (crop, condition, plantvillage_key)
+LABEL_PARSER_MAP: Dict[str, Tuple[str, str, str]] = {
+    "apple scab": ("Apple", "Apple Scab", "Apple___Apple_scab"),
+    "apple with black rot": ("Apple", "Black Rot", "Apple___Black_rot"),
+    "cedar apple rust": ("Apple", "Cedar Apple Rust", "Apple___Cedar_apple_rust"),
+    "healthy apple": ("Apple", "Healthy", "Apple___healthy"),
+    "healthy blueberry plant": ("Blueberry", "Healthy", "Blueberry___healthy"),
+    "cherry with powdery mildew": ("Cherry", "Powdery Mildew", "Cherry_(including_sour)___Powdery_mildew"),
+    "healthy cherry plant": ("Cherry", "Healthy", "Cherry_(including_sour)___healthy"),
+    "corn (maize) with cercospora and gray leaf spot": ("Corn", "Cercospora and Gray Leaf Spot", "Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot"),
+    "corn (maize) with common rust": ("Corn", "Common Rust", "Corn_(maize)___Common_rust_"),
+    "corn (maize) with northern leaf blight": ("Corn", "Northern Leaf Blight", "Corn_(maize)___Northern_Leaf_Blight"),
+    "healthy corn (maize) plant": ("Corn", "Healthy", "Corn_(maize)___healthy"),
+    "grape with black rot": ("Grape", "Black Rot", "Grape___Black_rot"),
+    "grape with esca (black measles)": ("Grape", "Esca (Black Measles)", "Grape___Esca_(Black_Measles)"),
+    "grape with isariopsis leaf spot": ("Grape", "Isariopsis Leaf Spot", "Grape___Leaf_blight_(Isariopsis_Leaf_Spot)"),
+    "healthy grape plant": ("Grape", "Healthy", "Grape___healthy"),
+    "orange with citrus greening": ("Orange", "Citrus Greening", "Orange___Haunglongbing_(Citrus_greening)"),
+    "peach with bacterial spot": ("Peach", "Bacterial Spot", "Peach___Bacterial_spot"),
+    "healthy peach plant": ("Peach", "Healthy", "Peach___healthy"),
+    "bell pepper with bacterial spot": ("Pepper", "Bacterial Spot", "Pepper,_bell___Bacterial_spot"),
+    "healthy bell pepper plant": ("Pepper", "Healthy", "Pepper,_bell___healthy"),
+    "potato with early blight": ("Potato", "Early Blight", "Potato___Early_blight"),
+    "potato with late blight": ("Potato", "Late Blight", "Potato___Late_blight"),
+    "healthy potato plant": ("Potato", "Healthy", "Potato___healthy"),
+    "healthy raspberry plant": ("Raspberry", "Healthy", "Raspberry___healthy"),
+    "healthy soybean plant": ("Soybean", "Healthy", "Soybean___healthy"),
+    "squash with powdery mildew": ("Squash", "Powdery Mildew", "Squash___Powdery_mildew"),
+    "strawberry with leaf scorch": ("Strawberry", "Leaf Scorch", "Strawberry___Leaf_scorch"),
+    "healthy strawberry plant": ("Strawberry", "Healthy", "Strawberry___healthy"),
+    "tomato with bacterial spot": ("Tomato", "Bacterial Spot", "Tomato___Bacterial_spot"),
+    "tomato with early blight": ("Tomato", "Early Blight", "Tomato___Early_blight"),
+    "tomato with late blight": ("Tomato", "Late Blight", "Tomato___Late_blight"),
+    "tomato with leaf mold": ("Tomato", "Leaf Mold", "Tomato___Leaf_Mold"),
+    "tomato with septoria leaf spot": ("Tomato", "Septoria Leaf Spot", "Tomato___Septoria_leaf_spot"),
+    "tomato with spider mites or two-spotted spider mite": ("Tomato", "Spider Mites", "Tomato___Spider_mites Two-spotted_spider_mite"),
+    "tomato with target spot": ("Tomato", "Target Spot", "Tomato___Target_Spot"),
+    "tomato yellow leaf curl virus": ("Tomato", "Yellow Leaf Curl Virus", "Tomato___Tomato_Yellow_Leaf_Curl_Virus"),
+    "tomato mosaic virus": ("Tomato", "Mosaic Virus", "Tomato___Tomato_mosaic_virus"),
+    "healthy tomato plant": ("Tomato", "Healthy", "Tomato___healthy"),
+}
+
+CROP_ALIASES: Dict[str, str] = {
+    "grapes": "Grape",
+    "grape": "Grape",
+    "maize": "Corn",
+    "corn": "Corn",
+    "corn (maize)": "Corn",
+    "bell pepper": "Pepper",
+    "pepper": "Pepper",
+    "citrus": "Orange",
+    "orange": "Orange",
+    "paddy": "Rice",
+    "rice": "Rice",
+}
+
+
+def normalize_crop_name(crop: str) -> str:
+    """Normalize user or dataset crop names to standard form."""
+    c = crop.strip().lower()
+    return CROP_ALIASES.get(c, crop.strip().capitalize())
+
+
 def _parse_class_label(raw_label: str) -> Tuple[str, str]:
     """
-    Parse a PlantVillage class label into (crop_name, condition_name).
-
-    Examples:
-        "Tomato___Early_blight" -> ("Tomato", "Early Blight")
-        "Corn_(maize)___Common_rust_" -> ("Corn (Maize)", "Common Rust")
-        "Tomato___healthy" -> ("Tomato", "Healthy")
+    Parse any PlantVillage or HuggingFace class label into (crop_name, condition_name).
+    Supports both 'Crop___Condition' and 'Crop with Condition' / 'Healthy Crop Plant' formats.
     """
-    parts = raw_label.split("___")
-    if len(parts) == 2:
-        crop_raw, condition_raw = parts
-    else:
-        crop_raw = parts[0]
-        condition_raw = "___".join(parts[1:]) if len(parts) > 1 else "Unknown"
+    clean_k = raw_label.lower().strip()
 
-    # Clean up crop name
-    crop = crop_raw.replace("_", " ").strip()
-    crop = crop.replace("(including sour)", "(incl. sour)")
-    crop = crop.replace(",  bell", ", Bell")
-    crop = crop.replace(", bell", ", Bell")
+    # 1. Direct match in human-readable mapping
+    if clean_k in LABEL_PARSER_MAP:
+        return LABEL_PARSER_MAP[clean_k][0], LABEL_PARSER_MAP[clean_k][1]
 
-    # Clean up condition name
-    condition = condition_raw.replace("_", " ").strip()
-    # Title case but preserve known acronyms
-    condition = " ".join(
-        w.capitalize() if w.lower() not in ("of", "the", "and", "in") else w
-        for w in condition.split()
-    )
+    # 2. PlantVillage '___' format
+    if "___" in raw_label:
+        parts = raw_label.split("___", 1)
+        crop_raw, condition_raw = parts[0], parts[1]
+        crop = crop_raw.replace("_", " ").strip()
+        crop = crop.replace("(including sour)", "").replace("(maize)", "").replace(", bell", "").strip()
+        crop = normalize_crop_name(crop)
+        condition = condition_raw.replace("_", " ").strip()
+        condition = " ".join(
+            w.capitalize() if w.lower() not in ("of", "the", "and", "in", "or", "with") else w
+            for w in condition.split()
+        )
+        return crop, condition
 
-    return crop, condition
+    # 3. Numeric string index
+    if raw_label.isdigit():
+        idx = int(raw_label)
+        if 0 <= idx < len(PLANTVILLAGE_CLASSES):
+            return _parse_class_label(PLANTVILLAGE_CLASSES[idx])
+
+    # 4. Fallback: Search for known crop keyword in label
+    known_crops = [
+        "Apple", "Blueberry", "Cherry", "Corn", "Grape", "Orange", "Peach",
+        "Pepper", "Potato", "Raspberry", "Soybean", "Squash", "Strawberry", "Tomato",
+        "Cotton", "Rice", "Wheat", "Onion", "Sugarcane", "Pomegranate"
+    ]
+    for kc in known_crops:
+        if kc.lower() in clean_k:
+            is_healthy = "healthy" in clean_k
+            cond = "Healthy" if is_healthy else clean_k.replace(kc.lower(), "").replace("with", "").replace("plant", "").strip().title()
+            return kc, cond or "Unknown"
+
+    return "Crop", raw_label.replace("_", " ").title()
+
 
 
 class DiseaseClassifier:
