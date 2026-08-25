@@ -1,98 +1,98 @@
-import os
 import base64
-from fastapi import APIRouter, File, UploadFile, Form, HTTPException, Query
 from typing import Optional
+
+from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile
+
 from backend.config import settings
 from backend.ml.config.ml_config import SUPPORTED_CROPS
 from backend.ml.preprocessing.image_processor import validate_and_preprocess_image
-from backend.ml.inference.engine import inference_engine
+from backend.ml.inference.production_engine import inference_engine
 from backend.db.database import db
 
 router = APIRouter(prefix="/diagnosis", tags=["Crop Diagnostics"])
+
 
 @router.post("/analyze")
 async def analyze_crop_leaf(
     image: UploadFile = File(...),
     cropType: str = Form("Tomato"),
-    userId: Optional[str] = Form("anonymous_farmer")
+    userId: Optional[str] = Form("anonymous_farmer"),
 ):
-    """
-    Uploads a crop leaf image, validates quality (blur/darkness/resolution),
-    runs computer-vision prediction, evaluates confidence against threshold, and saves result.
-    """
-    contents = await image.read()
+    """Validate, diagnose, and persist a crop-leaf analysis.
 
-    # 1. Quality Validation & Preprocessing
+    The endpoint never substitutes a fabricated disease for an unsupported crop
+    or low-confidence prediction.
+    """
+    if not image.filename:
+        raise HTTPException(status_code=400, detail="Image filename is required.")
+
+    ext = image.filename.rsplit(".", 1)[-1].lower() if "." in image.filename else ""
+    if ext not in settings.ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported image type '.{ext}'. Allowed: {', '.join(sorted(settings.ALLOWED_EXTENSIONS))}.",
+        )
+
+    contents = await image.read()
+    max_bytes = settings.MAX_IMAGE_SIZE_MB * 1024 * 1024
+    if len(contents) > max_bytes:
+        raise HTTPException(
+            status_code=413,
+            detail=f"Image exceeds the {settings.MAX_IMAGE_SIZE_MB} MB upload limit.",
+        )
+
     val_result = validate_and_preprocess_image(contents, image.filename)
     if not val_result.is_valid:
         raise HTTPException(status_code=400, detail=val_result.error_message)
 
-    # 2. Convert Image for Storage Preview
-    encoded_b64 = base64.b64encode(contents).decode("utf-8")
-    ext = image.filename.split(".")[-1].lower() if "." in image.filename else "jpeg"
-    data_url = f"data:image/{ext};base64,{encoded_b64}"
-
-    # 3. ML Computer Vision Inference
     prediction = inference_engine.analyze(val_result.pil_image, cropType)
-    prediction["imageUrl"] = data_url
-    prediction["userId"] = userId
+
+    mime = "jpeg" if ext == "jpg" else ext
+    prediction["imageUrl"] = f"data:image/{mime};base64,{base64.b64encode(contents).decode('utf-8')}"
+    prediction["userId"] = userId or "anonymous_farmer"
     prediction["warnings"] = val_result.warnings
 
-    # 4. Confidence threshold check
-    confidence = prediction.get("confidence", 0.0)
-    is_invalid = not prediction.get("is_valid_crop_image", True)
+    confidence = float(prediction.get("confidence", 0.0))
+    abstain = bool(prediction.get("uncertainty", {}).get("abstain", False))
+    prediction["is_low_confidence"] = abstain or confidence < settings.AI_CONFIDENCE_THRESHOLD
+    prediction["condition_label"] = (
+        "Uncertain Result" if prediction["is_low_confidence"] else prediction.get("condition", "Analyzed")
+    )
 
-    if is_invalid:
-        prediction["is_low_confidence"] = False
-        prediction["condition_label"] = "Invalid Image"
-    elif confidence < settings.AI_CONFIDENCE_THRESHOLD:
-        prediction["is_low_confidence"] = True
-        prediction["condition_label"] = "Uncertain Result"
+    if prediction["is_low_confidence"]:
         prediction["low_confidence_notice"] = (
-            f"The AI confidence ({int(confidence*100)}%) is below the reliable threshold "
-            f"({int(settings.AI_CONFIDENCE_THRESHOLD*100)}%). "
-            "Please retake a sharper photo in bright, natural light, or consult a local agricultural expert."
+            f"The AI result is not reliable enough to use as a definitive diagnosis. "
+            f"Current confidence: {round(confidence * 100)}%. "
+            "Retake a sharp, well-lit close-up photo or consult a local agricultural expert."
         )
-    else:
-        prediction["is_low_confidence"] = False
-        prediction["condition_label"] = prediction.get("condition", "Analyzed")
 
-    # 5. Save Record to History Database
+    # Do not persist a base64 image indefinitely when the database implementation
+    # supports a record without the preview. Keep compatibility for the current UI.
     saved_doc = db.save_diagnosis(prediction)
 
     return {
         "success": True,
         "diagnosis": saved_doc,
-        "warnings": val_result.warnings
+        "warnings": val_result.warnings,
     }
+
 
 @router.get("/history")
 async def get_diagnosis_history(crop: Optional[str] = Query(None)):
-    """
-    Retrieves stored diagnosis records for the user. Supports optional crop filtering.
-    """
     history = db.get_history(crop_filter=crop)
-    return {
-        "success": True,
-        "total": len(history),
-        "history": history
-    }
+    return {"success": True, "total": len(history), "history": history}
+
 
 @router.get("/{diag_id}")
 async def get_diagnosis_item(diag_id: str):
-    """
-    Fetches detailed single diagnosis record by ID.
-    """
     item = db.get_diagnosis_by_id(diag_id)
     if not item:
         raise HTTPException(status_code=404, detail=f"Diagnosis with ID '{diag_id}' not found.")
     return {"success": True, "diagnosis": item}
 
+
 @router.delete("/{diag_id}")
 async def delete_diagnosis_item(diag_id: str):
-    """
-    Deletes diagnosis item from history.
-    """
     deleted = db.delete_diagnosis(diag_id)
     if not deleted:
         raise HTTPException(status_code=404, detail=f"Diagnosis with ID '{diag_id}' not found or already deleted.")
