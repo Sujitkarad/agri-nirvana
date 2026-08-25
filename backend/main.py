@@ -1,36 +1,35 @@
-import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
 from backend.config import settings
 from backend.ml.config.ml_config import SUPPORTED_CROPS
-from backend.ml.inference.engine import inference_engine
+from backend.ml.inference.production_engine import inference_engine
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
-    openapi_url=f"{settings.API_V1_STR}/openapi.json"
+    openapi_url=f"{settings.API_V1_STR}/openapi.json",
 )
 
-# CORS configuration
+# Keep development origins explicit. Production deployments should provide the
+# frontend origin through ALLOWED_ORIGINS instead of using a wildcard.
+configured_origins = [
+    origin.strip()
+    for origin in __import__("os").getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173").split(",")
+    if origin.strip()
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://localhost:8000",
-        "http://127.0.0.1:8000",
-        "*"
-    ],
+    allow_origins=configured_origins,
     allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
-# Register routers
 from backend.routes.diagnosis import router as diagnosis_router
 app.include_router(diagnosis_router, prefix=settings.API_V1_STR)
+
 
 @app.get("/")
 async def root():
@@ -40,24 +39,26 @@ async def root():
         "version": settings.VERSION,
         "model_provider": inference_engine.provider_type,
         "models_loaded": inference_engine._models_loaded,
-        "confidence_threshold": inference_engine.threshold
+        "model_name": inference_engine.model_name,
+        "model_version": inference_engine.model_version,
+        "confidence_threshold": inference_engine.threshold,
     }
+
 
 @app.get(f"{settings.API_V1_STR}/crops")
 async def get_supported_crops():
-    """
-    Returns list of supported crops configuration.
-    """
+    # The diagnosis selector must reflect what the active ML model can actually classify.
+    model_crops = set(inference_engine.supported_crops())
+    crops = [crop for crop in SUPPORTED_CROPS if crop["id"].lower() in {c.lower() for c in model_crops}]
     return {
         "success": True,
-        "crops": SUPPORTED_CROPS
+        "crops": crops,
+        "model_supported_crops": sorted(model_crops),
     }
+
 
 @app.get(f"{settings.API_V1_STR}/model/status")
 async def get_model_status():
-    """
-    Returns active ML model status, version, and provider info.
-    """
     return {
         "success": True,
         "model_name": inference_engine.model_name,
@@ -65,9 +66,11 @@ async def get_model_status():
         "provider_type": inference_engine.provider_type,
         "is_mock": inference_engine.provider_type != "real" or not inference_engine._models_loaded,
         "models_loaded": inference_engine._models_loaded,
-        "confidence_threshold": settings.AI_CONFIDENCE_THRESHOLD,
-        "max_image_size_mb": settings.MAX_IMAGE_SIZE_MB
+        "confidence_threshold": inference_engine.threshold,
+        "max_image_size_mb": settings.MAX_IMAGE_SIZE_MB,
+        "supported_crops": inference_engine.supported_crops(),
     }
+
 
 if __name__ == "__main__":
     import uvicorn
