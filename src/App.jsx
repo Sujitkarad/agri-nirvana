@@ -523,12 +523,17 @@ export default function App() {
         isDark={isDark}
         theme={theme}
         onToggleTheme={(targetTheme) => {
-          const newTheme = targetTheme || (theme === "botanical" ? "cyber" : theme === "cyber" ? "harvest" : "botanical");
+          const newTheme = targetTheme || (
+            theme === "botanical" ? "cyber" :
+            theme === "cyber" ? "monochrome" :
+            theme === "monochrome" ? "harvest" : "botanical"
+          );
           setTheme(newTheme);
           const themeLabels = {
-            botanical: "Botanical Glass (Apple / Stripe AgTech)",
-            cyber: "Cyber Obsidian (MiniMax AI)",
-            harvest: "Golden Harvest (Anthropic Claude)"
+            botanical: "🌿 Botanical Daylight (Sunlit Orchard & Soil)",
+            cyber: "🌲 Living Canopy (Organic Forest & Night Sky)",
+            monochrome: "📓 Botanical Noir (Minimalist Field Study)",
+            harvest: "🌾 Golden Harvest (Sun-Drenched Wheat Fields)"
           };
           showToast(`Switched to ${themeLabels[newTheme] || newTheme}`);
         }}

@@ -57,10 +57,10 @@ export default function CommandPaletteModal({
     { id: "calc", label: "Calculate NPK Fertilizer Bags", icon: Calculator, category: "Tools", badge: "Agronomy", run: () => { onSelectNav("calc"); onClose(); } },
     { id: "mandi", label: "Live APMC Mandi Prices (e-NAM)", icon: TrendingUp, category: "Market", badge: "Live Feed", run: () => { onSelectNav("mandi"); onClose(); } },
     { id: "market", label: "Direct Harvest Produce Marketplace", icon: ShoppingCart, category: "Market", badge: "Trade", run: () => { onSelectNav("market"); onClose(); } },
-    { id: "theme-botanical", label: "Switch to Botanical Glass Theme", icon: Sun, category: "Appearance", badge: "Light", run: () => { onChangeTheme("botanical"); onClose(); } },
-    { id: "theme-cyber", label: "Switch to Cyber Obsidian Theme", icon: Moon, category: "Appearance", badge: "Dark", run: () => { onChangeTheme("cyber"); onClose(); } },
-    { id: "theme-monochrome", label: "Switch to Monochrome Noir (Black & White)", icon: Sliders, category: "Appearance", badge: "B&W", run: () => { onChangeTheme("monochrome"); onClose(); } },
-    { id: "theme-harvest", label: "Switch to Golden Harvest Theme", icon: Sparkles, category: "Appearance", badge: "Warm", run: () => { onChangeTheme("harvest"); onClose(); } }
+    { id: "theme-botanical", label: "Switch to 🌿 Botanical Daylight Theme (Sunlit Orchard)", icon: Sun, category: "Appearance", badge: "Daylight", run: () => { onChangeTheme("botanical"); onClose(); } },
+    { id: "theme-cyber", label: "Switch to 🌲 Living Canopy Theme (Deep Organic Forest)", icon: Leaf, category: "Appearance", badge: "Canopy", run: () => { onChangeTheme("cyber"); onClose(); } },
+    { id: "theme-monochrome", label: "Switch to 📓 Botanical Noir Theme (Field Journal)", icon: Sliders, category: "Appearance", badge: "Noir", run: () => { onChangeTheme("monochrome"); onClose(); } },
+    { id: "theme-harvest", label: "Switch to 🌾 Golden Harvest Theme (Warm Wheat Fields)", icon: Sparkles, category: "Appearance", badge: "Harvest", run: () => { onChangeTheme("harvest"); onClose(); } }
   ];
 
   const filtered = actions.filter((a) =>
