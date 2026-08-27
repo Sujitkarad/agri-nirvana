@@ -39,7 +39,7 @@ async def root():
         "service": settings.PROJECT_NAME,
         "version": settings.VERSION,
         "model_provider": inference_engine.provider_type,
-        "models_loaded": inference_engine.models_loaded,
+        "models_loaded": inference_engine._models_loaded,
         "model_name": inference_engine.model_name,
         "model_version": inference_engine.model_version,
         "confidence_threshold": inference_engine.threshold,
@@ -50,7 +50,7 @@ async def root():
 async def health():
     return {
         "status": "ok",
-        "model_ready": inference_engine.models_loaded,
+        "model_ready": inference_engine._models_loaded,
         "model_provider": inference_engine.provider_type,
     }
 
@@ -80,8 +80,8 @@ async def get_model_status():
         "model_name": inference_engine.model_name,
         "model_version": inference_engine.model_version,
         "provider_type": inference_engine.provider_type,
-        "is_mock": inference_engine.is_mock,
-        "models_loaded": inference_engine.models_loaded,
+        "is_mock": inference_engine.provider_type != "real" or not inference_engine._models_loaded,
+        "models_loaded": inference_engine._models_loaded,
         "confidence_threshold": inference_engine.threshold,
         "max_image_size_mb": settings.MAX_IMAGE_SIZE_MB,
         "supported_crops": inference_engine.supported_crops(),
