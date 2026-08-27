@@ -11,11 +11,9 @@ app = FastAPI(
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
 )
 
-# Keep development origins explicit. Production deployments should provide the
-# frontend origin through ALLOWED_ORIGINS instead of using a wildcard.
 configured_origins = [
     origin.strip()
-    for origin in __import__("os").getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173").split(",")
+    for origin in settings.ALLOWED_ORIGINS.split(",")
     if origin.strip()
 ]
 
@@ -29,36 +27,48 @@ app.add_middleware(
 
 from backend.routes.diagnosis import router as diagnosis_router
 from backend.routes.field_intelligence import router as field_intelligence_router
+
 app.include_router(diagnosis_router, prefix=settings.API_V1_STR)
 app.include_router(field_intelligence_router, prefix=settings.API_V1_STR)
 
 
-@app.get("/")
+@app.get("/", tags=["Health"])
 async def root():
     return {
         "status": "online",
         "service": settings.PROJECT_NAME,
         "version": settings.VERSION,
         "model_provider": inference_engine.provider_type,
-        "models_loaded": inference_engine._models_loaded,
+        "models_loaded": inference_engine.models_loaded,
         "model_name": inference_engine.model_name,
         "model_version": inference_engine.model_version,
         "confidence_threshold": inference_engine.threshold,
     }
 
 
+@app.get("/health", tags=["Health"])
+async def health():
+    return {
+        "status": "ok",
+        "model_ready": inference_engine.models_loaded,
+        "model_provider": inference_engine.provider_type,
+    }
+
+
 @app.get(f"{settings.API_V1_STR}/crops")
 async def get_supported_crops():
     from backend.ml.models.disease_classifier import normalize_crop_name
+
     model_crops = set(inference_engine.supported_crops())
+    normalized_model_crops = {normalize_crop_name(c).lower() for c in model_crops}
     crops = [
-        crop for crop in SUPPORTED_CROPS
-        if normalize_crop_name(crop["id"]).lower() in {c.lower() for c in model_crops}
-        or crop["id"].lower() in {c.lower() for c in model_crops}
+        crop
+        for crop in SUPPORTED_CROPS
+        if normalize_crop_name(crop["id"]).lower() in normalized_model_crops
     ]
     return {
         "success": True,
-        "crops": crops or SUPPORTED_CROPS,
+        "crops": crops,
         "model_supported_crops": sorted(model_crops),
     }
 
@@ -70,8 +80,8 @@ async def get_model_status():
         "model_name": inference_engine.model_name,
         "model_version": inference_engine.model_version,
         "provider_type": inference_engine.provider_type,
-        "is_mock": inference_engine.provider_type != "real" or not inference_engine._models_loaded,
-        "models_loaded": inference_engine._models_loaded,
+        "is_mock": inference_engine.is_mock,
+        "models_loaded": inference_engine.models_loaded,
         "confidence_threshold": inference_engine.threshold,
         "max_image_size_mb": settings.MAX_IMAGE_SIZE_MB,
         "supported_crops": inference_engine.supported_crops(),
@@ -80,4 +90,5 @@ async def get_model_status():
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run("backend.main:app", host="0.0.0.0", port=8000, reload=True)
