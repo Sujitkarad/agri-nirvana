@@ -4,12 +4,21 @@ from typing import Optional
 from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile
 
 from backend.config import settings
-from backend.ml.config.ml_config import SUPPORTED_CROPS
-from backend.ml.preprocessing.image_processor import validate_and_preprocess_image
-from backend.ml.inference.production_engine import inference_engine
 from backend.db.database import db
+from backend.ml.config.disease_knowledge import DISEASE_KNOWLEDGE, get_disease_info
+from backend.ml.inference.dynamic_advisor import generate_dynamic_advisory
+from backend.ml.inference.production_engine import inference_engine
+from backend.ml.models.disease_classifier import normalize_crop_name
+from backend.ml.preprocessing.image_processor import validate_and_preprocess_image
 
 router = APIRouter(prefix="/diagnosis", tags=["Crop Diagnostics"])
+
+
+def _persist_without_image(record: dict) -> dict:
+    """Persist metadata only; never put a base64 image into SQLite history."""
+    stored = dict(record)
+    stored["imageUrl"] = ""
+    return db.save_diagnosis(stored)
 
 
 @router.post("/analyze")
@@ -18,63 +27,50 @@ async def analyze_crop_leaf(
     cropType: str = Form("Tomato"),
     userId: Optional[str] = Form("anonymous_farmer"),
 ):
-    """Validate, diagnose, and persist a crop-leaf analysis.
-
-    The endpoint never substitutes a fabricated disease for an unsupported crop
-    or low-confidence prediction.
-    """
     if not image.filename:
         raise HTTPException(status_code=400, detail="Image filename is required.")
 
     ext = image.filename.rsplit(".", 1)[-1].lower() if "." in image.filename else ""
     if ext not in settings.ALLOWED_EXTENSIONS:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Unsupported image type '.{ext}'. Allowed: {', '.join(sorted(settings.ALLOWED_EXTENSIONS))}.",
-        )
+        allowed = ", ".join(sorted(settings.ALLOWED_EXTENSIONS))
+        raise HTTPException(status_code=400, detail=f"Unsupported image type '.{ext}'. Allowed: {allowed}.")
 
     contents = await image.read()
     max_bytes = settings.MAX_IMAGE_SIZE_MB * 1024 * 1024
     if len(contents) > max_bytes:
-        raise HTTPException(
-            status_code=413,
-            detail=f"Image exceeds the {settings.MAX_IMAGE_SIZE_MB} MB upload limit.",
-        )
+        raise HTTPException(status_code=413, detail=f"Image exceeds the {settings.MAX_IMAGE_SIZE_MB} MB upload limit.")
 
     val_result = validate_and_preprocess_image(contents, image.filename)
     if not val_result.is_valid:
         raise HTTPException(status_code=400, detail=val_result.error_message)
 
     prediction = inference_engine.analyze(val_result.pil_image, cropType)
+    confidence = max(0.0, min(float(prediction.get("confidence", 0.0)), 1.0))
+    abstain = bool(prediction.get("uncertainty", {}).get("abstain", False))
 
-    mime = "jpeg" if ext == "jpg" else ext
-    prediction["imageUrl"] = f"data:image/{mime};base64,{base64.b64encode(contents).decode('utf-8')}"
     prediction["userId"] = userId or "anonymous_farmer"
     prediction["warnings"] = val_result.warnings
-
-    confidence = float(prediction.get("confidence", 0.0))
-    abstain = bool(prediction.get("uncertainty", {}).get("abstain", False))
     prediction["is_low_confidence"] = abstain or confidence < settings.AI_CONFIDENCE_THRESHOLD
     prediction["condition_label"] = (
         "Uncertain Result" if prediction["is_low_confidence"] else prediction.get("condition", "Analyzed")
     )
 
-    if prediction["is_low_confidence"]:
+    if prediction["is_low_confidence"] and not prediction.get("low_confidence_notice"):
         prediction["low_confidence_notice"] = (
-            f"The AI result is not reliable enough to use as a definitive diagnosis. "
+            "The AI result is not reliable enough to use as a definitive diagnosis. "
             f"Current confidence: {round(confidence * 100)}%. "
             "Retake a sharp, well-lit close-up photo or consult a local agricultural expert."
         )
 
-    # Do not persist a base64 image indefinitely when the database implementation
-    # supports a record without the preview. Keep compatibility for the current UI.
-    saved_doc = db.save_diagnosis(prediction)
+    mime = "jpeg" if ext == "jpg" else ext
+    preview_url = f"data:image/{mime};base64,{base64.b64encode(contents).decode('utf-8')}"
+    prediction["imageUrl"] = preview_url
 
-    return {
-        "success": True,
-        "diagnosis": saved_doc,
-        "warnings": val_result.warnings,
-    }
+    saved_doc = _persist_without_image(prediction)
+    response_diagnosis = dict(saved_doc)
+    response_diagnosis["imageUrl"] = preview_url
+
+    return {"success": True, "diagnosis": response_diagnosis, "warnings": val_result.warnings}
 
 
 @router.post("/symptoms")
@@ -83,163 +79,149 @@ async def analyze_crop_symptoms(
     symptomsText: str = Form(...),
     userId: Optional[str] = Form("anonymous_farmer"),
 ):
-    """Analyze crop symptoms described via natural language or voice transcription."""
-    from backend.ml.models.disease_classifier import normalize_crop_name
-    from backend.ml.config.disease_knowledge import get_disease_info, DISEASE_KNOWLEDGE
-    from backend.ml.inference.dynamic_advisor import generate_dynamic_advisory
+    """Match reported symptoms against the knowledge base without inventing a diagnosis."""
+    text = (symptomsText or "").strip()
+    if len(text) < 5:
+        raise HTTPException(status_code=400, detail="Please provide a more detailed symptom description.")
+    if len(text) > 2000:
+        raise HTTPException(status_code=413, detail="Symptom description is too long.")
 
     crop_name = normalize_crop_name(cropType)
-    text_lower = symptomsText.lower()
+    candidates = []
+    text_lower = text.lower()
 
-    # Search for matching disease within crop
-    best_match_key = None
-    best_score = 0
     for key, info in DISEASE_KNOWLEDGE.items():
-        if info.get("crop", "").lower() == crop_name.lower():
-            score = 0
-            # Check symptoms keywords
-            for sym in info.get("symptoms_observed", []):
-                sym_words = sym.lower().split()
-                for word in sym_words:
-                    if len(word) > 3 and word in text_lower:
-                        score += 1
-            if info.get("display_name", "").lower() in text_lower:
-                score += 3
-            if score > best_score:
-                best_score = score
-                best_match_key = key
+        if normalize_crop_name(info.get("crop", "")).lower() != crop_name.lower():
+            continue
+        score = 0
+        for symptom in info.get("symptoms_observed", []):
+            for word in symptom.lower().split():
+                cleaned = word.strip(".,;:()[]{}")
+                if len(cleaned) >= 4 and cleaned in text_lower:
+                    score += 1
+        display_name = info.get("display_name", "")
+        if display_name and display_name.lower() in text_lower:
+            score += 3
+        if score:
+            candidates.append((score, key, info))
 
-    if not best_match_key:
-        # Default to early blight or first disease for that crop if no specific keyword
-        for key, info in DISEASE_KNOWLEDGE.items():
-            if info.get("crop", "").lower() == crop_name.lower() and "healthy" not in key.lower():
-                best_match_key = key
-                break
+    candidates.sort(key=lambda item: item[0], reverse=True)
+    if not candidates:
+        prediction = {
+            "status": "uncertain",
+            "is_valid_crop_image": False,
+            "validation": {
+                "is_plant": None,
+                "is_crop": True,
+                "crop_supported": crop_name in inference_engine.supported_crops(),
+                "rejection_reason": None,
+            },
+            "crop": {"name": crop_name, "confidence_pct": 0},
+            "cropType": crop_name,
+            "condition": "Insufficient Evidence",
+            "confidence": 0.0,
+            "confidence_pct": 0,
+            "severity": "Unknown",
+            "severityPercentage": 0,
+            "symptoms": [text],
+            "symptoms_observed": [],
+            "differential_diagnoses": [],
+            "uncertainty": {
+                "abstain": True,
+                "reason": "The reported symptoms did not match a sufficiently specific knowledge-base pattern.",
+            },
+            "recommendations": {
+                "immediate": "Do not apply disease-specific chemicals based on this symptom report alone.",
+                "monitoring": "Take clear photos of affected leaves and record whether symptoms are spreading.",
+                "prevention": "Continue routine scouting and avoid unnecessary pesticide application.",
+                "expert_help": "Consult a local KVK/agriculture extension officer for confirmation.",
+            },
+            "modelName": "Agri Nirvana Symptom Knowledge Matcher",
+            "modelVersion": "v3",
+            "isMock": False,
+            "userId": userId or "anonymous_farmer",
+            "warnings": ["Symptom-only matching is not a definitive diagnosis."],
+            "is_low_confidence": True,
+            "condition_label": "Uncertain Result",
+        }
+        saved = _persist_without_image(prediction)
+        return {"success": True, "diagnosis": saved, "warnings": prediction["warnings"]}
 
-    if not best_match_key:
-        best_match_key = f"{crop_name}___Early_blight"
+    best_score, best_key, disease_info = candidates[0]
+    # Confidence is deliberately capped and tied to observed evidence rather than fabricated as a fixed 90%+ score.
+    confidence = min(0.89, 0.45 + best_score * 0.08)
+    if len(candidates) > 1 and candidates[0][0] == candidates[1][0]:
+        confidence = min(confidence, 0.59)
 
-    disease_info = get_disease_info(best_match_key)
-    confidence = min(0.92, max(0.72, 0.70 + (best_score * 0.05)))
-    confidence_pct = round(confidence * 100)
-    severity_tier = "Moderate"
-
+    severity = "Moderate"
     advisory = generate_dynamic_advisory(
         crop=disease_info.get("crop", crop_name),
-        disease=disease_info.get("display_name", "Pathology Detected"),
+        disease=disease_info.get("display_name", "Possible disease"),
         pathogen=disease_info.get("pathogen", ""),
-        severity_tier=severity_tier,
-        necrotic_area_pct=28.0,
-        confidence_pct=confidence_pct,
+        severity_tier=severity,
+        necrotic_area_pct=0.0,
+        confidence_pct=round(confidence * 100),
         differential_diagnoses=[],
         base_info=disease_info,
     )
 
-    structured_chem = disease_info.get("structured_chemical", {})
-    regional_terms = disease_info.get("regional_terms", {})
-    verification_note = disease_info.get(
-        "verification_note",
-        "Confirm exact product name and current registration status with your local KVK/agri extension officer before purchase or application."
-    )
-
-    chem_item = advisory.get("ipm", {}).get("tier_2_chemical", [{}])[0] if advisory.get("ipm", {}).get("tier_2_chemical") else {}
-    org_item = advisory.get("ipm", {}).get("tier_1_biological", [{}])[0] if advisory.get("ipm", {}).get("tier_1_biological") else {}
-    prev_list = advisory.get("ipm", {}).get("tier_3_cultural", ["Maintain clean field sanitation"])
-
-    treatment_plan = {
-        "organic": {
-            "name": org_item.get("agent", "Bio-fungicide Consortium (Trichoderma viride)"),
-            "dosage": org_item.get("dosage", "5 ml/L water (75ml in 15L tank)"),
-            "applicationSchedule": org_item.get("application_timing", "Spray early morning every 5 to 7 days")
-        },
-        "chemical": {
-            "name": chem_item.get("active_ingredient", (disease_info.get("treatment_chemical") or ["Recommended Crop Fungicide"])[0]),
-            "dosage": f"{structured_chem.get('dose_ml_per_L', 2.5)} g/L ({chem_item.get('dose_ml_per_15L', 37.5)} g per 15L tank)",
-            "dose_15L_tank": f"{chem_item.get('dose_ml_per_15L', 37.5)} g/ml per 15L knapsack tank",
-            "frac_code": chem_item.get("frac_code", structured_chem.get("frac_code", "FRAC Group M03")),
-            "rotation_partner": structured_chem.get("rotation_partner", "Chlorothalonil 75% WP (FRAC M05)"),
-            "safetyIntervalDays": structured_chem.get("phi_days", 7)
-        },
-        "preventive": {
-            "cultural": prev_list[0] if prev_list else "Practice good crop sanitation and crop rotation",
-            "irrigation": "Use morning drip cycles — avoid prolonged foliar surface wetness"
+    differential = [
+        {
+            "name": info.get("display_name", key),
+            "condition": info.get("display_name", key),
+            "crop": info.get("crop", crop_name),
+            "confidence_pct": round(min(0.89, 0.40 + score * 0.08) * 100),
         }
-    }
+        for score, key, info in candidates[1:3]
+    ]
 
     prediction = {
-        "status": "success",
-        "image_quality": {"status": "pass", "score": 100, "reason": None},
-        "validation": {"is_plant": True, "is_crop": True, "crop_supported": True, "rejection_reason": None},
-        "crop": {"name": disease_info.get("crop", crop_name), "confidence_pct": confidence_pct},
-        "plant_part": "leaf",
-        "diagnosis": {
-            "category": disease_info.get("pathogen_category", "Fungal").lower(),
-            "name": disease_info.get("display_name", "Pathology Detected"),
-            "causal_agent": disease_info.get("pathogen", "Natural Language Symptom Match"),
-            "confidence_pct": confidence_pct,
+        "status": "possible_match" if confidence < settings.AI_CONFIDENCE_THRESHOLD else "success",
+        "is_valid_crop_image": False,
+        "validation": {
+            "is_plant": None,
+            "is_crop": True,
+            "crop_supported": crop_name in inference_engine.supported_crops(),
+            "rejection_reason": None,
         },
-        "evidence_features": [f"Reported symptom: {symptomsText}"] + advisory.get("symptoms_observed", [])[:2],
-        "differential_diagnoses": [],
-        "uncertainty": {"abstain": False, "reason": ""},
-        "severity": {
-            "necrotic_area_pct": 28.0,
-            "tier": severity_tier,
-            "confidence_pct": confidence_pct,
-        },
-        "agronomic_risk": {
-            "level": "Moderate",
-            "reason": "Symptom description indicates active pathogen pressure; follow recommended IPM protocol.",
-        },
-        "ipm": advisory.get("ipm", {}),
-        "farmer_summary": advisory.get("farmer_summary", ""),
-        "is_valid_crop_image": True,
-        "confidence": confidence,
-        "confidence_pct": confidence_pct,
+        "crop": {"name": disease_info.get("crop", crop_name), "confidence_pct": round(confidence * 100)},
         "cropType": disease_info.get("crop", crop_name),
-        "condition": disease_info.get("display_name", "Pathology Detected"),
-        "pathogen": disease_info.get("pathogen", ""),
-        "pathogenCategory": disease_info.get("pathogen_category", "Fungal"),
-        "severityPercentage": 28.0,
-        "affectedSurface": "Canopy foliage reported with symptoms",
-        "imageUrl": f"/samples/sample_{crop_name.lower()}_leaf.jpg" if crop_name.lower() in ["cotton", "potato", "soybean"] else "/samples/sample_tomato_early_blight.jpg",
-        "symptoms": [f"Farmer symptom report: '{symptomsText}'"] + advisory.get("symptoms_observed", [])[:2],
+        "condition": disease_info.get("display_name", "Possible Disease"),
+        "confidence": round(confidence, 4),
+        "confidence_pct": round(confidence * 100),
+        "severity": severity,
+        "severityPercentage": 0,
+        "symptoms": [text] + advisory.get("symptoms_observed", [])[:3],
         "symptoms_observed": advisory.get("symptoms_observed", []),
-        "likely_cause": advisory.get("likely_cause", ""),
-        "immediate_precautions": advisory.get("immediate_precautions", []),
-        "treatment_organic": [f"{b.get('agent', '')} — {b.get('dosage', '')}" for b in advisory.get("ipm", {}).get("tier_1_biological", [])],
-        "treatment_chemical": [f"{c.get('active_ingredient', '')} — {c.get('dose_ml_per_15L', 37.5)}g/ml per 15L tank" for c in advisory.get("ipm", {}).get("tier_2_chemical", [])],
-        "prevention_tips": advisory.get("ipm", {}).get("tier_3_cultural", []),
-        "structured_chemical": structured_chem,
-        "regional_terms": regional_terms,
-        "verification_note": verification_note,
-        "treatmentPlan": treatment_plan,
-        "droneMissionReady": {
-            "recommendedAltitudeMeters": 3.5,
-            "spotSprayRequired": True,
-            "flowRateLitresPerHectare": 16.0,
-            "chemicalReductionPct": 78.0
+        "differential_diagnoses": differential,
+        "uncertainty": {
+            "abstain": confidence < settings.AI_CONFIDENCE_THRESHOLD,
+            "reason": "Symptom-only evidence is weaker than image-based diagnosis." if confidence < settings.AI_CONFIDENCE_THRESHOLD else "",
         },
-        "lesionCoordinates3D": [
-            {"x": 0.42, "y": 0.58, "radius": 0.12},
-            {"x": 0.61, "y": 0.35, "radius": 0.08}
-        ],
+        "farmer_summary": advisory.get("farmer_summary", ""),
+        "ipm": advisory.get("ipm", {}),
         "recommendations": {
-            "immediate": (advisory.get("immediate_precautions") or ["Monitor crop closely"])[0],
-            "monitoring": "Scout the crop twice weekly and inspect leaf undersides.",
-            "prevention": (advisory.get("ipm", {}).get("tier_3_cultural") or ["Maintain good field sanitation"])[0],
-            "expert_help": "Consult a local KVK/agriculture extension officer if symptoms persist.",
+            "immediate": (advisory.get("immediate_precautions") or ["Confirm the condition with a clear leaf image."])[0],
+            "monitoring": "Photograph the same affected area again in 48–72 hours to track progression.",
+            "prevention": (advisory.get("ipm", {}).get("tier_3_cultural") or ["Maintain field sanitation."])[0],
+            "expert_help": "Consult a local KVK/agriculture extension officer before disease-specific chemical application.",
         },
-        "modelName": "Kisan AI Natural Language Pathology Advisor",
-        "modelVersion": "v2.0-nlp",
+        "treatmentPlan": {
+            "organic": {"name": "See verified IPM guidance", "dosage": "Follow the registered product label."},
+            "chemical": {"name": "Not recommended from symptoms alone", "dosage": "Confirm diagnosis first."},
+            "preventive": {"cultural": "Scout and remove severely affected material where appropriate."},
+        },
+        "modelName": "Agri Nirvana Symptom Knowledge Matcher",
+        "modelVersion": "v3",
         "isMock": False,
         "userId": userId or "anonymous_farmer",
-        "warnings": [],
-        "is_low_confidence": False,
-        "condition_label": disease_info.get("display_name", "Pathology Detected")
+        "warnings": ["This is a symptom-based possible match, not a laboratory-confirmed diagnosis."],
+        "is_low_confidence": confidence < settings.AI_CONFIDENCE_THRESHOLD,
+        "condition_label": disease_info.get("display_name", "Possible Disease"),
     }
 
-    saved_doc = db.save_diagnosis(prediction)
-    return {"success": True, "diagnosis": saved_doc, "warnings": []}
+    saved = _persist_without_image(prediction)
+    return {"success": True, "diagnosis": saved, "warnings": prediction["warnings"]}
 
 
 @router.get("/history")
