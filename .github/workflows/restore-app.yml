@@ -1,0 +1,25 @@
+name: Restore App From Known Good Commit
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  restore:
+    if: github.event.head_commit.message != 'chore: restore App.jsx before landing-page styling'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Restore App.jsx
+        run: |
+          git checkout 2046916afc681f7e8a05f0182f3c5e3dd20caf58 -- src/App.jsx
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/App.jsx
+          git commit -m 'chore: restore App.jsx before landing-page styling'
+          git push
