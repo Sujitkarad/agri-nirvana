@@ -52,5 +52,6 @@ jobs:
       - name: Run Backend Tests
         run: pytest -q backend/tests
         env:
+          PYTHONPATH: .
           AI_MODEL_PROVIDER: mock
           AI_CONFIDENCE_THRESHOLD: '0.70'

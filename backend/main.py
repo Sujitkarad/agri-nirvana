@@ -1,3 +1,14 @@
+import sys
+from pathlib import Path
+
+# Ensure root workspace directory is on sys.path whether running from root or backend/
+_backend_dir = Path(__file__).resolve().parent
+_root_dir = _backend_dir.parent
+if str(_root_dir) not in sys.path:
+    sys.path.insert(0, str(_root_dir))
+if str(_backend_dir) not in sys.path:
+    sys.path.insert(0, str(_backend_dir))
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -11,15 +22,24 @@ app = FastAPI(
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
 )
 
-configured_origins = [
+configured_origins = {
     origin.strip()
     for origin in settings.ALLOWED_ORIGINS.split(",")
     if origin.strip()
-]
+}
+# Ensure verified Vercel production domain and local dev origins are always permitted
+configured_origins.update([
+    "https://agri-nirvana.vercel.app",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:3000",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000"
+])
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=configured_origins,
+    allow_origins=sorted(configured_origins),
     allow_credentials=False,
     allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization"],

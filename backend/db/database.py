@@ -2,7 +2,7 @@ import os
 import sqlite3
 import json
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional
 from backend.config import settings
 
@@ -37,7 +37,7 @@ class Database:
 
     def save_diagnosis(self, record: Dict[str, Any]) -> Dict[str, Any]:
         doc_id = str(uuid.uuid4())
-        created_at = datetime.utcnow().isoformat()
+        created_at = datetime.now(timezone.utc).isoformat()
 
         # Extract safe scalar values whether they are strings or dicts
         crop_val = record.get("cropType") or record.get("crop")

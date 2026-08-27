@@ -102,6 +102,13 @@ async def analyze_crop_symptoms(
     if len(text) > 2000:
         raise HTTPException(status_code=413, detail="Symptom description is too long.")
 
+    STOP_WORDS = {
+        "this", "that", "with", "from", "have", "also", "when", "some", "into",
+        "over", "more", "than", "they", "them", "their", "been", "look", "very",
+        "were", "what", "which", "will", "would", "about", "after", "again", "each",
+        "only", "same", "such", "then", "there", "these", "those", "plant", "plants"
+    }
+
     crop_name = normalize_crop_name(cropType)
     candidates = []
     text_lower = text.lower()
@@ -112,12 +119,12 @@ async def analyze_crop_symptoms(
         for symptom in info.get("symptoms_observed", []):
             for word in symptom.lower().split():
                 cleaned = word.strip(".,;:()[]{}")
-                if len(cleaned) >= 4 and cleaned in text_lower:
+                if len(cleaned) >= 4 and cleaned not in STOP_WORDS and cleaned in text_lower:
                     score += 1
         display_name = info.get("display_name", "")
         if display_name and display_name.lower() in text_lower:
             score += 3
-        if score:
+        if score >= 2:
             candidates.append((score, key, info))
 
     candidates.sort(key=lambda item: item[0], reverse=True)
