@@ -1,64 +1,19 @@
-import React, { useState, useEffect } from "react";
-import { Activity, ShieldCheck, Cpu, Radio, Sparkles } from "lucide-react";
+import React from "react";
+import { Activity, Database, Radio, ShieldCheck } from "lucide-react";
 
-export default function TelemetryRibbon({ isDark = true, selectedModel = "Mistral-7B" }) {
-  const [latency, setLatency] = useState(42);
-
-  // Subtle realistic latency fluctuation simulation: 42ms -> 38ms -> 41ms -> 37ms
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const delta = (Math.random() * 6 - 3); // -3 to +3
-      setLatency((prev) => {
-        const next = Math.round(prev + delta);
-        return Math.min(48, Math.max(34, next));
-      });
-    }, 2800);
-    return () => clearInterval(interval);
-  }, []);
-
+/** Runtime status ribbon: intentionally avoids fabricated latency/uptime/security claims. */
+export default function TelemetryRibbon({ isDark = false, selectedModel = "Model status pending" }) {
   return (
-    <div
-      className={`border-b text-[11px] font-mono py-1.5 px-4 overflow-hidden whitespace-nowrap select-none transition-colors duration-300 ${
-        isDark
-          ? "border-emerald-500/20 bg-[#020906]/90 text-emerald-400/90 backdrop-blur-md"
-          : "border-slate-200 bg-slate-900 text-emerald-300"
-      }`}
-    >
-      <div className="mx-auto max-w-7xl flex items-center justify-between gap-4">
-        {/* Left Telemetry Cluster */}
-        <div className="flex items-center gap-5 sm:gap-6">
-          <span className="flex items-center gap-1.5 font-bold">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-            </span>
-            <span className="tracking-tight">&lt;{latency}ms</span>
-            <span className="opacity-70 font-normal">Neural Inference</span>
-          </span>
-
-          <span className="hidden md:flex items-center gap-1.5 text-cyan-400">
-            <Activity size={12} className="text-cyan-400" />
-            <span className="font-bold">API Health:</span>
-            <span className="text-emerald-400">Operational (99.99%)</span>
-          </span>
-
-          <span className="hidden lg:flex items-center gap-1.5 text-slate-300">
-            <ShieldCheck size={12} className="text-emerald-400" />
-            <span className="opacity-70">TLS 1.3 End-to-End Encrypted</span>
-          </span>
+    <div role="status" aria-label="Agri Nirvana system status" className={`border-b px-4 py-1.5 text-[11px] font-mono transition-colors ${isDark ? "border-emerald-500/20 bg-[#020906]/90 text-emerald-300" : "border-slate-200 bg-white text-slate-600"}`}>
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
+        <div className="flex min-w-0 items-center gap-4 sm:gap-6">
+          <span className="flex items-center gap-1.5 font-semibold"><span className="h-2 w-2 shrink-0 rounded-full bg-emerald-500" />System ready</span>
+          <span className="hidden md:flex items-center gap-1.5"><Activity size={12} className="text-emerald-600" /><span className="font-semibold">API:</span><span>status reported by service</span></span>
+          <span className="hidden lg:flex items-center gap-1.5"><ShieldCheck size={12} className="text-emerald-600" /><span>Security transport depends on deployment configuration</span></span>
         </div>
-
-        {/* Right Telemetry Cluster */}
-        <div className="flex items-center gap-3">
-          <span className="flex items-center gap-1.5 text-emerald-300 font-semibold">
-            <Radio size={12} className="text-emerald-400 animate-pulse" />
-            <span className="hidden sm:inline">Engine:</span>
-            <span className="text-white font-bold">{selectedModel}</span>
-          </span>
-
-          <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] text-emerald-300 border border-emerald-500/40 font-bold">
-            Live Telemetry
-          </span>
+        <div className="flex shrink-0 items-center gap-3">
+          <span className="hidden sm:flex items-center gap-1.5"><Radio size={12} className="text-emerald-600" /><span className="font-semibold">Engine:</span><span className="max-w-40 truncate" title={selectedModel}>{selectedModel}</span></span>
+          <span className="flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-800"><Database size={11} />Demo data where marked</span>
         </div>
       </div>
     </div>
