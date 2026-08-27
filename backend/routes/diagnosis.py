@@ -5,7 +5,7 @@ from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile
 
 from backend.config import settings
 from backend.db.database import db
-from backend.ml.config.disease_knowledge import DISEASE_KNOWLEDGE, get_disease_info
+from backend.ml.config.disease_knowledge import DISEASE_KNOWLEDGE
 from backend.ml.inference.dynamic_advisor import generate_dynamic_advisory
 from backend.ml.inference.production_engine import inference_engine
 from backend.ml.models.disease_classifier import normalize_crop_name
@@ -19,6 +19,12 @@ def _persist_without_image(record: dict) -> dict:
     stored = dict(record)
     stored["imageUrl"] = ""
     return db.save_diagnosis(stored)
+
+
+def _safe_user_id(user_id: Optional[str]) -> str:
+    """Avoid storing an empty or whitespace-only identity value."""
+    value = (user_id or "anonymous_farmer").strip()
+    return value[:128] or "anonymous_farmer"
 
 
 @router.post("/analyze")
@@ -39,29 +45,39 @@ async def analyze_crop_leaf(
     max_bytes = settings.MAX_IMAGE_SIZE_MB * 1024 * 1024
     if len(contents) > max_bytes:
         raise HTTPException(status_code=413, detail=f"Image exceeds the {settings.MAX_IMAGE_SIZE_MB} MB upload limit.")
+    if not contents:
+        raise HTTPException(status_code=400, detail="The uploaded image is empty.")
 
     val_result = validate_and_preprocess_image(contents, image.filename)
-    if not val_result.is_valid:
-        raise HTTPException(status_code=400, detail=val_result.error_message)
+    if not val_result.is_valid or val_result.pil_image is None:
+        raise HTTPException(status_code=400, detail=val_result.error_message or "Unable to process image.")
 
     prediction = inference_engine.analyze(val_result.pil_image, cropType)
     confidence = max(0.0, min(float(prediction.get("confidence", 0.0)), 1.0))
-    abstain = bool(prediction.get("uncertainty", {}).get("abstain", False))
+    uncertainty = prediction.get("uncertainty") or {}
+    abstain = bool(uncertainty.get("abstain", False))
 
-    prediction["userId"] = userId or "anonymous_farmer"
-    prediction["warnings"] = val_result.warnings
+    prediction["userId"] = _safe_user_id(userId)
+    prediction["warnings"] = list(val_result.warnings or [])
     prediction["is_low_confidence"] = abstain or confidence < settings.AI_CONFIDENCE_THRESHOLD
     prediction["condition_label"] = (
         "Uncertain Result" if prediction["is_low_confidence"] else prediction.get("condition", "Analyzed")
     )
+    prediction["provenance"] = {
+        "source": "real_ml_inference" if prediction.get("status") == "success" else "abstention",
+        "confidence_is_calibrated": False,
+        "severity_is_independent": bool((prediction.get("severity") or {}).get("reliable", False)) if isinstance(prediction.get("severity"), dict) else False,
+        "treatment_allowed": prediction.get("status") == "success" and not prediction["is_low_confidence"],
+    }
 
-    if prediction["is_low_confidence"] and not prediction.get("low_confidence_notice"):
+    if prediction["is_low_confidence"]:
         prediction["low_confidence_notice"] = (
             "The AI result is not reliable enough to use as a definitive diagnosis. "
-            f"Current confidence: {round(confidence * 100)}%. "
-            "Retake a sharp, well-lit close-up photo or consult a local agricultural expert."
+            f"Model score: {round(confidence * 100)}%. Retake a sharp, well-lit close-up photo "
+            "or consult a local agricultural expert."
         )
 
+    # The image is returned only for the current response; it is never persisted in history.
     mime = "jpeg" if ext == "jpg" else ext
     preview_url = f"data:image/{mime};base64,{base64.b64encode(contents).decode('utf-8')}"
     prediction["imageUrl"] = preview_url
@@ -79,7 +95,7 @@ async def analyze_crop_symptoms(
     symptomsText: str = Form(...),
     userId: Optional[str] = Form("anonymous_farmer"),
 ):
-    """Match reported symptoms against the knowledge base without inventing a diagnosis."""
+    """Return a possible knowledge-base match; never present it as image diagnosis."""
     text = (symptomsText or "").strip()
     if len(text) < 5:
         raise HTTPException(status_code=400, detail="Please provide a more detailed symptom description.")
@@ -89,7 +105,6 @@ async def analyze_crop_symptoms(
     crop_name = normalize_crop_name(cropType)
     candidates = []
     text_lower = text.lower()
-
     for key, info in DISEASE_KNOWLEDGE.items():
         if normalize_crop_name(info.get("crop", "")).lower() != crop_name.lower():
             continue
@@ -106,16 +121,13 @@ async def analyze_crop_symptoms(
             candidates.append((score, key, info))
 
     candidates.sort(key=lambda item: item[0], reverse=True)
+    user_id = _safe_user_id(userId)
+
     if not candidates:
         prediction = {
             "status": "uncertain",
             "is_valid_crop_image": False,
-            "validation": {
-                "is_plant": None,
-                "is_crop": True,
-                "crop_supported": crop_name in inference_engine.supported_crops(),
-                "rejection_reason": None,
-            },
+            "validation": {"is_plant": None, "is_crop": True, "crop_supported": crop_name in inference_engine.supported_crops(), "rejection_reason": None},
             "crop": {"name": crop_name, "confidence_pct": 0},
             "cropType": crop_name,
             "condition": "Insufficient Evidence",
@@ -126,10 +138,7 @@ async def analyze_crop_symptoms(
             "symptoms": [text],
             "symptoms_observed": [],
             "differential_diagnoses": [],
-            "uncertainty": {
-                "abstain": True,
-                "reason": "The reported symptoms did not match a sufficiently specific knowledge-base pattern.",
-            },
+            "uncertainty": {"abstain": True, "reason": "The reported symptoms did not match a sufficiently specific knowledge-base pattern."},
             "recommendations": {
                 "immediate": "Do not apply disease-specific chemicals based on this symptom report alone.",
                 "monitoring": "Take clear photos of affected leaves and record whether symptoms are spreading.",
@@ -137,87 +146,65 @@ async def analyze_crop_symptoms(
                 "expert_help": "Consult a local KVK/agriculture extension officer for confirmation.",
             },
             "modelName": "Agri Nirvana Symptom Knowledge Matcher",
-            "modelVersion": "v3",
+            "modelVersion": "v4",
             "isMock": False,
-            "userId": userId or "anonymous_farmer",
+            "userId": user_id,
             "warnings": ["Symptom-only matching is not a definitive diagnosis."],
             "is_low_confidence": True,
             "condition_label": "Uncertain Result",
+            "provenance": {"source": "knowledge_base_matcher", "confidence_is_calibrated": False, "treatment_allowed": False},
         }
         saved = _persist_without_image(prediction)
         return {"success": True, "diagnosis": saved, "warnings": prediction["warnings"]}
 
     best_score, best_key, disease_info = candidates[0]
-    # Confidence is deliberately capped and tied to observed evidence rather than fabricated as a fixed 90%+ score.
+    # Evidence score, deliberately capped below a definitive threshold.
     confidence = min(0.89, 0.45 + best_score * 0.08)
     if len(candidates) > 1 and candidates[0][0] == candidates[1][0]:
         confidence = min(confidence, 0.59)
 
-    severity = "Moderate"
-    advisory = generate_dynamic_advisory(
-        crop=disease_info.get("crop", crop_name),
-        disease=disease_info.get("display_name", "Possible disease"),
-        pathogen=disease_info.get("pathogen", ""),
-        severity_tier=severity,
-        necrotic_area_pct=0.0,
-        confidence_pct=round(confidence * 100),
-        differential_diagnoses=[],
-        base_info=disease_info,
-    )
-
+    is_low_confidence = confidence < settings.AI_CONFIDENCE_THRESHOLD
     differential = [
-        {
-            "name": info.get("display_name", key),
-            "condition": info.get("display_name", key),
-            "crop": info.get("crop", crop_name),
-            "confidence_pct": round(min(0.89, 0.40 + score * 0.08) * 100),
-        }
+        {"name": info.get("display_name", key), "condition": info.get("display_name", key), "crop": info.get("crop", crop_name), "confidence_pct": round(min(0.89, 0.40 + score * 0.08) * 100)}
         for score, key, info in candidates[1:3]
     ]
 
+    # Symptoms alone never unlock disease-specific treatment.
     prediction = {
-        "status": "possible_match" if confidence < settings.AI_CONFIDENCE_THRESHOLD else "success",
+        "status": "possible_match",
         "is_valid_crop_image": False,
-        "validation": {
-            "is_plant": None,
-            "is_crop": True,
-            "crop_supported": crop_name in inference_engine.supported_crops(),
-            "rejection_reason": None,
-        },
+        "validation": {"is_plant": None, "is_crop": True, "crop_supported": crop_name in inference_engine.supported_crops(), "rejection_reason": None},
         "crop": {"name": disease_info.get("crop", crop_name), "confidence_pct": round(confidence * 100)},
         "cropType": disease_info.get("crop", crop_name),
         "condition": disease_info.get("display_name", "Possible Disease"),
         "confidence": round(confidence, 4),
         "confidence_pct": round(confidence * 100),
-        "severity": severity,
+        "severity": "Unknown",
         "severityPercentage": 0,
-        "symptoms": [text] + advisory.get("symptoms_observed", [])[:3],
-        "symptoms_observed": advisory.get("symptoms_observed", []),
+        "symptoms": [text],
+        "symptoms_observed": disease_info.get("symptoms_observed", [])[:5],
         "differential_diagnoses": differential,
-        "uncertainty": {
-            "abstain": confidence < settings.AI_CONFIDENCE_THRESHOLD,
-            "reason": "Symptom-only evidence is weaker than image-based diagnosis." if confidence < settings.AI_CONFIDENCE_THRESHOLD else "",
-        },
-        "farmer_summary": advisory.get("farmer_summary", ""),
-        "ipm": advisory.get("ipm", {}),
+        "uncertainty": {"abstain": True, "reason": "Symptom-only evidence is weaker than image-based diagnosis."},
+        "farmer_summary": "Possible symptom match only. Confirm with a clear crop image or an agricultural expert before treatment.",
         "recommendations": {
-            "immediate": (advisory.get("immediate_precautions") or ["Confirm the condition with a clear leaf image."])[0],
+            "immediate": "Confirm the condition with a clear leaf image before applying disease-specific treatment.",
             "monitoring": "Photograph the same affected area again in 48–72 hours to track progression.",
-            "prevention": (advisory.get("ipm", {}).get("tier_3_cultural") or ["Maintain field sanitation."])[0],
-            "expert_help": "Consult a local KVK/agriculture extension officer before disease-specific chemical application.",
+            "prevention": "Maintain field sanitation and routine scouting.",
+            "expert_help": "Consult a local KVK/agriculture extension officer before chemical application.",
         },
         "treatmentPlan": {
-            "organic": {"name": "See verified IPM guidance", "dosage": "Follow the registered product label."},
+            "organic": {"name": "Not prescribed", "dosage": "Confirm diagnosis first."},
             "chemical": {"name": "Not recommended from symptoms alone", "dosage": "Confirm diagnosis first."},
             "preventive": {"cultural": "Scout and remove severely affected material where appropriate."},
         },
         "modelName": "Agri Nirvana Symptom Knowledge Matcher",
-        "modelVersion": "v3",
+        "modelVersion": "v4",
         "isMock": False,
-        "userId": userId or "anonymous_farmer",
+        "userId": user_id,
         "warnings": ["This is a symptom-based possible match, not a laboratory-confirmed diagnosis."],
-        "is_low_confidence": confidence < settings.AI_CONFIDENCE_THRESHOLD,
-        "condition_label": disease_info.get("display_name", "Possible Disease"),
+        "is_low_confidence": is_low_confidence,
+        "condition_label": "Possible Match — Confirm",
+        "provenance": {"source": "knowledge_base_matcher", "confidence_is_calibrated": False, "treatment_allowed": False},
     }
 
     saved = _persist_without_image(prediction)
