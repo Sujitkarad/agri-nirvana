@@ -11,6 +11,9 @@ class Settings(BaseSettings):
     AI_CONFIDENCE_THRESHOLD: float = Field(default=0.70, ge=0.50, le=0.95)
     HF_MODEL_ID: str = "linkanjarad/mobilenet_v2_1.0_224-plant-disease-identification"
 
+    AI_CHAT_MODEL: str = "openai/gpt-oss-120b:fastest"
+    AI_CHAT_ALLOWED_MODELS: str = "openai/gpt-oss-120b:fastest,deepseek-ai/DeepSeek-V3-0324:fastest,Qwen/Qwen2.5-7B-Instruct-1M:fastest"
+
     MAX_IMAGE_SIZE_MB: int = Field(default=10, ge=1, le=25)
     ALLOWED_EXTENSIONS: set[str] = {"jpg", "jpeg", "png", "webp"}
     UPLOAD_DIR: str = "backend/uploads"
