@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import {
-  Sparkles, ShieldAlert, CheckCircle2, Info, AlertTriangle, Eye, ZoomIn, X,
-  Clock, ArrowRight, UserCheck, Activity, ShieldCheck, Zap, Droplet,
-  Compass, Plane, Leaf, Beaker, FileText, ShoppingCart
+  Sparkles, ShieldAlert, Info, AlertTriangle, Eye, ZoomIn, X,
+  Clock, ArrowRight, Activity, ShieldCheck, Droplet,
+  Plane, Leaf, Beaker
 } from "lucide-react";
+
+const NO_RESULT = "—";
 
 export default function DiagnosisResultCard({
   diagnosis = {},
@@ -14,524 +16,181 @@ export default function DiagnosisResultCard({
   isDark = true
 }) {
   const [zoomOpen, setZoomOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("treatment"); // "treatment" | "symptoms" | "pathology"
-
-  const rawCrop = diagnosis.crop || diagnosis.cropType || "Tomato";
-  const crop = typeof rawCrop === "object" ? (rawCrop.name || "Tomato") : rawCrop;
-
-  const rawCondition = diagnosis.condition || diagnosis.diagnosis || "Early Blight";
-  const condition = typeof rawCondition === "object" ? (rawCondition.name || "Early Blight") : rawCondition;
-
-  const rawSeverity = diagnosis.severity || "Moderate";
-  const severity = typeof rawSeverity === "object" ? (rawSeverity.tier || "Moderate") : rawSeverity;
-
-  const {
-    confidence = 0.96,
-    severityPercentage = (typeof diagnosis.severity === "object" ? diagnosis.severity.necrotic_area_pct : 38),
-    pathogen = "Alternaria solani",
-    pathogenCategory = "Fungal",
-    affectedSurface = "Lower leaf lamina and petiole nodes",
-    imageUrl = "",
-    symptoms = [],
-    lesionCoordinates3D = [],
-    treatmentPlan = {},
-    recommendations = {},
-    droneMissionReady = {},
-    modelName = "PlantVillage MobileNetV2",
-    modelVersion = "v1.0-real",
-    isMock = false,
-    requiresExpertReview = false,
-    createdAt = new Date().toISOString()
-  } = diagnosis;
-
   const [sprayTankCount, setSprayTankCount] = useState(1);
 
-  const confPercent = Math.round(
-    diagnosis.confidence_pct != null
-      ? diagnosis.confidence_pct
-      : (confidence > 1 ? confidence : confidence * 100)
+  const rawCrop = diagnosis.crop || diagnosis.cropType || NO_RESULT;
+  const crop = typeof rawCrop === "object" ? (rawCrop.name || NO_RESULT) : rawCrop;
+
+  const rawCondition = diagnosis.condition || diagnosis.diagnosis || NO_RESULT;
+  const condition = typeof rawCondition === "object" ? (rawCondition.name || NO_RESULT) : rawCondition;
+
+  const rawSeverity = diagnosis.severity || NO_RESULT;
+  const severity = typeof rawSeverity === "object" ? (rawSeverity.tier || NO_RESULT) : rawSeverity;
+
+  const confidence = Number(diagnosis.confidence ?? 0);
+  const confidencePct = Number.isFinite(Number(diagnosis.confidence_pct))
+    ? Number(diagnosis.confidence_pct)
+    : (confidence > 1 ? confidence : confidence * 100);
+  const confPercent = Math.max(0, Math.min(100, Math.round(confidencePct)));
+  const severityPercentage = diagnosis.severityPercentage ?? diagnosis.severity?.necrotic_area_pct;
+  const pathogen = diagnosis.pathogen || "";
+  const pathogenCategory = diagnosis.pathogenCategory || "";
+  const affectedSurface = diagnosis.affectedSurface || "";
+  const imageUrl = diagnosis.imageUrl || "";
+  const symptoms = Array.isArray(diagnosis.symptoms) ? diagnosis.symptoms : [];
+  const lesionCoordinates3D = Array.isArray(diagnosis.lesionCoordinates3D) ? diagnosis.lesionCoordinates3D : [];
+  const treatmentPlan = diagnosis.treatmentPlan || {};
+  const recommendations = diagnosis.recommendations || {};
+  const droneMissionReady = diagnosis.droneMissionReady;
+  const modelName = diagnosis.modelName || "";
+  const modelVersion = diagnosis.modelVersion || "";
+  const isMock = Boolean(diagnosis.isMock);
+  const requiresExpertReview = Boolean(diagnosis.requiresExpertReview || diagnosis.uncertainty?.abstain);
+  const createdAt = diagnosis.createdAt;
+  const isUncertain = diagnosis.status === "uncertain" || requiresExpertReview;
+  const hasTreatment = !isUncertain && Boolean(
+    treatmentPlan?.chemical?.name || treatmentPlan?.organic?.name || treatmentPlan?.preventive?.cultural
   );
 
-  const handleSpeakMarathi = () => {
-    if ("speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-      const text = `${crop} पिकामध्ये ${diagnosis?.regional_terms?.disease_marathi || condition} आढळले आहे. तीव्रता ${severity} आहे. ${treatmentPlan?.chemical?.name || "औषध"} ची फवारणी १५ लिटर पंपाला ${treatmentPlan?.chemical?.dose_15L_tank || "३७.५ ग्रॅम"} या प्रमाणात करावी.`;
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = "mr-IN";
-      window.speechSynthesis.speak(utterance);
-    }
+  const handleSpeak = (lang, diseaseName, fallbackMessage) => {
+    if (!("speechSynthesis" in window)) return;
+    window.speechSynthesis.cancel();
+    const text = diseaseName
+      ? fallbackMessage(diseaseName)
+      : `${crop} पिकासाठी विश्वसनीय निदान उपलब्ध नाही. कृपया स्पष्ट पानाचा फोटो पुन्हा घ्या.`;
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = lang;
+    window.speechSynthesis.speak(utterance);
   };
 
-  const handleSpeakHindi = () => {
-    if ("speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-      const text = `${crop} की फसल में ${diagnosis?.regional_terms?.disease_hindi || condition} देखा गया है। तीव्रता ${severity} है। १५ लीटर स्प्रे पंप के लिए ${treatmentPlan?.chemical?.name || "दवा"} ${treatmentPlan?.chemical?.dose_15L_tank || "३७.५ ग्राम"} मिलाएं।`;
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = "hi-IN";
-      window.speechSynthesis.speak(utterance);
-    }
-  };
+  const handleSpeakMarathi = () => handleSpeak(
+    "mr-IN",
+    condition !== NO_RESULT && !isUncertain ? condition : "",
+    (diseaseName) => `${crop} पिकामध्ये ${diagnosis?.regional_terms?.disease_marathi || diseaseName} आढळले आहे. तीव्रता ${severity} आहे.`
+  );
+
+  const handleSpeakHindi = () => handleSpeak(
+    "hi-IN",
+    condition !== NO_RESULT && !isUncertain ? condition : "",
+    (diseaseName) => `${crop} की फसल में ${diagnosis?.regional_terms?.disease_hindi || diseaseName} देखा गया है। तीव्रता ${severity} है।`
+  );
 
   const handleShareWhatsApp = () => {
-    const text = `🌿 *Agri Nirvana - Crop Health Advisory*\n\n` +
-      `🌱 *Crop:* ${crop}\n` +
-      `🦠 *Diagnosis:* ${condition} (${diagnosis?.regional_terms?.disease_marathi || ""})\n` +
-      `📊 *Severity:* ${severity} (${severityPercentage}%)\n` +
-      `🪣 *Knapsack Spray Dose (15L Tank):* ${treatmentPlan?.chemical?.dose_15L_tank || "37.5 g per 15L tank"}\n` +
-      `💊 *Chemical:* ${treatmentPlan?.chemical?.name || "Recommended Fungicide"}\n` +
-      `🔄 *FRAC Mode-of-Action:* ${treatmentPlan?.chemical?.frac_code || "Group M03"}\n` +
-      `⏳ *Pre-Harvest Interval (PHI):* ${treatmentPlan?.chemical?.safetyIntervalDays || 7} Days\n\n` +
-      `👨‍🌾 *KVK Advisory Note:* ${diagnosis?.verification_note || "Verify with local Krishi Vigyan Kendra extension officer."}\n\n` +
-      `Generated by Agri Nirvana AI (SIH 2026)`;
-
-    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
-    window.open(url, "_blank");
+    const text = [
+      "🌿 *Agri Nirvana - Crop Health Advisory*",
+      `🌱 *Crop:* ${crop}`,
+      `🦠 *Diagnosis:* ${condition}`,
+      severityPercentage != null ? `📊 *Severity:* ${severity} (${severityPercentage}%)` : `📊 *Severity:* ${severity}`,
+      hasTreatment && treatmentPlan?.chemical?.name ? `💊 *Chemical:* ${treatmentPlan.chemical.name}` : "⚠️ *Treatment:* No disease-specific treatment issued",
+      diagnosis?.verification_note ? `👨‍🌾 *Verification:* ${diagnosis.verification_note}` : "👨‍🌾 *Verification:* Confirm treatment with a local KVK/agriculture extension officer.",
+      "Generated by Agri Nirvana AI"
+    ].join("\n");
+    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, "_blank");
   };
 
   const getSeverityStyle = (sev) => {
-    const s = String(sev || "").toLowerCase();
-    switch (s) {
-      case "healthy":
-        return { bg: "bg-emerald-500/20 text-emerald-300 border-emerald-500/40", badge: "Healthy / Clean Foliage" };
-      case "low":
-        return { bg: "bg-cyan-500/20 text-cyan-300 border-cyan-500/40", badge: "Low Severity Watch" };
-      case "moderate":
-        return { bg: "bg-amber-500/20 text-amber-300 border-amber-500/40", badge: "Moderate Action Advisable" };
-      case "severe":
-        return { bg: "bg-rose-500/20 text-rose-300 border-rose-500/40", badge: "Severe Urgent Action Required" };
-      default:
-        return { bg: "bg-slate-500/20 text-slate-300 border-slate-500/40", badge: "Severity Assessment Pending" };
+    switch (String(sev || "").toLowerCase()) {
+      case "healthy": return { bg: "bg-emerald-500/20 text-emerald-300 border-emerald-500/40", badge: "Healthy / Clean Foliage" };
+      case "low": return { bg: "bg-cyan-500/20 text-cyan-300 border-cyan-500/40", badge: "Low Severity Watch" };
+      case "moderate": return { bg: "bg-amber-500/20 text-amber-300 border-amber-500/40", badge: "Moderate Action Advisable" };
+      case "severe": return { bg: "bg-rose-500/20 text-rose-300 border-rose-500/40", badge: "Severe Urgent Action Required" };
+      default: return { bg: "bg-slate-500/20 text-slate-300 border-slate-500/40", badge: "Assessment Pending" };
     }
   };
 
   const sevStyle = getSeverityStyle(severity);
+  const hasSeverity = severityPercentage != null && Number.isFinite(Number(severityPercentage));
 
   return (
     <div className={`rounded-3xl border p-5 sm:p-7 space-y-6 text-left animate-fade-in ${
       isDark ? "border-emerald-800/50 bg-[#072017] shadow-2xl text-white" : "border-slate-200 bg-white shadow-xl text-slate-900"
     }`}>
-      {/* HEADER BAR */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b pb-4 border-emerald-900/40">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400">
-              Kisan AI Pathologist Assessment
-            </span>
-            {pathogenCategory && (
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                {pathogenCategory}
-              </span>
-            )}
+            <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400">Kisan AI Pathologist Assessment</span>
+            {pathogenCategory && <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">{pathogenCategory}</span>}
           </div>
           <h2 className="text-2xl font-black mt-1">{crop} — {condition}</h2>
           {pathogen && <p className="text-xs italic text-slate-400 font-mono mt-0.5">{pathogen}</p>}
         </div>
-
         <div className="flex flex-wrap items-center gap-2">
           <span className={`px-3 py-1 rounded-full text-xs font-black border ${sevStyle.bg}`}>
-            {sevStyle.badge} ({severityPercentage || 35}% Foliage Affected)
+            {sevStyle.badge}{hasSeverity ? ` (${Number(severityPercentage)}% Foliage Affected)` : ""}
           </span>
           <span className="px-3 py-1 rounded-full text-xs font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1">
-            <Sparkles size={12} /> {confPercent}% Confidence
+            <Sparkles size={12} /> {diagnosis.confidence_pct != null ? `${confPercent}% Confidence` : "Confidence unavailable"}
           </span>
         </div>
       </div>
 
+      {isUncertain && (
+        <div className="rounded-2xl border border-amber-500/40 bg-amber-950/20 p-4 text-xs text-amber-100">
+          <div className="flex items-center gap-2 font-bold text-amber-300"><ShieldAlert size={15} /> AI did not reach a reliable diagnosis</div>
+          <p className="mt-1 leading-relaxed">{diagnosis.uncertainty?.reason || "The model result is uncertain. No disease-specific treatment should be selected from this result."}</p>
+        </div>
+      )}
+
       <div className="grid gap-6 lg:grid-cols-12 items-start">
-        {/* A. IMAGE CARD WITH PREVIEW & 3D LESION BADGES */}
         <div className="lg:col-span-5 space-y-3">
           <div className="relative aspect-[16/11] overflow-hidden rounded-2xl border border-emerald-800/60 bg-slate-950 shadow-inner group">
-            <img src={imageUrl} alt="Diagnosed Leaf Region" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
-            
-            {/* 3D Lesion Spots overlay */}
-            {lesionCoordinates3D && lesionCoordinates3D.map((pt, i) => (
-              <div
-                key={i}
-                className="absolute rounded-full border-2 border-rose-400 bg-rose-500/40 animate-ping pointer-events-none"
-                style={{
-                  left: `${pt.x * 100}%`,
-                  top: `${pt.y * 100}%`,
-                  width: `${(pt.radius || 0.1) * 120}px`,
-                  height: `${(pt.radius || 0.1) * 120}px`,
-                  transform: "translate(-50%, -50%)"
-                }}
-              />
+            {imageUrl ? <img src={imageUrl} alt="Diagnosed Leaf Region" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" /> : <div className="h-full w-full flex items-center justify-center text-sm text-slate-500">No diagnostic image available</div>}
+            {lesionCoordinates3D.map((pt, i) => (
+              <div key={i} className="absolute rounded-full border-2 border-rose-400 bg-rose-500/40 animate-ping pointer-events-none" style={{ left: `${pt.x * 100}%`, top: `${pt.y * 100}%`, width: `${(pt.radius || 0.1) * 120}px`, height: `${(pt.radius || 0.1) * 120}px`, transform: "translate(-50%, -50%)" }} />
             ))}
-
-            <button
-              onClick={() => setZoomOpen(true)}
-              className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-xl bg-black/70 backdrop-blur-md px-3 py-1.5 text-xs font-bold text-white hover:bg-black/90 transition shadow"
-            >
-              <ZoomIn size={14} /> Zoom Image
-            </button>
-            {isMock && (
-              <span className="absolute top-3 left-3 rounded-full bg-amber-500/90 text-slate-950 text-[10px] font-black px-2.5 py-0.5 shadow">
-                Offline guidance — verify locally
-              </span>
-            )}
+            {imageUrl && <button onClick={() => setZoomOpen(true)} className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-xl bg-black/70 backdrop-blur-md px-3 py-1.5 text-xs font-bold text-white hover:bg-black/90 transition shadow"><ZoomIn size={14} /> Zoom Image</button>}
+            {isMock && <span className="absolute top-3 left-3 rounded-full bg-amber-500/90 text-slate-950 text-[10px] font-black px-2.5 py-0.5 shadow">Offline / model unavailable</span>}
           </div>
-
-          <div className="flex items-center justify-between text-[11px] font-mono text-slate-400">
-            <span className="flex items-center gap-1"><Clock size={12} /> {new Date(createdAt).toLocaleDateString()}</span>
-            <span>{modelName} ({modelVersion})</span>
-          </div>
-
-          {affectedSurface && (
-            <div className="p-2.5 rounded-xl bg-slate-950/60 border border-emerald-900/40 text-[11px] text-slate-300">
-              <strong className="text-emerald-400">Affected Surface:</strong> {affectedSurface}
-            </div>
-          )}
+          {(createdAt || modelName || modelVersion) && <div className="flex items-center justify-between text-[11px] font-mono text-slate-400"><span className="flex items-center gap-1">{createdAt ? <><Clock size={12} /> {new Date(createdAt).toLocaleDateString()}</> : NO_RESULT}</span><span>{modelName || NO_RESULT}{modelVersion ? ` (${modelVersion})` : ""}</span></div>}
+          {affectedSurface && <div className="p-2.5 rounded-xl bg-slate-950/60 border border-emerald-900/40 text-[11px] text-slate-300"><strong className="text-emerald-400">Affected Surface:</strong> {affectedSurface}</div>}
         </div>
 
-        {/* B. CONFIDENCE & DIAGNOSIS DETAILS */}
         <div className="lg:col-span-7 space-y-4">
-          {/* CONFIDENCE VISUAL METER */}
           <div className={`p-4 rounded-2xl border ${isDark ? "bg-emerald-950/40 border-emerald-900/50" : "bg-slate-50 border-slate-200"}`}>
-            <div className="flex items-center justify-between text-xs font-bold mb-1.5">
-              <span className="flex items-center gap-1.5"><Activity size={14} className="text-emerald-400" /> {isMock ? "Guidance confidence" : "Neural Vision Confidence Score"}</span>
-              <span className="text-emerald-400 font-mono font-black">{confPercent}%</span>
-            </div>
-            <div className="h-2.5 rounded-full bg-slate-950 border border-emerald-800/40 overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-400 transition-all duration-1000 shadow-[0_0_10px_#10b981]"
-                style={{ width: `${confPercent}%` }}
-              />
-            </div>
+            <div className="flex items-center justify-between text-xs font-bold mb-1.5"><span className="flex items-center gap-1.5"><Activity size={14} className="text-emerald-400" /> {isMock ? "Model status" : "Neural Vision Confidence Score"}</span><span className="text-emerald-400 font-mono font-black">{diagnosis.confidence_pct != null ? `${confPercent}%` : "Unavailable"}</span></div>
+            {diagnosis.confidence_pct != null ? <div className="h-2.5 rounded-full bg-slate-950 border border-emerald-800/40 overflow-hidden"><div className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-400 transition-all duration-1000" style={{ width: `${confPercent}%` }} /></div> : <p className="text-[11px] text-slate-400">Confidence is not reported because the model did not produce a reliable diagnosis.</p>}
           </div>
 
-          {requiresExpertReview && (
-            <div className="rounded-2xl border border-amber-500/40 bg-amber-950/20 p-3 text-xs text-amber-100">
-              <div className="flex items-center gap-2 font-bold text-amber-300"><ShieldAlert size={15} /> Verify before treatment</div>
-              <p className="mt-1 leading-relaxed">The ML backend was unavailable, so this is crop-specific educational guidance rather than an image diagnosis. Confirm the disease and any product dose with your local KVK or licensed agronomist.</p>
-            </div>
-          )}
+          {requiresExpertReview && <div className="rounded-2xl border border-amber-500/40 bg-amber-950/20 p-3 text-xs text-amber-100"><div className="flex items-center gap-2 font-bold text-amber-300"><ShieldAlert size={15} /> Verify before treatment</div><p className="mt-1 leading-relaxed">This result is not sufficiently reliable for disease-specific treatment. Confirm the diagnosis and any product dose with a local KVK or licensed agronomist.</p></div>}
 
-          {/* DETECTED SYMPTOMS */}
           <div className={`p-4 rounded-2xl border ${isDark ? "bg-[#04160f] border-emerald-900/50" : "bg-slate-50 border-slate-200"}`}>
-            <h4 className="text-xs font-black uppercase tracking-wider text-emerald-400 mb-2 flex items-center gap-1.5">
-              <Eye size={14} /> Pathological Symptoms Identified
-            </h4>
+            <h4 className="text-xs font-black uppercase tracking-wider text-emerald-400 mb-2 flex items-center gap-1.5"><Eye size={14} /> Pathological Symptoms Identified</h4>
             <ul className="space-y-1.5 text-xs text-slate-300">
-              {symptoms && symptoms.length > 0 ? (
-                symptoms.map((sym, idx) => (
-                  <li key={idx} className="flex items-start gap-2">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shrink-0 mt-1.5" />
-                    <span>{sym}</span>
-                  </li>
-                ))
-              ) : (
-                <li className="text-slate-400">No abnormal lesions or symptoms detected. Foliage displays healthy leaf matrix.</li>
-              )}
+              {symptoms.length > 0 ? symptoms.map((sym, idx) => <li key={idx} className="flex items-start gap-2"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shrink-0 mt-1.5" /><span>{sym}</span></li>) : <li className="text-slate-400">No model-reported symptoms.</li>}
             </ul>
           </div>
         </div>
       </div>
 
-      {/* REGIONAL LANGUAGE TERMS BANNER */}
-      {diagnosis.regional_terms && (
-        <div className="p-3 rounded-2xl bg-emerald-950/40 border border-emerald-800/40 flex flex-wrap items-center justify-between gap-2 text-xs">
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-black uppercase text-emerald-400 font-mono">मराठी / हिंदी नाव:</span>
-            <span className="font-bold text-white">{diagnosis.regional_terms.disease_marathi}</span>
-            <span className="text-slate-400 font-mono">({diagnosis.regional_terms.disease_hindi})</span>
-          </div>
-          <div className="text-emerald-300 font-mono text-[11px]">
-            {diagnosis.regional_terms.action_marathi}
+      {diagnosis.regional_terms && <div className="p-3 rounded-2xl bg-emerald-950/40 border border-emerald-800/40 flex flex-wrap items-center justify-between gap-2 text-xs"><div className="flex items-center gap-2"><span className="text-[10px] font-black uppercase text-emerald-400 font-mono">मराठी / हिंदी नाव:</span><span className="font-bold text-white">{diagnosis.regional_terms.disease_marathi || NO_RESULT}</span><span className="text-slate-400 font-mono">({diagnosis.regional_terms.disease_hindi || NO_RESULT})</span></div><div className="text-emerald-300 font-mono text-[11px]">{diagnosis.regional_terms.action_marathi || ""}</div></div>}
+
+      {diagnosis.differential_diagnoses?.length > 0 && (
+        <div className="p-4 rounded-2xl border border-amber-500/40 bg-amber-950/20 space-y-2 text-xs"><div className="flex items-center gap-2 font-bold text-amber-300"><AlertTriangle size={15} /> Differential Diagnosis</div><p className="text-slate-300 text-[11px]">Alternative model predictions are shown for comparison. They are not confirmed diagnoses.</p><div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">{diagnosis.differential_diagnoses.map((diff, i) => <div key={i} className="p-2.5 rounded-xl bg-black/40 border border-amber-500/30 text-slate-200"><div className="font-bold text-amber-200">{diff.crop || crop} — {diff.condition || NO_RESULT}{diff.confidence_pct != null ? ` (${diff.confidence_pct}%)` : ""}</div><div className="text-[10px] text-slate-400 mt-0.5">{diff.key_distinguishing_feature || "Compare symptoms with field observations."}</div></div>)}</div></div>
+      )}
+
+      {hasTreatment && (
+        <div className="space-y-3 pt-2">
+          <h4 className="text-xs font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5"><ShieldCheck size={16} /> Agronomic Treatment & Mitigation Plan</h4>
+          {treatmentPlan?.chemical?.dose_15L_tank && <div className="p-4 rounded-2xl border border-emerald-500/40 bg-emerald-950/40 space-y-3"><div className="flex flex-wrap items-center justify-between gap-2"><div><div className="text-xs font-black text-emerald-300">Field Tank Calculator</div><div className="text-[10px] text-slate-400">Uses only the dose returned by the advisory engine.</div></div><div className="flex flex-wrap gap-1.5 text-xs">{[{label:"1 Tank (15L)", tanks:1},{label:"2 Tanks (30L)", tanks:2},{label:"4 Tanks (60L)", tanks:4}].map(item => <button key={item.tanks} type="button" onClick={() => setSprayTankCount(item.tanks)} className={`px-2.5 py-1 rounded-xl font-bold text-[11px] ${sprayTankCount === item.tanks ? "bg-emerald-500 text-slate-950" : "bg-slate-900/80 text-slate-300 border border-emerald-800/40"}`}>{item.label}</button>)}</div></div><div className="grid grid-cols-2 gap-2 pt-1 text-center"><div className="p-2.5 rounded-xl bg-black/50 border border-emerald-500/20"><div className="text-[10px] text-slate-400 font-bold">Total Water</div><div className="text-sm font-black text-cyan-300 mt-0.5">{sprayTankCount * 15} L</div></div><div className="p-2.5 rounded-xl bg-black/50 border border-amber-500/20"><div className="text-[10px] text-slate-400 font-bold">Chemical Dose</div><div className="text-sm font-black text-amber-300 mt-0.5">{typeof treatmentPlan.chemical.dose_15L_tank === "number" ? treatmentPlan.chemical.dose_15L_tank * sprayTankCount : `${treatmentPlan.chemical.dose_15L_tank} × ${sprayTankCount}`}</div></div></div></div>}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {treatmentPlan?.organic?.name && <div className="p-4 rounded-2xl border border-emerald-500/30 bg-emerald-950/30 space-y-2 text-xs"><div className="flex items-center gap-1.5 font-bold text-emerald-300"><Leaf size={14} /> Biological / Organic</div><div className="font-semibold text-white">{treatmentPlan.organic.name}</div><p className="text-slate-300"><strong>Dosage:</strong> {treatmentPlan.organic.dosage || "Follow registered label"}</p><p className="text-slate-400 text-[11px]">{treatmentPlan.organic.applicationSchedule || "Follow registered label"}</p></div>}
+            {treatmentPlan?.chemical?.name && <div className="p-4 rounded-2xl border border-amber-500/30 bg-amber-950/30 space-y-2 text-xs"><div className="flex items-center justify-between gap-1"><div className="flex items-center gap-1.5 font-bold text-amber-300"><Beaker size={14} /> Chemical</div>{treatmentPlan.chemical.frac_code && <span className="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">{treatmentPlan.chemical.frac_code}</span>}</div><div className="font-semibold text-white">{treatmentPlan.chemical.name}</div>{treatmentPlan.chemical.dose_15L_tank && <div className="p-2 rounded-xl bg-black/40 border border-amber-500/20"><p className="text-amber-200 font-bold text-[11px]">🪣 Tank Dose: {treatmentPlan.chemical.dose_15L_tank}</p></div>}{treatmentPlan.chemical.dosage && <p className="text-slate-300 text-[11px]"><strong>Concentration:</strong> {treatmentPlan.chemical.dosage}</p>}{treatmentPlan.chemical.rotation_partner && <p className="text-slate-400 text-[10px]"><strong>Rotate Mode of Action:</strong> {treatmentPlan.chemical.rotation_partner}</p>}{treatmentPlan.chemical.safetyIntervalDays != null && <p className="text-slate-400 text-[11px]">Pre-harvest interval (PHI): <strong className="text-amber-300">{treatmentPlan.chemical.safetyIntervalDays} days</strong></p>}</div>}
+            {treatmentPlan?.preventive && <div className="p-4 rounded-2xl border border-cyan-500/30 bg-cyan-950/30 space-y-2 text-xs"><div className="flex items-center gap-1.5 font-bold text-cyan-300"><Droplet size={14} /> Agronomic Prevention</div>{treatmentPlan.preventive.cultural && <p className="text-slate-300"><strong>Cultural:</strong> {treatmentPlan.preventive.cultural}</p>}{treatmentPlan.preventive.irrigation && <p className="text-slate-300"><strong>Irrigation:</strong> {treatmentPlan.preventive.irrigation}</p>}</div>}
           </div>
         </div>
       )}
 
-      {/* DIFFERENTIAL DIAGNOSIS CARD (WHEN CONFIDENCE < 85%) */}
-      {diagnosis.differential_diagnoses && diagnosis.differential_diagnoses.length > 0 && confPercent < 85 && (
-        <div className="p-4 rounded-2xl border border-amber-500/40 bg-amber-950/20 space-y-2 text-xs">
-          <div className="flex items-center gap-2 font-bold text-amber-300">
-            <AlertTriangle size={15} /> Differential Diagnosis (Alternative Possibilities)
-          </div>
-          <p className="text-slate-300 text-[11px]">
-            Confidence is under 85%. Consider these visually similar pathologies before applying targeted treatment:
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-            {diagnosis.differential_diagnoses.map((diff, i) => (
-              <div key={i} className="p-2.5 rounded-xl bg-black/40 border border-amber-500/30 text-slate-200">
-                <div className="font-bold text-amber-200">{diff.crop} — {diff.condition} ({diff.confidence_pct}%)</div>
-                <div className="text-[10px] text-slate-400 mt-0.5">{diff.key_distinguishing_feature}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {diagnosis.verification_note && <div className="p-3.5 rounded-2xl bg-amber-950/30 border border-amber-500/40 flex items-start gap-2.5 text-xs text-amber-200"><Info size={16} className="text-amber-400 shrink-0 mt-0.5" /><div><strong className="text-amber-300 font-bold">KVK / Agri Officer Verification Nudge:</strong><p className="text-slate-300 text-[11px] mt-0.5">{diagnosis.verification_note}</p></div></div>}
 
-      {/* C. 3-TIER TREATMENT PLAN */}
-      <div className="space-y-3 pt-2">
-        <div className="flex items-center justify-between">
-          <h4 className="text-xs font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
-            <ShieldCheck size={16} /> 3-Tier Agronomic Treatment & Mitigation Plan
-          </h4>
-        </div>
+      {(recommendations.immediate || recommendations.monitoring || recommendations.prevention || recommendations.expert_help) && <div className="space-y-3 pt-2"><h4 className="text-xs font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5"><ArrowRight size={14} /> Field Protocol & Scouting Schedule</h4><div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">{recommendations.immediate && <div className="p-4 rounded-2xl border border-rose-500/30 bg-rose-950/20"><div className="font-bold text-rose-300">⚡ Immediate Action</div><p className="text-slate-300 mt-1">{recommendations.immediate}</p></div>}{recommendations.monitoring && <div className="p-4 rounded-2xl border border-cyan-500/30 bg-cyan-950/20"><div className="font-bold text-cyan-300">👁️ Monitoring Protocol</div><p className="text-slate-300 mt-1">{recommendations.monitoring}</p></div>}{recommendations.prevention && <div className="p-4 rounded-2xl border border-emerald-500/30 bg-emerald-950/20"><div className="font-bold text-emerald-300">🛡️ Preventative Measures</div><p className="text-slate-300 mt-1">{recommendations.prevention}</p></div>}{recommendations.expert_help && <div className="p-4 rounded-2xl border border-amber-500/30 bg-amber-950/20"><div className="font-bold text-amber-300">👨‍🌾 Agricultural Expert Guidance</div><p className="text-slate-300 mt-1">{recommendations.expert_help}</p></div>}</div></div>}
 
-        {/* INTERACTIVE 15L TANK & ACREAGE DOSING MULTIPLIER */}
-        <div className="p-4 rounded-2xl border border-emerald-500/40 bg-emerald-950/40 space-y-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <span className="text-lg">🪣</span>
-              <div>
-                <div className="text-xs font-black text-emerald-300">Quick Field Tank Spray Calculator</div>
-                <div className="text-[10px] text-slate-400">Calculate exact chemical & water mix for your farm size</div>
-              </div>
-            </div>
-            <div className="flex flex-wrap items-center gap-1.5 text-xs">
-              {[
-                { label: "1 Tank (15L)", tanks: 1 },
-                { label: "2 Tanks (30L)", tanks: 2 },
-                { label: "4 Tanks (60L)", tanks: 4 },
-                { label: "1 Acre (13 Tanks / 200L)", tanks: 13.3 }
-              ].map((item, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => setSprayTankCount(item.tanks)}
-                  className={`px-2.5 py-1 rounded-xl font-bold transition text-[11px] ${
-                    sprayTankCount === item.tanks
-                      ? "bg-emerald-500 text-slate-950 shadow-md font-black"
-                      : "bg-slate-900/80 text-slate-300 border border-emerald-800/40 hover:bg-emerald-900/40"
-                  }`}
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
-          </div>
+      {droneMissionReady && !isUncertain && droneMissionReady.recommendedAltitudeMeters != null && droneMissionReady.flowRateLitresPerHectare != null && <div className="p-3.5 rounded-2xl bg-cyan-950/30 border border-cyan-800/40 flex flex-wrap items-center justify-between gap-3 text-xs"><div className="flex items-center gap-2 text-cyan-300"><Plane size={16} /><span className="font-bold">Autonomous Drone Spot-Spray Telemetry Ready:</span><span className="text-slate-300">Altitude: {droneMissionReady.recommendedAltitudeMeters}m • Flow: {droneMissionReady.flowRateLitresPerHectare} L/ha</span></div><button type="button" onClick={onOpenDrone} className="px-3 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-black text-xs transition">Launch Drone Mission</button></div>}
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-center">
-            <div className="p-2.5 rounded-xl bg-black/50 border border-emerald-500/20">
-              <div className="text-[10px] text-slate-400 font-bold">Total Water Volume</div>
-              <div className="text-sm font-black text-cyan-300 mt-0.5">{Math.round(sprayTankCount * 15)} Litres</div>
-            </div>
-            <div className="p-2.5 rounded-xl bg-black/50 border border-amber-500/20">
-              <div className="text-[10px] text-slate-400 font-bold">Chemical ({treatmentPlan?.chemical?.name?.split('/')[0]?.trim() || "Active"})</div>
-              <div className="text-sm font-black text-amber-300 mt-0.5">{Math.round(sprayTankCount * 37.5)} g / ml</div>
-            </div>
-            <div className="p-2.5 rounded-xl bg-black/50 border border-emerald-500/20">
-              <div className="text-[10px] text-slate-400 font-bold">Bio-Agent (Neem / Trichoderma)</div>
-              <div className="text-sm font-black text-emerald-300 mt-0.5">{Math.round(sprayTankCount * 75)} ml</div>
-            </div>
-            <div className="p-2.5 rounded-xl bg-black/50 border border-cyan-500/20">
-              <div className="text-[10px] text-slate-400 font-bold">Best Spray Window</div>
-              <div className="text-sm font-black text-emerald-400 mt-0.5">6:30–9:30 AM</div>
-            </div>
-          </div>
-        </div>
+      <div className="p-3.5 rounded-2xl border border-emerald-800/60 bg-black/40 flex flex-wrap items-center justify-between gap-3 text-xs"><div className="flex items-center gap-2"><span className="text-slate-400 font-bold">🔊 Audio Advisory:</span><button type="button" onClick={handleSpeakMarathi} className="px-2.5 py-1 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-bold">🔊 ऐका (मराठी)</button><button type="button" onClick={handleSpeakHindi} className="px-2.5 py-1 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold">🔊 सुनिए (हिंदी)</button></div><div className="flex items-center gap-2"><button type="button" onClick={handleShareWhatsApp} className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs">📱 WhatsApp Advisory</button><button type="button" onClick={() => window.print()} className="px-3 py-1.5 rounded-xl border border-slate-700 bg-slate-900 text-slate-300 text-xs font-bold">📄 Print / PDF</button></div></div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {/* TIER 1: ORGANIC */}
-          <div className="p-4 rounded-2xl border border-emerald-500/30 bg-emerald-950/30 space-y-2 text-xs">
-            <div className="flex items-center gap-1.5 font-bold text-emerald-300">
-              <Leaf size={14} /> Tier 1: Biological / Organic
-            </div>
-            <div className="font-semibold text-white">
-              {treatmentPlan?.organic?.name || "Bio-fungicide Consortium (Trichoderma)"}
-            </div>
-            <p className="text-slate-300">
-              <strong>Dosage:</strong> {treatmentPlan?.organic?.dosage || "5 ml/L water (75ml in 15L tank)"}
-            </p>
-            <p className="text-slate-400 text-[11px]">
-              {treatmentPlan?.organic?.applicationSchedule || "Spray early morning every 5 to 7 days"}
-            </p>
-          </div>
+      <div className="pt-3 border-t border-emerald-900/40 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-slate-400"><div className="flex items-center gap-2"><Info size={14} className="text-emerald-400 shrink-0" /><span><strong>AI Pathology Notice:</strong> This is a preliminary AI assessment. Do not apply disease-specific treatment when the result is uncertain; verify critical cases with an accredited agronomist.</span></div><div className="flex items-center gap-2">{hasTreatment && <button type="button" onClick={onOpenDosage} className="shrink-0 rounded-xl bg-amber-600 px-3 py-2 text-xs font-black text-white">Dosage Calc</button>}<button type="button" onClick={onRetake} className="shrink-0 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-black text-white">Diagnose Another Leaf</button></div></div>
 
-          {/* TIER 2: CHEMICAL */}
-          <div className="p-4 rounded-2xl border border-amber-500/30 bg-amber-950/30 space-y-2 text-xs">
-            <div className="flex items-center justify-between gap-1">
-              <div className="flex items-center gap-1.5 font-bold text-amber-300">
-                <Beaker size={14} /> Tier 2: Chemical
-              </div>
-              {treatmentPlan?.chemical?.frac_code && (
-                <span className="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                  {treatmentPlan.chemical.frac_code}
-                </span>
-              )}
-            </div>
-            <div className="font-semibold text-white">
-              {treatmentPlan?.chemical?.name || "Mancozeb 75% WP / Ridomil MZ"}
-            </div>
-            <div className="p-2 rounded-xl bg-black/40 border border-amber-500/20 space-y-1">
-              <p className="text-amber-200 font-bold text-[11px]">
-                🪣 Tank Dose: {treatmentPlan?.chemical?.dose_15L_tank || "37.5 g per 15L knapsack tank"}
-              </p>
-              <p className="text-slate-300 text-[11px]">
-                <strong>Concentration:</strong> {treatmentPlan?.chemical?.dosage || "2.5 g/L water"}
-              </p>
-            </div>
-            {treatmentPlan?.chemical?.rotation_partner && (
-              <p className="text-slate-400 text-[10px]">
-                <strong>Rotate Mode of Action:</strong> {treatmentPlan.chemical.rotation_partner}
-              </p>
-            )}
-            <p className="text-slate-400 text-[11px]">
-              Pre-harvest interval (PHI): <strong className="text-amber-300">{treatmentPlan?.chemical?.safetyIntervalDays || 7} days</strong>
-            </p>
-          </div>
-
-          {/* TIER 3: PREVENTIVE */}
-          <div className="p-4 rounded-2xl border border-cyan-500/30 bg-cyan-950/30 space-y-2 text-xs">
-            <div className="flex items-center gap-1.5 font-bold text-cyan-300">
-              <Droplet size={14} /> Tier 3: Agronomic Prevention
-            </div>
-            <p className="text-slate-300">
-              <strong>Cultural:</strong> {treatmentPlan?.preventive?.cultural || "Prune lower leaves; maintain 60cm row spacing"}
-            </p>
-            <p className="text-slate-300">
-              <strong>Irrigation:</strong> {treatmentPlan?.preventive?.irrigation || "Morning drip cycles to allow leaf drying"}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* KVK MANDATORY VERIFICATION NOTICE BOX */}
-      {diagnosis.verification_note && (
-        <div className="p-3.5 rounded-2xl bg-amber-950/30 border border-amber-500/40 flex items-start gap-2.5 text-xs text-amber-200">
-          <Info size={16} className="text-amber-400 shrink-0 mt-0.5" />
-          <div>
-            <strong className="text-amber-300 font-bold">KVK / Agri Officer Verification Nudge:</strong>
-            <p className="text-slate-300 text-[11px] mt-0.5">{diagnosis.verification_note}</p>
-          </div>
-        </div>
-      )}
-
-      {/* D. RECOMMENDED NEXT ACTIONS */}
-      <div className="space-y-3 pt-2">
-        <h4 className="text-xs font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
-          <ArrowRight size={14} /> Field Protocol & Scouting Schedule
-        </h4>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-          {recommendations.immediate && (
-            <div className="p-4 rounded-2xl border border-rose-500/30 bg-rose-950/20 text-slate-200 space-y-1">
-              <div className="font-bold text-rose-300 flex items-center gap-1.5">⚡ Immediate Action</div>
-              <p className="text-slate-300">{recommendations.immediate}</p>
-            </div>
-          )}
-
-          {recommendations.monitoring && (
-            <div className="p-4 rounded-2xl border border-cyan-500/30 bg-cyan-950/20 text-slate-200 space-y-1">
-              <div className="font-bold text-cyan-300 flex items-center gap-1.5">👁️ Monitoring Protocol</div>
-              <p className="text-slate-300">{recommendations.monitoring}</p>
-            </div>
-          )}
-
-          {recommendations.prevention && (
-            <div className="p-4 rounded-2xl border border-emerald-500/30 bg-emerald-950/20 text-slate-200 space-y-1">
-              <div className="font-bold text-emerald-300 flex items-center gap-1.5">🛡️ Preventative Measures</div>
-              <p className="text-slate-300">{recommendations.prevention}</p>
-            </div>
-          )}
-
-          {recommendations.expert_help && (
-            <div className="p-4 rounded-2xl border border-amber-500/30 bg-amber-950/20 text-slate-200 space-y-1">
-              <div className="font-bold text-amber-300 flex items-center gap-1.5">👨‍🌾 Agricultural Expert Guidance</div>
-              <p className="text-slate-300">{recommendations.expert_help}</p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* E. DRONE MISSION READINESS BAR */}
-      {droneMissionReady && (
-        <div className="p-3.5 rounded-2xl bg-cyan-950/30 border border-cyan-800/40 flex flex-wrap items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-2 text-cyan-300">
-            <Plane size={16} />
-            <span className="font-bold">Autonomous Drone Spot-Spray Telemetry Ready:</span>
-            <span className="text-slate-300">Altitude: {droneMissionReady.recommendedAltitudeMeters || 3.5}m • Flow: {droneMissionReady.flowRateLitresPerHectare || 15} L/ha</span>
-          </div>
-          <button
-            type="button"
-            onClick={onOpenDrone}
-            className="px-3 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-black text-xs transition"
-          >
-            Launch Drone Mission
-          </button>
-        </div>
-      )}
-
-      {/* F. FARMER SHARING & AUDIO READOUT BAR */}
-      <div className="p-3.5 rounded-2xl border border-emerald-800/60 bg-black/40 flex flex-wrap items-center justify-between gap-3 text-xs">
-        <div className="flex items-center gap-2">
-          <span className="text-slate-400 font-bold">🔊 Audio Advisory:</span>
-          <button
-            type="button"
-            onClick={() => handleSpeakMarathi()}
-            className="px-2.5 py-1 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/30 font-bold transition flex items-center gap-1"
-          >
-            🔊 ऐका (मराठी)
-          </button>
-          <button
-            type="button"
-            onClick={() => handleSpeakHindi()}
-            className="px-2.5 py-1 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 hover:bg-amber-500/30 font-bold transition flex items-center gap-1"
-          >
-            🔊 सुनिए (हिंदी)
-          </button>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={handleShareWhatsApp}
-            className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs transition flex items-center gap-1.5 shadow-md"
-          >
-            <span>📱 WhatsApp Prescription</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => window.print()}
-            className="px-3 py-1.5 rounded-xl border border-slate-700 bg-slate-900 text-slate-300 hover:text-white text-xs font-bold transition"
-          >
-            📄 Print / PDF
-          </button>
-        </div>
-      </div>
-
-      {/* DISCLAIMER FOOTER & ACTION BUTTONS */}
-      <div className="pt-3 border-t border-emerald-900/40 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-slate-400">
-        <div className="flex items-center gap-2">
-          <Info size={14} className="text-emerald-400 shrink-0" />
-          <span>
-            <strong>AI Pathology Notice:</strong> Validated preliminary assessment. For critical outbreaks, dispatch an accredited agronomist.
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={onOpenDosage}
-            className="shrink-0 rounded-xl bg-amber-600 px-3 py-2 text-xs font-black text-white hover:bg-amber-500 transition"
-          >
-            Dosage Calc
-          </button>
-          <button
-            type="button"
-            onClick={onRetake}
-            className="shrink-0 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-black text-white hover:bg-emerald-700 transition"
-          >
-            Diagnose Another Leaf
-          </button>
-        </div>
-      </div>
-
-      {/* ZOOM MODAL */}
-      {zoomOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md">
-          <div className="relative max-w-4xl max-h-[90vh] overflow-hidden rounded-3xl border border-emerald-800 bg-slate-950 p-2 shadow-2xl">
-            <button
-              onClick={() => setZoomOpen(false)}
-              className="absolute top-4 right-4 rounded-full bg-slate-900/80 p-2 text-white hover:bg-rose-600 transition z-10"
-            >
-              <X size={20} />
-            </button>
-            <img src={imageUrl} alt="Zoomed Leaf Image" className="max-h-[85vh] w-auto object-contain rounded-2xl" />
-          </div>
-        </div>
-      )}
+      {zoomOpen && imageUrl && <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md"><div className="relative max-w-4xl max-h-[90vh] overflow-hidden rounded-3xl border border-emerald-800 bg-slate-950 p-2 shadow-2xl"><button onClick={() => setZoomOpen(false)} className="absolute top-4 right-4 rounded-full bg-slate-900/80 p-2 text-white hover:bg-rose-600 transition z-10"><X size={20} /></button><img src={imageUrl} alt="Zoomed Leaf Image" className="max-h-[85vh] w-auto object-contain rounded-2xl" /></div></div>}
     </div>
   );
 }
-
