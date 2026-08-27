@@ -4,7 +4,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Agri Nirvana - Crop AI Health Diagnostic API"
-    VERSION: str = "3.1.0"
+    VERSION: str = "3.4.0"
     API_V1_STR: str = "/api/v1"
 
     AI_MODEL_PROVIDER: str = "real"
@@ -22,7 +22,9 @@ class Settings(BaseSettings):
     DATABASE_NAME: str = "agri_nirvana"
     SQLITE_FALLBACK_DB: str = "backend/db/history.db"
 
-    ALLOWED_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5173"
+    # Keep local development origins plus the deployed Vite frontend by default.
+    # Override this with ALLOWED_ORIGINS in production when using a custom domain.
+    ALLOWED_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5173,https://agri-nirvana.vercel.app"
 
     model_config = SettingsConfigDict(
         env_file=".env",

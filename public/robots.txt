@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://agri-nirvana.vercel.app/sitemap.xml
