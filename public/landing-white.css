@@ -1,0 +1,20 @@
+/* Agri Nirvana landing/workspace light foundation. */
+html, body, #root {
+  background: #ffffff !important;
+}
+
+/* Keep the default Botanical landing view crisp and white. */
+.ai-mesh-bg-botanical {
+  background: #ffffff !important;
+  background-image: none !important;
+}
+
+/* Soft green depth without bringing back a dark/glowing canvas. */
+.ai-mesh-bg-botanical::before,
+.ai-mesh-bg-botanical::after {
+  opacity: 0.08 !important;
+}
+
+@media (prefers-color-scheme: light) {
+  body { color: #0f172a; }
+}
