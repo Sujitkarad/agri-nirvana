@@ -62,6 +62,7 @@ import NDVITerrain3DModel from "./components/NDVITerrain3DModel";
 import DiseaseHeatmapCanvas from "./components/DiseaseHeatmapCanvas";
 import CropDiagnosticsWorkspace from "./components/diagnostics/CropDiagnosticsWorkspace";
 import DashboardDiagnosticCard from "./components/diagnostics/DashboardDiagnosticCard";
+import PrecisionFieldIntelligenceWorkspace from "./components/field-intelligence/PrecisionFieldIntelligenceWorkspace";
 
 // Enterprise Shell Components
 import TelemetryRibbon from "./components/shell/TelemetryRibbon";
@@ -143,7 +144,7 @@ function AgriBot3DAvatar({ isThinking, isSpeaking, selectedModel }) {
 export default function App() {
   // Theme & Navigation State
   const [theme, setTheme] = useState("botanical");
-  const isDark = theme === "cyber" || theme === "dark";
+  const isDark = theme === "cyber" || theme === "dark" || theme === "monochrome";
   const [lang, setLang] = useState("en");
   const [langMenuOpen, setLangMenuOpen] = useState(false);
   const [offline, setOffline] = useState(false);
@@ -499,7 +500,9 @@ export default function App() {
 
   return (
     <div className={`min-h-screen font-sans transition-colors duration-500 ${
-      theme === "cyber"
+      theme === "monochrome"
+        ? "ai-mesh-bg-monochrome text-white"
+        : theme === "cyber"
         ? "ai-mesh-bg-dark text-slate-100"
         : theme === "harvest"
         ? "ai-mesh-bg-harvest text-slate-900"
@@ -523,11 +526,16 @@ export default function App() {
         isDark={isDark}
         theme={theme}
         onToggleTheme={(targetTheme) => {
-          const newTheme = targetTheme || (theme === "botanical" ? "cyber" : theme === "cyber" ? "harvest" : "botanical");
+          const newTheme = targetTheme || (
+            theme === "botanical" ? "cyber" :
+            theme === "cyber" ? "monochrome" :
+            theme === "monochrome" ? "harvest" : "botanical"
+          );
           setTheme(newTheme);
           const themeLabels = {
             botanical: "Botanical Glass (Apple / Stripe AgTech)",
             cyber: "Cyber Obsidian (MiniMax AI)",
+            monochrome: "Monochrome Noir (Black & White Minimalist)",
             harvest: "Golden Harvest (Anthropic Claude)"
           };
           showToast(`Switched to ${themeLabels[newTheme] || newTheme}`);
@@ -719,6 +727,15 @@ export default function App() {
               />
             </div>
           </div>
+        )}
+
+        {/* SECTION: 3D PRECISION FIELD INTELLIGENCE & DRONE AVIONICS */}
+        {activeNav === "intel" && (
+          <PrecisionFieldIntelligenceWorkspace
+            isDark={isDark}
+            theme={theme}
+            showToast={showToast}
+          />
         )}
 
         {/* SECTION: ENTERPRISE YIELD & AGRONOMY ANALYTICS */}

@@ -28,7 +28,9 @@ app.add_middleware(
 )
 
 from backend.routes.diagnosis import router as diagnosis_router
+from backend.routes.field_intelligence import router as field_intelligence_router
 app.include_router(diagnosis_router, prefix=settings.API_V1_STR)
+app.include_router(field_intelligence_router, prefix=settings.API_V1_STR)
 
 
 @app.get("/")

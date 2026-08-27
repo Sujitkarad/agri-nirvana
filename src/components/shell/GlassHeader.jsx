@@ -16,7 +16,8 @@ import {
   Zap,
   User,
   Check,
-  Search
+  Search,
+  Compass
 } from "lucide-react";
 
 const LANGUAGES = [
@@ -40,6 +41,7 @@ export default function GlassHeader({
 
   const navItems = [
     { id: "workspace", label: "Workspace", icon: Bot, badge: "AI Core" },
+    { id: "intel", label: "3D Field Intel", icon: Compass, badge: "Sentinel-2" },
     { id: "diag", label: "Diagnostics", icon: Leaf },
     { id: "sat", label: "3D Satellite", icon: Layers },
     { id: "map", label: "GIS Radar", icon: Radar },
@@ -161,24 +163,29 @@ export default function GlassHeader({
             <span className="hidden sm:inline">Pro Tier</span>
           </button>
 
-          {/* 3-Way Beast Theme Selector */}
+          {/* 4-Way Beast Theme Selector (Botanical → Cyber → Monochrome B&W → Harvest) */}
           <div className="relative">
             <button
               onClick={() => {
                 if (theme === "botanical" || theme === "light") onToggleTheme?.("cyber");
-                else if (theme === "cyber" || theme === "dark") onToggleTheme?.("harvest");
+                else if (theme === "cyber" || theme === "dark") onToggleTheme?.("monochrome");
+                else if (theme === "monochrome") onToggleTheme?.("harvest");
                 else onToggleTheme?.("botanical");
               }}
-              title="Click to cycle themes: Botanical White → Cyber Obsidian → Golden Harvest"
+              title="Click to cycle themes: Botanical White → Cyber Obsidian → Monochrome B&W → Golden Harvest"
               className={`flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-xs font-bold transition-all active:scale-[0.98] ${
-                theme === "cyber" || isDark
+                theme === "monochrome"
+                  ? "border-white/40 bg-black text-white hover:bg-neutral-900 shadow-md shadow-white/10 font-black"
+                  : theme === "cyber" || (isDark && theme !== "harvest")
                   ? "border-emerald-500/30 bg-[#071a10] text-emerald-300 hover:bg-[#0c2a1b] glow-emerald"
                   : theme === "harvest"
                   ? "border-amber-400 bg-amber-50 text-amber-900 shadow-sm hover:bg-amber-100"
                   : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50 shadow-sm"
               }`}
             >
-              {theme === "cyber" || isDark ? (
+              {theme === "monochrome" ? (
+                <span className="h-3.5 w-3.5 rounded-full border border-white bg-gradient-to-r from-white to-black inline-block" />
+              ) : theme === "cyber" || (isDark && theme !== "harvest") ? (
                 <Moon size={14} className="text-emerald-400" />
               ) : theme === "harvest" ? (
                 <Sparkles size={14} className="text-amber-500" />
@@ -186,7 +193,7 @@ export default function GlassHeader({
                 <Sun size={14} className="text-amber-500" />
               )}
               <span className="hidden md:inline font-mono">
-                {theme === "cyber" || (isDark && theme !== "harvest") ? "Cyber" : theme === "harvest" ? "Harvest" : "Botanical"}
+                {theme === "monochrome" ? "B&W Noir" : theme === "cyber" || (isDark && theme !== "harvest") ? "Cyber" : theme === "harvest" ? "Harvest" : "Botanical"}
               </span>
             </button>
           </div>

@@ -14,7 +14,9 @@ import {
   Moon,
   Sparkles,
   X,
-  Command
+  Command,
+  Compass,
+  Sliders
 } from "lucide-react";
 
 export default function CommandPaletteModal({
@@ -47,6 +49,7 @@ export default function CommandPaletteModal({
 
   const actions = [
     { id: "workspace", label: "Open 3D AI Workspace", icon: Bot, category: "Navigation", badge: "AI Core", run: () => { onSelectNav("workspace"); onClose(); } },
+    { id: "intel", label: "Precision Field Intelligence & Drone Avionics", icon: Compass, category: "Satellite & Avionics", badge: "Sentinel-2 + DEM", run: () => { onSelectNav("intel"); onClose(); } },
     { id: "diag", label: "Run AI Crop Leaf Diagnostics", icon: Leaf, category: "Diagnostics", badge: "ResNet-50", run: () => { onSelectNav("diag"); onClose(); } },
     { id: "sat", label: "Open 3D Satellite NDVI & Drone Flyover", icon: Layers, category: "Satellite", badge: "Sentinel-2", run: () => { onSelectNav("sat"); onClose(); } },
     { id: "map", label: "View 25km GIS Outbreak Radar", icon: Radar, category: "Telemetry", badge: "GIS", run: () => { onSelectNav("map"); onClose(); } },
@@ -56,6 +59,7 @@ export default function CommandPaletteModal({
     { id: "market", label: "Direct Harvest Produce Marketplace", icon: ShoppingCart, category: "Market", badge: "Trade", run: () => { onSelectNav("market"); onClose(); } },
     { id: "theme-botanical", label: "Switch to Botanical Glass Theme", icon: Sun, category: "Appearance", badge: "Light", run: () => { onChangeTheme("botanical"); onClose(); } },
     { id: "theme-cyber", label: "Switch to Cyber Obsidian Theme", icon: Moon, category: "Appearance", badge: "Dark", run: () => { onChangeTheme("cyber"); onClose(); } },
+    { id: "theme-monochrome", label: "Switch to Monochrome Noir (Black & White)", icon: Sliders, category: "Appearance", badge: "B&W", run: () => { onChangeTheme("monochrome"); onClose(); } },
     { id: "theme-harvest", label: "Switch to Golden Harvest Theme", icon: Sparkles, category: "Appearance", badge: "Warm", run: () => { onChangeTheme("harvest"); onClose(); } }
   ];
 

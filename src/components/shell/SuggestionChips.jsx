@@ -1,7 +1,12 @@
 import React from "react";
-import { Sparkles, Leaf, TrendingUp, Layers, Calculator, ShieldAlert, Cpu } from "lucide-react";
+import { Sparkles, Leaf, TrendingUp, Layers, Calculator, ShieldAlert, Cpu, Compass } from "lucide-react";
 
 export const SUGGESTIONS = [
+  {
+    icon: Compass,
+    label: "3D Field Intel & Avionics",
+    prompt: "Generate a full 20-section Precision Field Intelligence report and autonomous drone mission plan for 10.5 ha Kharif Cotton."
+  },
   {
     icon: Leaf,
     label: "Diagnose Leaf Blight",

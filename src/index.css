@@ -286,6 +286,14 @@ canvas {
     radial-gradient(at 50% 90%, rgba(245, 158, 11, 0.06) 0px, transparent 55%);
 }
 
+.ai-mesh-bg-monochrome {
+  background-color: #000000;
+  background-image: 
+    radial-gradient(at 15% 15%, rgba(255, 255, 255, 0.09) 0px, transparent 50%),
+    radial-gradient(at 85% 20%, rgba(200, 200, 200, 0.06) 0px, transparent 45%),
+    radial-gradient(at 50% 90%, rgba(255, 255, 255, 0.05) 0px, transparent 55%);
+}
+
 .glass-ai-panel {
   background: rgba(7, 21, 14, 0.72);
   backdrop-filter: blur(20px);
@@ -309,6 +317,14 @@ canvas {
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(245, 158, 11, 0.25);
   box-shadow: 0 15px 35px -5px rgba(120, 53, 15, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+
+.glass-ai-panel-monochrome {
+  background: rgba(12, 12, 12, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
 .glow-emerald {
