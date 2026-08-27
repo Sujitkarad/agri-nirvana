@@ -65,7 +65,7 @@ def _call_huggingface(messages: List[Dict[str, str]], model: str) -> Dict[str, A
     if not token:
         raise HTTPException(
             status_code=503,
-            detail="AI chat is not configured. Set HF_TOKEN on the backend with Inference Providers permission.",
+            detail="AI chat is not configured. Please configure an inference provider token on the backend.",
         )
 
     payload = {

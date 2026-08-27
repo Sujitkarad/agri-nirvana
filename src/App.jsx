@@ -38,7 +38,8 @@ import {
   ArrowUpRight,
   Cpu,
   Radio,
-  Activity
+  Activity,
+  Compass
 } from "lucide-react";
 
 import {
@@ -63,6 +64,7 @@ import NDVITerrain3DModel from "./components/NDVITerrain3DModel";
 import DiseaseHeatmapCanvas from "./components/DiseaseHeatmapCanvas";
 import CropDiagnosticsWorkspace from "./components/diagnostics/CropDiagnosticsWorkspace";
 import DashboardDiagnosticCard from "./components/diagnostics/DashboardDiagnosticCard";
+import PrecisionFieldIntelligenceWorkspace from "./components/field-intelligence/PrecisionFieldIntelligenceWorkspace";
 
 // Enterprise Shell Components
 import TelemetryRibbon from "./components/shell/TelemetryRibbon";
@@ -144,7 +146,7 @@ function AgriBot3DAvatar({ isThinking, isSpeaking, selectedModel }) {
 export default function App() {
   // Theme & Navigation State
   const [theme, setTheme] = useState("botanical");
-  const isDark = theme === "cyber" || theme === "dark";
+  const isDark = theme === "cyber" || theme === "dark" || theme === "monochrome";
   const [lang, setLang] = useState("en");
   const [langMenuOpen, setLangMenuOpen] = useState(false);
   const [offline, setOffline] = useState(false);
@@ -509,6 +511,8 @@ export default function App() {
     <div className={`min-h-screen font-sans transition-colors duration-500 ${
       theme === "cyber"
         ? "ai-mesh-bg-dark text-slate-100"
+        : theme === "monochrome"
+        ? "ai-mesh-bg-monochrome text-slate-100"
         : theme === "harvest"
         ? "ai-mesh-bg-harvest text-slate-900"
         : "ai-mesh-bg-botanical text-slate-900"
@@ -656,6 +660,7 @@ export default function App() {
         <div className="flex xl:hidden overflow-x-auto gap-2 mb-6 pb-2 no-scrollbar">
           {[
             { id: "workspace", label: "Workspace", icon: Bot, badge: "AI Core" },
+            { id: "intel", label: "3D Field Intel", icon: Compass, badge: "Sentinel-2" },
             { id: "diag", label: t.navDiag, icon: Leaf },
             { id: "sat", label: t.navSat, icon: Layers },
             { id: "map", label: t.navMap, icon: Radar, badge: "GIS" },
@@ -732,6 +737,17 @@ export default function App() {
                 isDark={isDark}
               />
             </div>
+          </div>
+        )}
+
+        {/* SECTION: PRECISION 3D FIELD INTELLIGENCE & DRONE AVIONICS */}
+        {activeNav === "intel" && (
+          <div className="animate-fade-in">
+            <PrecisionFieldIntelligenceWorkspace
+              isDark={isDark}
+              theme={theme}
+              showToast={showToast}
+            />
           </div>
         )}
 

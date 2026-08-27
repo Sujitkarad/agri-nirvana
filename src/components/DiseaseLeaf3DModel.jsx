@@ -16,7 +16,7 @@ export default function DiseaseLeaf3DModel({ disease, theme = "light" }) {
   const mountRef = useRef(null);
   const [webglSupported, setWebglSupported] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
-  const isDark = theme === "dark";
+  const isDark = theme === "cyber" || theme === "dark" || theme === "monochrome";
 
   const isHealthy = disease?.severity === "Healthy";
   const confidence = disease?.confidence || 95;
@@ -27,6 +27,7 @@ export default function DiseaseLeaf3DModel({ disease, theme = "light" }) {
       return;
     }
 
+    let isMounted = true;
     let THREE;
     let scene, camera, renderer, animationFrameId;
     let leafMesh, lesionMesh, mainGroup;
@@ -35,6 +36,7 @@ export default function DiseaseLeaf3DModel({ disease, theme = "light" }) {
     let previousMousePosition = { x: 0, y: 0 };
 
     import("three").then((threeModule) => {
+      if (!isMounted) return;
       THREE = threeModule;
       const container = mountRef.current;
       if (!container) return;
@@ -223,8 +225,14 @@ export default function DiseaseLeaf3DModel({ disease, theme = "light" }) {
     });
 
     return () => {
+      isMounted = false;
       if (animationFrameId) cancelAnimationFrame(animationFrameId);
-      if (renderer) renderer.dispose();
+      if (renderer) {
+        renderer.dispose();
+        if (renderer.domElement && renderer.domElement.parentElement) {
+          renderer.domElement.parentElement.removeChild(renderer.domElement);
+        }
+      }
     };
   }, [disease, theme]);
 

@@ -31,7 +31,7 @@ export default function CropDiagnosticsWorkspace({
   setMonthlyScansCount = () => {},
   handleSimulatePurchase = () => {}
 }) {
-  const isDark = theme === "dark";
+  const isDark = theme === "cyber" || theme === "dark" || theme === "monochrome";
 
   // Tab: "diagnostic" | "history"
   const [activeSubTab, setActiveSubTab] = useState("diagnostic");

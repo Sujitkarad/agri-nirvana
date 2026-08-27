@@ -16,7 +16,7 @@ function detectWebGL() {
 export default function Hero3DCropModel({ theme = "light" }) {
   const mountRef = useRef(null);
   const [webglSupported, setWebglSupported] = useState(true);
-  const isDark = theme === "dark";
+  const isDark = theme === "cyber" || theme === "dark" || theme === "monochrome";
 
   useEffect(() => {
     if (!detectWebGL()) {
@@ -24,11 +24,13 @@ export default function Hero3DCropModel({ theme = "light" }) {
       return;
     }
 
+    let isMounted = true;
     let THREE;
     let scene, camera, renderer, animationFrameId;
     let plantGroup;
 
     import("three").then((threeModule) => {
+      if (!isMounted) return;
       THREE = threeModule;
       const container = mountRef.current;
       if (!container) return;
@@ -163,8 +165,14 @@ export default function Hero3DCropModel({ theme = "light" }) {
     });
 
     return () => {
+      isMounted = false;
       if (animationFrameId) cancelAnimationFrame(animationFrameId);
-      if (renderer) renderer.dispose();
+      if (renderer) {
+        renderer.dispose();
+        if (renderer.domElement && renderer.domElement.parentElement) {
+          renderer.domElement.parentElement.removeChild(renderer.domElement);
+        }
+      }
     };
   }, [theme]);
 

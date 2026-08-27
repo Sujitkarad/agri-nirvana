@@ -5,6 +5,7 @@
  */
 
 import { KAGGLE_VEGETABLE_PRICES, MANDI_PRICES_FEED, CROPS_CONFIG } from "../data/agriData";
+import { sendAgriAIChat } from "../lib/aiChat";
 
 // Conversational context storage
 let conversationHistory = [];
@@ -52,6 +53,51 @@ export async function generateAIChatResponse({
     "Kisan-Dr": "38ms · 120 tokens/s"
   };
   const latency = latencyMap[selectedModel] || "45ms · 105 tokens/s";
+
+  // If no image attachment, attempt calling real backend API if reachable
+  if (attachments.length === 0 && promptTrimmed) {
+    try {
+      const chatMessages = conversationHistory
+        .filter((msg) => msg.role === "user" || msg.role === "assistant")
+        .map((msg) => ({
+          role: msg.role,
+          content: msg.content
+        }));
+
+      const liveResponse = await Promise.race([
+        sendAgriAIChat({
+          messages: chatMessages,
+          crop: "General Agronomy",
+          language: userLang
+        }),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 4000))
+      ]);
+
+      if (liveResponse && liveResponse.success && liveResponse.message) {
+        conversationHistory.push({
+          role: "assistant",
+          content: liveResponse.message,
+          model: liveResponse.model || selectedModel,
+          timestamp: new Date().toISOString()
+        });
+
+        return {
+          text: liveResponse.message,
+          source: liveResponse.provider || `${selectedModel} Live Neural Engine`,
+          reasoning: `Server-side neural inference executed via ${liveResponse.model || selectedModel}.`,
+          latency,
+          tableData: null,
+          suggestedFollowUps: [
+            "Calculate fertilizer dosage for my field",
+            "Show organic bio-pesticide alternatives",
+            "What are today's APMC mandi prices?"
+          ]
+        };
+      }
+    } catch (_) {
+      // Graceful fallback to offline precision agronomic synthesis
+    }
+  }
 
   // Simulate network thinking delay
   await new Promise((resolve) => setTimeout(resolve, 600 + Math.random() * 500));

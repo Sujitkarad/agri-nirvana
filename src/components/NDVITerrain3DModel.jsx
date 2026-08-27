@@ -17,7 +17,7 @@ export default function NDVITerrain3DModel({ fieldData, theme = "light" }) {
   const [webglSupported, setWebglSupported] = useState(true);
   const [activeSensor, setActiveSensor] = useState(null);
   const [droneFlying, setDroneFlying] = useState(true);
-  const isDark = theme === "dark";
+  const isDark = theme === "cyber" || theme === "dark" || theme === "monochrome";
 
   const ndviScore = fieldData?.ndviScore || 0.76;
 
@@ -27,6 +27,7 @@ export default function NDVITerrain3DModel({ fieldData, theme = "light" }) {
       return;
     }
 
+    let isMounted = true;
     let THREE;
     let scene, camera, renderer, animationFrameId;
     let terrainGroup, droneGroup, laserBeam;
@@ -34,6 +35,7 @@ export default function NDVITerrain3DModel({ fieldData, theme = "light" }) {
     let previousMousePosition = { x: 0, y: 0 };
 
     import("three").then((threeModule) => {
+      if (!isMounted) return;
       THREE = threeModule;
       const container = mountRef.current;
       if (!container) return;
@@ -277,8 +279,14 @@ export default function NDVITerrain3DModel({ fieldData, theme = "light" }) {
     });
 
     return () => {
+      isMounted = false;
       if (animationFrameId) cancelAnimationFrame(animationFrameId);
-      if (renderer) renderer.dispose();
+      if (renderer) {
+        renderer.dispose();
+        if (renderer.domElement && renderer.domElement.parentElement) {
+          renderer.domElement.parentElement.removeChild(renderer.domElement);
+        }
+      }
     };
   }, [fieldData, theme, droneFlying]);
 

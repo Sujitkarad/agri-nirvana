@@ -710,7 +710,11 @@ export async function analyzeCropImageApi(imageFile, cropType = "Tomato", userIm
     }
   }
 
-  validateImage(imageBlob);
+  if (imageBlob) {
+    validateImage(imageBlob);
+  } else if (!userImageSrc) {
+    throw new Error("No image provided. Please upload or capture a crop leaf photo.");
+  }
 
   const formData = new FormData();
   if (imageBlob) {
@@ -724,22 +728,28 @@ export async function analyzeCropImageApi(imageFile, cropType = "Tomato", userIm
     "http://127.0.0.1:8000/api/v1/diagnosis/analyze"
   ];
 
-  for (const endpoint of endpoints) {
-    try {
-      if (!imageBlob) break;
-      const res = await fetch(endpoint, {
-        method: "POST",
-        body: formData
-      });
+  if (imageBlob) {
+    for (const endpoint of endpoints) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3500);
 
-      if (res.ok) {
-        const data = await res.json();
-        if (data && data.diagnosis) {
-          return data;
+        const res = await fetch(endpoint, {
+          method: "POST",
+          body: formData,
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.diagnosis) {
+            return data;
+          }
         }
+      } catch (_) {
+        // Try next endpoint or fallback to Edge Engine
       }
-    } catch (_) {
-      // Try next endpoint or fallback to Edge Engine
     }
   }
 
