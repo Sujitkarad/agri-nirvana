@@ -1,0 +1,27 @@
+# fly.toml app configuration file for Agri Nirvana Backend
+app = "agri-nirvana-api"
+primary_region = "bom"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "8080"
+  AI_MODEL_PROVIDER = "real"
+  AI_CONFIDENCE_THRESHOLD = "0.70"
+  ALLOWED_ORIGINS = "https://agri-nirvana.vercel.app,http://localhost:5173"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ["app"]
+
+[[http_service.checks]]
+  grace_period = "30s"
+  interval = "15s"
+  method = "GET"
+  path = "/health"
+  timeout = "10s"
