@@ -20,8 +20,16 @@ jobs:
           node-version: 20
           cache: 'npm'
 
-      - name: Install Dependencies
+      - name: Install Frontend Dependencies
         run: npm ci
 
       - name: Execute Production Build
         run: npm run build
+
+      - name: Setup Python Environment
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Validate Backend Python Syntax
+        run: python -m compileall -q backend
