@@ -25,9 +25,11 @@ app.add_middleware(
     allow_headers=["Content-Type", "Authorization"],
 )
 
+from backend.routes.ai_chat import router as ai_chat_router
 from backend.routes.diagnosis import router as diagnosis_router
 from backend.routes.field_intelligence import router as field_intelligence_router
 
+app.include_router(ai_chat_router, prefix=settings.API_V1_STR)
 app.include_router(diagnosis_router, prefix=settings.API_V1_STR)
 app.include_router(field_intelligence_router, prefix=settings.API_V1_STR)
 
@@ -43,6 +45,7 @@ async def root():
         "model_name": inference_engine.model_name,
         "model_version": inference_engine.model_version,
         "confidence_threshold": inference_engine.threshold,
+        "chat_model": settings.AI_CHAT_MODEL,
     }
 
 
@@ -52,6 +55,7 @@ async def health():
         "status": "ok",
         "model_ready": inference_engine._models_loaded,
         "model_provider": inference_engine.provider_type,
+        "chat_configured": bool(__import__("os").getenv("HF_TOKEN", "").strip()),
     }
 
 
@@ -85,6 +89,7 @@ async def get_model_status():
         "confidence_threshold": inference_engine.threshold,
         "max_image_size_mb": settings.MAX_IMAGE_SIZE_MB,
         "supported_crops": inference_engine.supported_crops(),
+        "chat_model": settings.AI_CHAT_MODEL,
     }
 
 
