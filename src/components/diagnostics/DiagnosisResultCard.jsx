@@ -40,6 +40,7 @@ export default function DiagnosisResultCard({
     modelName = "PlantVillage MobileNetV2",
     modelVersion = "v1.0-real",
     isMock = false,
+    requiresExpertReview = false,
     createdAt = new Date().toISOString()
   } = diagnosis;
 
@@ -165,7 +166,7 @@ export default function DiagnosisResultCard({
             </button>
             {isMock && (
               <span className="absolute top-3 left-3 rounded-full bg-amber-500/90 text-slate-950 text-[10px] font-black px-2.5 py-0.5 shadow">
-                Dev / Mock Provider
+                Offline guidance — verify locally
               </span>
             )}
           </div>
@@ -187,7 +188,7 @@ export default function DiagnosisResultCard({
           {/* CONFIDENCE VISUAL METER */}
           <div className={`p-4 rounded-2xl border ${isDark ? "bg-emerald-950/40 border-emerald-900/50" : "bg-slate-50 border-slate-200"}`}>
             <div className="flex items-center justify-between text-xs font-bold mb-1.5">
-              <span className="flex items-center gap-1.5"><Activity size={14} className="text-emerald-400" /> Neural Vision Confidence Score</span>
+              <span className="flex items-center gap-1.5"><Activity size={14} className="text-emerald-400" /> {isMock ? "Guidance confidence" : "Neural Vision Confidence Score"}</span>
               <span className="text-emerald-400 font-mono font-black">{confPercent}%</span>
             </div>
             <div className="h-2.5 rounded-full bg-slate-950 border border-emerald-800/40 overflow-hidden">
@@ -197,6 +198,13 @@ export default function DiagnosisResultCard({
               />
             </div>
           </div>
+
+          {requiresExpertReview && (
+            <div className="rounded-2xl border border-amber-500/40 bg-amber-950/20 p-3 text-xs text-amber-100">
+              <div className="flex items-center gap-2 font-bold text-amber-300"><ShieldAlert size={15} /> Verify before treatment</div>
+              <p className="mt-1 leading-relaxed">The ML backend was unavailable, so this is crop-specific educational guidance rather than an image diagnosis. Confirm the disease and any product dose with your local KVK or licensed agronomist.</p>
+            </div>
+          )}
 
           {/* DETECTED SYMPTOMS */}
           <div className={`p-4 rounded-2xl border ${isDark ? "bg-[#04160f] border-emerald-900/50" : "bg-slate-50 border-slate-200"}`}>

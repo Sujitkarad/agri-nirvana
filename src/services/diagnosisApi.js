@@ -1,4 +1,16 @@
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+const MAX_IMAGE_SIZE_BYTES = 15 * 1024 * 1024;
+const SUPPORTED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+
+function validateImage(image) {
+  if (!image) throw new Error("No image provided. Please upload or capture a crop leaf photo.");
+  if (image.type && !SUPPORTED_IMAGE_TYPES.has(image.type)) {
+    throw new Error("Unsupported image format. Use a JPG, PNG, or WebP photo.");
+  }
+  if (image.size > MAX_IMAGE_SIZE_BYTES) {
+    throw new Error("Image is too large. Please choose an image smaller than 15 MB.");
+  }
+}
 
 // Comprehensive Agronomic Disease Knowledge Engine for Offline / Edge Resilience
 const AGRONOMIC_KNOWLEDGE = {
@@ -584,8 +596,8 @@ function generateClientSideAgronomicDiagnosis(cropType = "Tomato", symptomText =
     diagnosis: baseKnowledge.condition,
     pathogen: baseKnowledge.pathogen,
     pathogenCategory: baseKnowledge.pathogenCategory,
-    confidence: baseKnowledge.confidence,
-    confidence_pct: Math.round(baseKnowledge.confidence * 100),
+    confidence: userImageSrc ? 0.45 : 0.35,
+    confidence_pct: userImageSrc ? 45 : 35,
     severity: baseKnowledge.severity,
     severityPercentage: baseKnowledge.severity.necrotic_area_pct,
     symptoms: baseKnowledge.symptoms,
@@ -596,13 +608,14 @@ function generateClientSideAgronomicDiagnosis(cropType = "Tomato", symptomText =
     regional_terms: baseKnowledge.regional_terms,
     verification_note: baseKnowledge.verification_note,
     imageUrl: userImageSrc || `/samples/sample_${matchedCropKey.toLowerCase()}_leaf.jpg`,
-    modelName: "Client Edge Agronomy Engine (Offline Resilient)",
+    modelName: "Offline Crop Guidance",
     modelVersion: "v3.4-edge-client",
     provider_type: "client_offline_engine",
     provenance: "⚡ Client-Side Edge Diagnostic Engine (Offline Resilience Active)",
-    isMock: false,
-    is_valid_crop_image: true,
-    status: "diagnosed",
+    isMock: true,
+    requiresExpertReview: true,
+    is_valid_crop_image: null,
+    status: "guidance_only",
     symptomTextContext: symptomText || null,
     createdAt: new Date().toISOString()
   };
@@ -630,14 +643,14 @@ export async function fetchModelStatus() {
 
   return {
     success: true,
-    model_name: "Kisan AI Dr. Agri Multimodal Vision & Edge Engine",
-    model_version: "v3.4-prod-active",
+    model_name: "Backend unavailable — Offline guidance only",
+    model_version: "offline",
     provider_type: "client_offline_engine",
-    is_mock: false,
-    models_loaded: true,
+    is_mock: true,
+    models_loaded: false,
     confidence_threshold: 0.70,
     max_image_size_mb: 15,
-    status: "ready"
+    status: "offline"
   };
 }
 
@@ -696,6 +709,8 @@ export async function analyzeCropImageApi(imageFile, cropType = "Tomato", userIm
       // If fetching the sample failed (e.g. cross-origin/offline), proceed with fallback
     }
   }
+
+  validateImage(imageBlob);
 
   const formData = new FormData();
   if (imageBlob) {
