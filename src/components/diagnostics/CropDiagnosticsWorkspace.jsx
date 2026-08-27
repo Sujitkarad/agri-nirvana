@@ -294,16 +294,25 @@ export default function CropDiagnosticsWorkspace({
               </button>
             </div>
           ) : workflowState === "result" && currentDiagnosis ? (
-            currentDiagnosis.is_low_confidence || (currentDiagnosis.confidence < 0.50) ? (
-              <LowConfidenceNotice
-                confidence={currentDiagnosis.confidence}
-                threshold={modelStatus?.confidence_threshold || 0.50}
-                onRetake={() => setWorkflowState("idle")}
-                isDark={isDark}
-              />
-            ) : (
-              <div className="space-y-6">
-                {/* 3D WEBGL LEAF LESION INSPECTOR + DIAGNOSIS RESULT */}
+            <div className="space-y-6">
+              {/* LOW CONFIDENCE NOTICE BANNER (Informative while showing full crop report) */}
+              {(currentDiagnosis.is_low_confidence || currentDiagnosis.confidence < 0.85) && (
+                <div className={`p-4 rounded-2xl border flex items-start gap-3 text-xs text-left animate-fade-in ${
+                  isDark ? "border-amber-500/40 bg-amber-950/30 text-amber-200" : "border-amber-300 bg-amber-50 text-amber-900"
+                }`}>
+                  <AlertTriangle size={18} className="text-amber-400 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold text-amber-300">
+                      Moderate / Field Confidence Score ({Math.round(currentDiagnosis.confidence > 1 ? currentDiagnosis.confidence : currentDiagnosis.confidence * 100)}%):
+                    </span>
+                    <p className="mt-0.5 text-slate-300 text-[11px] leading-relaxed">
+                      AI identified primary symptoms with moderate confidence. Full pathology report, chemical dosages, and 3-tier treatment recommendations are provided below. Verify secondary physical signs before spraying.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* 3D WEBGL LEAF LESION INSPECTOR + DIAGNOSIS RESULT */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                   <div className="lg:col-span-8">
                     <DiagnosisResultCard
@@ -379,7 +388,6 @@ export default function CropDiagnosticsWorkspace({
                   </div>
                 </div>
               </div>
-            )
           ) : (
             /* IDLE INPUT WORKSPACE */
             <div className={`rounded-3xl p-6 sm:p-8 border space-y-6 transition-all text-left ${
