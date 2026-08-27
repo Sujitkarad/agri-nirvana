@@ -1,5 +1,9 @@
 import unittest
+
+from PIL import Image
+
 from backend.ml.inference.production_engine import ProductionInferenceEngine
+from backend.ml.models.plant_validator import PlantValidator
 
 
 class TestProductionEngine(unittest.TestCase):
@@ -32,6 +36,33 @@ class TestProductionEngine(unittest.TestCase):
         self.assertEqual(result["confidence"], 0.0)
 
 
+class TestPlantValidatorQualityGate(unittest.TestCase):
+    def test_rejects_missing_image_without_loading_model(self):
+        validator = PlantValidator.__new__(PlantValidator)
+        result = validator.validate(None)
+
+        self.assertFalse(result["is_plant"])
+        self.assertEqual(result["image_quality"]["status"], "fail")
+        self.assertIn("No image", result["rejection_reason"])
+
+    def test_rejects_image_below_model_input_size(self):
+        validator = PlantValidator.__new__(PlantValidator)
+        tiny = Image.new("RGB", (64, 64), "white")
+        result = validator.validate(tiny)
+
+        self.assertFalse(result["is_plant"])
+        self.assertEqual(result["image_quality"]["status"], "fail")
+        self.assertIn("too small", result["image_quality"]["reason"])
+
+    def test_quality_check_reports_measurements_for_valid_dimensions(self):
+        image = Image.new("RGB", (256, 256), "white")
+        quality = PlantValidator._quality_check(image)
+
+        self.assertEqual(quality["width"], 256)
+        self.assertEqual(quality["height"], 256)
+        self.assertIsNotNone(quality["brightness"])
+        self.assertIsNotNone(quality["sharpness"])
+
+
 if __name__ == "__main__":
     unittest.main()
-
