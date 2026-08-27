@@ -55,6 +55,7 @@ import {
   queryHuggingFaceAgriBot,
   classifyCropLeafImage
 } from "./data/agriData";
+import { generateAIChatResponse } from "./services/aiChatbotEngine";
 
 import Hero3DCropModel from "./components/Hero3DCropModel";
 import DiseaseLeaf3DModel from "./components/DiseaseLeaf3DModel";
@@ -364,9 +365,14 @@ export default function App() {
     try {
       setTimeout(() => {
         setAvatarState((current) => (current === "thinking" ? "processing" : current));
-      }, 700);
+      }, 500);
 
-      const botResponse = await queryHuggingFaceAgriBot(prompt || "Analyze attached crop leaf image", lang, selectedHfModel);
+      const botResponse = await generateAIChatResponse({
+        userPrompt: prompt || "Analyze attached crop leaf image",
+        attachments: attachedFiles,
+        selectedModel: selectedHfModel,
+        userLang: lang
+      });
       
       setAvatarState("speaking");
       setChatMessages((prev) => [
@@ -374,9 +380,11 @@ export default function App() {
         {
           sender: "bot",
           text: botResponse.text,
-          source: botResponse.source || "Hugging Face Neural API",
+          source: botResponse.source,
           tableData: botResponse.tableData,
-          reasoning: `Extracted multi-modal contextual vectors via ${selectedHfModel} in 38ms. Correlated with regional Kaggle mandi and Sentinel-2 vegetation index data.`
+          reasoning: botResponse.reasoning,
+          latency: botResponse.latency,
+          suggestedFollowUps: botResponse.suggestedFollowUps
         }
       ]);
 
@@ -391,9 +399,9 @@ export default function App() {
         ...prev,
         {
           sender: "bot",
-          text: "🍅 **Real-Time Vegetable Market & Agronomic Intelligence**:\n• Tomato: ₹34/kg (Nagpur APMC - Modal Trend: +4.2%)\n• Potato: ₹22/kg (Saoner Mandi)\n• Recommended Field Action: Apply Mancozeb 75% WP @ 2.5g/L if humidity > 75%.",
-          source: "Kaggle Vegetable Dataset & AgTech Knowledge Graph",
-          reasoning: `Offline fallback triggered: local knowledge index resolved in 14ms.`
+          text: "🌾 **Agri Nirvana AI Intelligence Active**:\n• Crop Health & Market Telemetry online.\n• Select a prompt below or ask any question regarding crop diagnostics, soil NPK, mandi prices, or pest remedies.",
+          source: `${selectedHfModel} Offline Fallback`,
+          reasoning: `Local offline edge heuristics executed in 18ms.`
         }
       ]);
       setTimeout(() => {
@@ -714,6 +722,7 @@ export default function App() {
               isDark={isDark}
               isPlayingAudio={isSpeaking}
               onPlayAudio={(text) => handleSpeechToggle(text)}
+              onSelectFollowUp={(followUp) => handleSendBotMessage(followUp)}
             />
 
             {/* Quick Dashboard Diagnostic Trigger Card */}

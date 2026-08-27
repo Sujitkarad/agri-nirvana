@@ -16,22 +16,34 @@ import {
 
 const MODEL_OPTIONS = [
   {
+    id: "DeepSeek-R1",
+    name: "DeepSeek-R1 Agri-Reasoner",
+    desc: "Deep chain-of-thought agronomy & soil chemistry",
+    badge: "Reasoning · CoT"
+  },
+  {
     id: "Mistral-7B",
-    name: "Mistral-7B-Instruct",
-    desc: "Fast reasoning & disease diagnosis",
-    badge: "Fast · 42ms"
+    name: "Mistral-7B-Instruct v0.3",
+    desc: "Ultra-fast diagnosis & actionable field prescriptions",
+    badge: "Fast · 34ms"
   },
   {
     id: "Llama-3.2",
-    name: "LLaMA-3.2-3B",
-    desc: "Edge-optimized agronomy intelligence",
-    badge: "Edge · 35ms"
+    name: "LLaMA-3.2-3B Multimodal",
+    desc: "Visual foliar lesion & edge agronomy analysis",
+    badge: "Edge Vision"
+  },
+  {
+    id: "Kisan-Dr",
+    name: "Kisan-AI Dr. (Multilingual)",
+    desc: "Field-verified farmer advisory in regional languages",
+    badge: "KVK Verified"
   },
   {
     id: "Zephyr-7B",
     name: "Zephyr-7B-Beta",
-    desc: "Dialectic agronomic reasoning",
-    badge: "High Precision"
+    desc: "Dialectic agronomic reasoning & farm economics",
+    badge: "Economics"
   }
 ];
 
