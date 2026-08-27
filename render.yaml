@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: agri-nirvana-api
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/v1/health
+    autoDeploy: true
+    envVars:
+      - key: AI_MODEL_PROVIDER
+        value: real
+      - key: AI_CONFIDENCE_THRESHOLD
+        value: "0.70"
+      - key: MAX_IMAGE_SIZE_MB
+        value: "10"
+      - key: ALLOWED_ORIGINS
+        value: "https://agri-nirvana.vercel.app"
+      - key: HF_MODEL_ID
+        value: linkanjarad/mobilenet_v2_1.0_224-plant-disease-identification
+      - key: MONGODB_URI
+        sync: false
+      - key: HF_TOKEN
+        sync: false
