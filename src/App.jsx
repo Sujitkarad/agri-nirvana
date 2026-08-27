@@ -220,6 +220,7 @@ export default function App() {
   const fileInputRef = useRef(null);
   const chatBottomRef = useRef(null);
   const t = TRANSLATIONS[lang] || TRANSLATIONS.en;
+  const isLandingPage = activeNav === "workspace" || activeNav === "bot";
 
   // Scanning Animation Timer & Real Pixel Classification
   useEffect(() => {
@@ -274,209 +275,68 @@ export default function App() {
         <div class="header">
           <div>
             <h1 class="title">AGRI NIRVANA • AI CROP DIAGNOSTIC REPORT</h1>
-            <p style="margin: 4px 0 0; font-size: 12px; color: #64748b;">Verified ResNet-50 Vision Telemetry • Date: ${new Date().toLocaleDateString()}</p>
+            <p style="margin: 4px 0 0; font-size: 12px; color: #64748b;">Verified ResNet-50 Vision Telemetry • ...</p>
           </div>
-          <div class="badge">${selectedDisease.confidence}% MATCH CONFIDENCE</div>
+          <div class="badge">AI ANALYZED</div>
         </div>
-
         <div class="grid">
-          <div class="box">
-            <div class="label">Crop Type & Sample</div>
-            <div class="value">${selectedDisease.crop}</div>
-          </div>
-          <div class="box">
-            <div class="label">Diagnosed Pathogen</div>
-            <div class="value">${selectedDisease.diseaseName} (${selectedDisease.pathogen})</div>
-          </div>
-          <div class="box">
-            <div class="label">Disease Severity Level</div>
-            <div class="value" style="color: ${selectedDisease.severity === 'Healthy' ? '#10b981' : '#f59e0b'};">${selectedDisease.severity} Severity</div>
-          </div>
-          <div class="box">
-            <div class="label">Infected Surface Coverage</div>
-            <div class="value">${selectedDisease.metrics?.necroticPercent ?? 12}% Necrotic Lesion Spots</div>
-          </div>
+          <div class="box"><div class="label">Crop</div><div class="value">${selectedDisease.crop || selectedDisease.cropType || diagCrop}</div></div>
+          <div class="box"><div class="label">Condition</div><div class="value">${selectedDisease.diseaseName || selectedDisease.condition || "Analysis"}</div></div>
+          <div class="box"><div class="label">Confidence</div><div class="value">${selectedDisease.confidence_pct ?? Math.round((selectedDisease.confidence || 0) * 100)}%</div></div>
+          <div class="box"><div class="label">Severity</div><div class="value">${selectedDisease.severity?.tier || selectedDisease.severity || "Unknown"}</div></div>
         </div>
-
-        <div class="remedy">
-          <h3 style="margin: 0 0 6px; color: #065f46; font-size: 15px;">Targeted Treatment Protocol</h3>
-          <p><strong>Organic Treatment:</strong> ${selectedDisease.remedies?.organic?.title || ''} — ${selectedDisease.remedies?.organic?.dosage || ''}</p>
-          <p><strong>Chemical Intervention:</strong> ${selectedDisease.remedies?.chemical?.title || ''} — ${selectedDisease.remedies?.chemical?.dosage || ''}</p>
-          <p><strong>Field Instructions:</strong> ${selectedDisease.remedies?.chemical?.instructions || ''}</p>
-        </div>
-
-        <div class="footer">
-          Generated automatically by Agri Nirvana AgTech Engine. Valid for agricultural advisory & crop protection.
-        </div>
-        <script>window.onload = function() { window.print(); }</script>
+        <div class="remedy"><strong>Recommended Action</strong><p>${selectedDisease.farmer_summary || selectedDisease.recommendations?.immediate || "Monitor the crop and consult an agriculture expert for uncertain cases."}</p></div>
+        <div class="footer">Agri Nirvana • AI-assisted decision support. Confirm crop protection products and local recommendations with a qualified agricultural professional.</div>
       </body>
-      </html>
-    `;
+      </html>`;
     printWin.document.write(content);
     printWin.document.close();
+    printWin.focus();
+    printWin.print();
   };
 
-  useEffect(() => {
-    if (activeNav === "bot") {
-      chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [chatMessages, activeNav]);
+  const showToast = (message) => {
+    setToastMessage(message);
+    window.setTimeout(() => setToastMessage(null), 2800);
+  };
 
-  const handleSpeechToggle = (textToSpeak) => {
-    if (!("speechSynthesis" in window)) {
-      showToast("Speech synthesis not supported in this browser.");
-      return;
-    }
-
+  const handleSpeechToggle = (text) => {
+    if (!text || !("speechSynthesis" in window)) return;
     if (isSpeaking) {
       window.speechSynthesis.cancel();
       setIsSpeaking(false);
-    } else {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(textToSpeak || selectedDisease.audioAdvisoryText);
-      utterance.rate = audioSpeechRate;
-      utterance.onend = () => setIsSpeaking(false);
-      utterance.onerror = () => setIsSpeaking(false);
-      window.speechSynthesis.speak(utterance);
-      setIsSpeaking(true);
+      return;
     }
+    const utterance = new SpeechSynthesisUtterance(text.replace(/[*#]/g, ""));
+    utterance.rate = audioSpeechRate;
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
+    setIsSpeaking(true);
   };
 
-  const showToast = (msg) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 4000);
-  };
-
-  const handleSendBotMessage = async (queryText, attachedFiles = []) => {
-    const prompt = queryText || botInputText;
-    if (!prompt.trim() && attachedFiles.length === 0) return;
-
-    let displayPrompt = prompt;
-    if (attachedFiles.length > 0) {
-      displayPrompt += `\n📎 [Attached: ${attachedFiles.map(f => f.name).join(", ")}]`;
-    }
-
-    const userMsg = { sender: "user", text: displayPrompt };
-    setChatMessages((prev) => [...prev, userMsg]);
-    if (!queryText) setBotInputText("");
+  const handleSendBotMessage = async (text, attachments = []) => {
+    const prompt = (text || botInputText || "").trim();
+    if (!prompt || botLoading) return;
+    setBotInputText("");
     setBotLoading(true);
     setAvatarState("thinking");
-
+    setChatMessages((prev) => [...prev, { sender: "user", text: prompt }]);
     try {
-      setTimeout(() => {
-        setAvatarState((current) => (current === "thinking" ? "processing" : current));
-      }, 700);
-
-      const botResponse = await queryHuggingFaceAgriBot(prompt || "Analyze attached crop leaf image", lang, selectedHfModel);
-      
-      setAvatarState("speaking");
-      setChatMessages((prev) => [
-        ...prev,
-        {
-          sender: "bot",
-          text: botResponse.text,
-          source: botResponse.source || "Hugging Face Neural API",
-          tableData: botResponse.tableData,
-          reasoning: `Extracted multi-modal contextual vectors via ${selectedHfModel} in 38ms. Correlated with regional Kaggle mandi and Sentinel-2 vegetation index data.`
-        }
-      ]);
-
-      // Automatically speak summary
-      handleSpeechToggle(botResponse.text.slice(0, 160));
-      setTimeout(() => {
-        setAvatarState("idle");
-      }, 4000);
-    } catch (err) {
-      setAvatarState("error");
-      setChatMessages((prev) => [
-        ...prev,
-        {
-          sender: "bot",
-          text: "🍅 **Real-Time Vegetable Market & Agronomic Intelligence**:\n• Tomato: ₹34/kg (Nagpur APMC - Modal Trend: +4.2%)\n• Potato: ₹22/kg (Saoner Mandi)\n• Recommended Field Action: Apply Mancozeb 75% WP @ 2.5g/L if humidity > 75%.",
-          source: "Kaggle Vegetable Dataset & AgTech Knowledge Graph",
-          reasoning: `Offline fallback triggered: local knowledge index resolved in 14ms.`
-        }
-      ]);
-      setTimeout(() => {
-        setAvatarState("idle");
-      }, 3000);
+      const result = await queryHuggingFaceAgriBot(prompt, lang, selectedHfModel, attachments);
+      setChatMessages((prev) => [...prev, { sender: "bot", text: result?.text || "I could not generate a response right now.", source: result?.source || "Agri Nirvana AI" }]);
+    } catch (error) {
+      setChatMessages((prev) => [...prev, { sender: "bot", text: "I couldn't complete that request. Please try again.", source: "Agri Nirvana" }]);
     } finally {
       setBotLoading(false);
+      setAvatarState("idle");
     }
   };
 
-  const handleFileChange = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setUserImage(event.target.result);
-        setScanState("idle");
-        showToast("Leaf photo uploaded! Click 'Run AI Diagnostics' to analyze.");
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const selectPresetSample = (datasetItem) => {
-    setSelectedDisease(datasetItem);
-    setUserImage(null);
-    setScanState("idle");
-  };
-
-  const triggerScan = () => {
-    setScanState("scanning");
-  };
-
-  const handleSimulateUpgrade = (planId) => {
-    setUserPlan(planId);
-    showToast(`Tier Updated to ${planId.toUpperCase()}! 100% Free Open Access Active.`);
-  };
-
-  const handleSimulatePurchase = (product) => {
-    const commission = Math.round(product.priceINR * product.commissionRate);
-    setTotalCommissionEarnedINR((prev) => prev + commission);
-    showToast(`Order placed with ${product.dealerName}! Est. platform commission earned: ₹${commission}`);
-  };
-
-  const handleProduceSubmit = (e) => {
-    e.preventDefault();
-    const newListing = {
-      id: `p-${Date.now()}`,
-      crop: produceFormCrop,
-      qtyQuintals: produceFormQty,
-      expectedPriceINR: produceFormPrice,
-      status: "Active Listing"
-    };
-    setListedProduce([newListing, ...listedProduce]);
-    showToast(`Harvest produce listing added! Buyers near you have been notified.`);
-  };
-
-  const handleOutbreakSubmit = (e) => {
-    e.preventDefault();
-    const newOutbreak = {
-      id: `ob-${Date.now()}`,
-      crop: reportCrop,
-      disease: reportDisease,
-      distKm: 4.2,
-      location: `Pincode ${reportPincode}`,
-      affectedFarms: 3,
-      riskLevel: "High Risk Alert"
-    };
-    setOutbreakList([newOutbreak, ...outbreakList]);
-    setReportModalOpen(false);
-    showToast(`Community Outbreak Reported for ${reportCrop}! Nearby agronomists and farmers alerted.`);
-  };
-
-  // NPK Calculation Logic
-  const currentCropConfig = CROPS_CONFIG.find((c) => c.id === calcCrop) || CROPS_CONFIG[0];
-  const multN = soilN === "low" ? 1.25 : soilN === "high" ? 0.75 : 1.0;
-  
-  const totalN_kg = Math.round(currentCropConfig.defaultN * calcAcres * multN);
-  const totalP_kg = Math.round(currentCropConfig.defaultP * calcAcres);
-  const totalK_kg = Math.round(currentCropConfig.defaultK * calcAcres);
-
-  const dapBags = Math.round((totalP_kg / 0.46) / 50);
+  const totalN_kg = (calcAcres * 50) * (soilN === "low" ? 1.25 : soilN === "high" ? 0.75 : 1);
+  const totalK_kg = calcAcres * 40;
+  const dapBags = Math.max(0, Math.round((calcAcres * 30) / 50));
   const nitrogenFromDap = dapBags * 50 * 0.18;
   const remainingN = Math.max(0, totalN_kg - nitrogenFromDap);
   const ureaBags = Math.round((remainingN / 0.46) / 50);
@@ -500,7 +360,9 @@ export default function App() {
 
   return (
     <div className={`min-h-screen font-sans transition-colors duration-500 ${
-      theme === "monochrome"
+      isLandingPage
+        ? "agri-landing-light text-slate-900"
+        : theme === "monochrome"
         ? "ai-mesh-bg-monochrome text-white"
         : theme === "cyber"
         ? "ai-mesh-bg-dark text-slate-100"
@@ -566,7 +428,9 @@ export default function App() {
       {/* 3. HERO SECTION (Collapsible) */}
       {heroExpanded ? (
         <section className={`relative overflow-hidden border-b py-8 px-4 sm:px-6 transition-all duration-300 ${
-          isDark
+          isLandingPage
+            ? "border-slate-200 bg-white"
+            : isDark
             ? "border-emerald-500/20 bg-gradient-to-b from-[#062419] via-[#041911] to-[#030705]"
             : "border-slate-200/70 bg-gradient-to-b from-emerald-50/90 via-teal-50/40 to-slate-50"
         }`}>
@@ -601,7 +465,11 @@ export default function App() {
                 </button>
                 <button
                   onClick={() => setActiveNav("sat")}
-                  className="rounded-2xl border border-emerald-500/40 bg-emerald-500/10 px-6 py-3 text-xs font-bold text-emerald-300 hover:bg-emerald-500/20 flex items-center gap-2 transition active:scale-[0.98]"
+                  className={`rounded-2xl px-6 py-3 text-xs font-bold flex items-center gap-2 transition active:scale-[0.98] ${
+                    isLandingPage
+                      ? "border border-slate-300 bg-white text-emerald-800 shadow-sm hover:border-emerald-400 hover:bg-emerald-50"
+                      : "border border-emerald-500/40 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20"
+                  }`}
                 >
                   <Layers size={16} /> Open 3D NDVI Terrain
                 </button>
@@ -610,7 +478,9 @@ export default function App() {
 
             <div className="lg:col-span-5 flex flex-col items-center justify-center">
               <div className={`relative rounded-3xl p-4 border transition-all ${
-                isDark ? "border-emerald-500/30 bg-[#072017]/80 shadow-2xl glow-emerald" : "border-slate-200 bg-white/90 shadow-xl"
+                isLandingPage
+                  ? "border-slate-200 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.10)]"
+                  : isDark ? "border-emerald-500/30 bg-[#072017]/80 shadow-2xl glow-emerald" : "border-slate-200 bg-white/90 shadow-xl"
               }`}>
                 <div className="flex items-center justify-between mb-1 px-2">
                   <span className="text-[11px] font-mono font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
@@ -728,564 +598,3 @@ export default function App() {
             </div>
           </div>
         )}
-
-        {/* SECTION: 3D PRECISION FIELD INTELLIGENCE & DRONE AVIONICS */}
-        {activeNav === "intel" && (
-          <PrecisionFieldIntelligenceWorkspace
-            isDark={isDark}
-            theme={theme}
-            showToast={showToast}
-          />
-        )}
-
-        {/* SECTION: ENTERPRISE YIELD & AGRONOMY ANALYTICS */}
-        {activeNav === "analytics" && (
-          <div className="space-y-6">
-            <div className={`rounded-3xl p-6 border transition-all ${
-              isDark ? "border-emerald-800/40 bg-[#072017]" : "border-slate-200 bg-white shadow-xl"
-            }`}>
-              <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-                <div>
-                  <h2 className={`text-2xl font-black flex items-center gap-2 ${isDark ? "text-white" : "text-slate-900"}`}>
-                    <LineChart className="text-emerald-500" size={26} />
-                    {t.navAnalytics} (Multi-Year Predictive Crop Yield)
-                  </h2>
-                  <p className="text-xs text-slate-400">AI-predicted harvest yield projections, soil NPK depletion forecasts, and revenue optimization</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-mono font-bold text-emerald-300 border border-emerald-500/40">
-                    Model: Ensembled ResNet + Sentinel-2
-                  </span>
-                </div>
-              </div>
-
-              {/* Analytics Metric Cards Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 my-6">
-                <div className={`rounded-2xl border p-4 text-center transition-all ${
-                  isDark ? "border-emerald-500/30 bg-[#04160f] text-white" : "border-slate-200 bg-emerald-50/50 text-slate-900 shadow-xs"
-                }`}>
-                  <Target size={24} className="mx-auto text-emerald-500 mb-2" />
-                  <p className="text-3xl font-black">{38.4} Q/Acre</p>
-                  <p className={`text-xs font-bold mt-1 ${isDark ? "text-emerald-300" : "text-emerald-700"}`}>Est. Target Harvest Yield</p>
-                </div>
-                <div className={`rounded-2xl border p-4 text-center transition-all ${
-                  isDark ? "border-cyan-500/30 bg-[#04160f] text-white" : "border-slate-200 bg-cyan-50/50 text-slate-900 shadow-xs"
-                }`}>
-                  <TrendingUp size={24} className="mx-auto text-cyan-500 mb-2" />
-                  <p className="text-3xl font-black">+18.5%</p>
-                  <p className={`text-xs font-bold mt-1 ${isDark ? "text-cyan-300" : "text-cyan-700"}`}>Yield Gain vs Regional Avg</p>
-                </div>
-                <div className={`rounded-2xl border p-4 text-center transition-all ${
-                  isDark ? "border-amber-500/30 bg-[#04160f] text-white" : "border-slate-200 bg-amber-50/50 text-slate-900 shadow-xs"
-                }`}>
-                  <Clock size={24} className="mx-auto text-amber-500 mb-2" />
-                  <p className="text-3xl font-black">28 Days</p>
-                  <p className={`text-xs font-bold mt-1 ${isDark ? "text-amber-300" : "text-amber-700"}`}>Est. Days to Optimal Harvest</p>
-                </div>
-                <div className={`rounded-2xl border p-4 text-center transition-all ${
-                  isDark ? "border-emerald-500/30 bg-[#04160f] text-white" : "border-slate-200 bg-emerald-50/50 text-slate-900 shadow-xs"
-                }`}>
-                  <Coins size={24} className="mx-auto text-emerald-500 mb-2" />
-                  <p className="text-3xl font-black">₹1,26,720</p>
-                  <p className={`text-xs font-bold mt-1 ${isDark ? "text-emerald-300" : "text-emerald-700"}`}>Projected Gross Revenue / Acre</p>
-                </div>
-              </div>
-
-              {/* Yield Trend Bar Chart Representation */}
-              <div className={`mt-6 rounded-2xl border p-6 ${isDark ? "border-emerald-900/60 bg-[#04160f]" : "border-slate-200 bg-slate-50"}`}>
-                <h3 className={`text-base font-black mb-4 ${isDark ? "text-white" : "text-slate-900"}`}>
-                  5-Year Historical & AI Projected Yield Trajectory (Quintals / Acre)
-                </h3>
-                <div className="space-y-3">
-                  {[
-                    { year: "2022 Actual", yieldVal: 28, pct: "65%" },
-                    { year: "2023 Actual", yieldVal: 31, pct: "72%" },
-                    { year: "2024 Actual", yieldVal: 33, pct: "78%" },
-                    { year: "2025 Actual", yieldVal: 35, pct: "84%" },
-                    { year: "2026 AI Projected (Agri Nirvana)", yieldVal: 38.4, pct: "95%", highlight: true }
-                  ].map((bar, bIdx) => (
-                    <div key={bIdx} className="space-y-1">
-                      <div className="flex justify-between text-xs font-bold">
-                        <span className={bar.highlight ? "text-emerald-500 font-black" : isDark ? "text-slate-400" : "text-slate-600"}>{bar.year}</span>
-                        <span className={bar.highlight ? "text-emerald-500 font-black" : isDark ? "text-slate-300" : "text-slate-700"}>{bar.yieldVal} Q/Acre</span>
-                      </div>
-                      <div className={`h-3 w-full rounded-full border overflow-hidden ${isDark ? "bg-slate-900 border-slate-800" : "bg-slate-200 border-slate-300"}`}>
-                        <div
-                          className={`h-full rounded-full transition-all duration-1000 ${
-                            bar.highlight ? "bg-gradient-to-r from-emerald-500 to-teal-400 shadow-[0_0_15px_#10b981]" : "bg-slate-500"
-                          }`}
-                          style={{ width: bar.pct }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* SECTION: AI DIAGNOSTICS MODULE (ONE-STOP WORKSPACE) */}
-        {activeNav === "diag" && (
-          <CropDiagnosticsWorkspace
-            lang={lang}
-            theme={theme}
-            t={t}
-            selectedField={selectedField}
-            showToast={showToast}
-            setMonthlyScansCount={setMonthlyScansCount}
-            handleSimulatePurchase={handleSimulatePurchase}
-          />
-        )}
-
-        {/* SECTION: SATELLITE TELEMETRY */}
-        {activeNav === "sat" && (
-          <div className="space-y-6">
-            <div className={`rounded-3xl p-6 border transition-all ${
-              isDark ? "border-emerald-800/40 bg-[#072017]" : "border-slate-200 bg-white shadow-xl"
-            }`}>
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h2 className={`text-2xl font-black flex items-center gap-2 ${isDark ? "text-white" : "text-slate-900"}`}>
-                    <Layers className="text-emerald-500" size={26} />
-                    {t.satelliteTitle}
-                  </h2>
-                  <p className={`text-xs mt-1 ${isDark ? "text-emerald-200/60" : "text-slate-500"}`}>{t.satSub}</p>
-                </div>
-                <div className="flex gap-2">
-                  {SATELLITE_FIELDS.map((f) => (
-                    <button
-                      key={f.id}
-                      onClick={() => setSelectedField(f)}
-                      className={`rounded-xl px-3 py-1.5 text-xs font-bold border transition ${
-                        selectedField.id === f.id
-                          ? "border-emerald-500 bg-emerald-500/20 text-emerald-300 font-black"
-                          : isDark ? "border-emerald-900/60 text-slate-400" : "border-slate-300 text-slate-700"
-                      }`}
-                    >
-                      {f.crop}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <NDVITerrain3DModel fieldData={selectedField} theme={theme} />
-            </div>
-          </div>
-        )}
-
-        {/* SECTION: GIS OUTBREAK RADAR & COMMUNITY LOGGING */}
-        {activeNav === "map" && (
-          <div className="space-y-6">
-            <div className={`rounded-3xl p-6 border transition-all ${
-              isDark ? "border-emerald-800/40 bg-[#072017]" : "border-slate-200 bg-white shadow-xl"
-            }`}>
-              <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-                <div>
-                  <h2 className={`text-2xl font-black flex items-center gap-2 ${isDark ? "text-white" : "text-slate-900"}`}>
-                    <Radar className="text-emerald-500" size={26} />
-                    {t.regionalOutbreaks} (25km Radius GIS Radar)
-                  </h2>
-                  <p className={`text-xs mt-1 ${isDark ? "text-slate-400" : "text-slate-600"}`}>Community crop disease logging and early infection spread warnings</p>
-                </div>
-                <button
-                  onClick={() => setReportModalOpen(true)}
-                  className="flex items-center gap-2 rounded-2xl bg-amber-500 px-5 py-2.5 text-xs font-black text-slate-950 hover:bg-amber-400 shadow transition"
-                >
-                  <PlusCircle size={16} /> + Report Outbreak to Community
-                </button>
-              </div>
-
-              {/* GIS Radar Map Visual Card */}
-              <div className="relative h-80 w-full rounded-2xl border border-emerald-500/30 bg-[#04160f] overflow-hidden p-4 flex flex-col items-center justify-center">
-                <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#10b981_1px,transparent_1px)] [background-size:16px_16px]" />
-                
-                {/* Concentric Radar Rings */}
-                <div className="absolute h-64 w-64 rounded-full border border-emerald-500/30 flex items-center justify-center animate-pulse">
-                  <div className="h-44 w-44 rounded-full border border-emerald-500/40 flex items-center justify-center">
-                    <div className="h-24 w-24 rounded-full border border-emerald-500/60" />
-                  </div>
-                </div>
-
-                <div className="relative z-10 text-center space-y-2">
-                  <span className="rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-mono font-bold text-emerald-300 border border-emerald-500/40">
-                    📡 Active 25km GIS Cluster Radar
-                  </span>
-                  <p className="text-sm font-bold text-white">3 Outbreak Clusters Detected Near Your PIN Code (440001)</p>
-                </div>
-              </div>
-
-              {/* Outbreak Cards Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 my-6">
-                {outbreakList.map((ob) => (
-                  <div key={ob.id} className={`rounded-2xl border p-4 transition ${
-                    isDark ? "border-emerald-900/60 bg-[#04160f]" : "border-slate-200 bg-white shadow-xs hover:border-emerald-500"
-                  }`}>
-                    <div className="flex justify-between items-start">
-                      <span className="text-[10px] font-mono font-bold text-amber-500 uppercase">{ob.riskLevel}</span>
-                      <span className={`text-[10px] ${isDark ? "text-slate-400" : "text-slate-500"}`}>{ob.distKm} km away</span>
-                    </div>
-                    <h3 className={`font-black text-base mt-1 ${isDark ? "text-white" : "text-slate-900"}`}>{ob.crop} — {ob.disease}</h3>
-                    <p className={`text-xs mt-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}><MapPin size={12} className="inline mr-1" />{ob.location} • {ob.affectedFarms} farms reported</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* SECTION: NPK FERTILIZER & YIELD CALCULATOR */}
-        {activeNav === "calc" && (
-          <div className="space-y-6">
-            <div className={`rounded-3xl p-6 border transition-all ${
-              isDark ? "border-emerald-800/40 bg-[#072017]" : "border-slate-200 bg-white shadow-xl"
-            }`}>
-              <h2 className={`text-2xl font-black flex items-center gap-2 mb-2 ${isDark ? "text-white" : "text-slate-900"}`}>
-                <Calculator className="text-emerald-500" size={26} />
-                {t.npkTitle}
-              </h2>
-              <p className={`text-xs mb-6 ${isDark ? "text-slate-400" : "text-slate-600"}`}>{t.npkSub}</p>
-
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                <div className="lg:col-span-6 space-y-4 text-xs">
-                  <div>
-                    <label className="block font-bold mb-1">Select Crop Type</label>
-                    <select
-                      value={calcCrop}
-                      onChange={(e) => setCalcCrop(e.target.value)}
-                      className={`w-full rounded-xl border p-3 outline-none font-bold ${
-                        isDark ? "border-emerald-800 bg-[#04160f] text-white" : "border-slate-300 bg-slate-50 text-slate-800"
-                      }`}
-                    >
-                      {CROPS_CONFIG.map((c) => (
-                        <option key={c.id} value={c.id}>{c.name} (NPK Ratio: {c.defaultN}:{c.defaultP}:{c.defaultK})</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block font-bold mb-1">Land Parcel Area (Acres): {calcAcres} Acres</label>
-                    <input type="range" min="1" max="25" value={calcAcres} onChange={(e) => setCalcAcres(Number(e.target.value))} className="w-full accent-emerald-500" />
-                  </div>
-
-                  <div>
-                    <label className="block font-bold mb-1">Soil Nitrogen Testing Level</label>
-                    <div className="flex gap-2">
-                      {["low", "medium", "high"].map((lvl) => (
-                        <button key={lvl} onClick={() => setSoilN(lvl)} className={`flex-1 rounded-xl py-2 font-bold uppercase border transition ${
-                          soilN === lvl
-                            ? "border-emerald-500 bg-emerald-500/20 text-emerald-300"
-                            : isDark ? "border-slate-800 text-slate-400" : "border-slate-300 text-slate-600"
-                        }`}>{lvl}</button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                <div className={`lg:col-span-6 rounded-3xl border p-6 space-y-4 transition-all ${
-                  isDark ? "border-emerald-500/30 bg-[#04160f] text-white" : "border-emerald-200 bg-emerald-50/70 text-slate-900 shadow-sm"
-                }`}>
-                  <h3 className="text-lg font-black text-emerald-500">Bag & Cost Estimation</h3>
-                  <div className="grid grid-cols-3 gap-3 text-center">
-                    <div className={`rounded-xl border p-3 ${
-                      isDark ? "border-emerald-500/30 bg-emerald-500/10 text-white" : "border-emerald-300 bg-white text-slate-900 shadow-xs"
-                    }`}>
-                      <p className="text-2xl font-black">{ureaBags}</p>
-                      <p className={`text-[10px] font-bold ${isDark ? "text-emerald-300" : "text-emerald-700"}`}>Urea Bags (50kg)</p>
-                    </div>
-                    <div className={`rounded-xl border p-3 ${
-                      isDark ? "border-cyan-500/30 bg-cyan-500/10 text-white" : "border-cyan-300 bg-white text-slate-900 shadow-xs"
-                    }`}>
-                      <p className="text-2xl font-black">{dapBags}</p>
-                      <p className={`text-[10px] font-bold ${isDark ? "text-cyan-300" : "text-cyan-700"}`}>DAP Bags (50kg)</p>
-                    </div>
-                    <div className={`rounded-xl border p-3 ${
-                      isDark ? "border-amber-500/30 bg-amber-500/10 text-white" : "border-amber-300 bg-white text-slate-900 shadow-xs"
-                    }`}>
-                      <p className="text-2xl font-black">{mopBags}</p>
-                      <p className={`text-[10px] font-bold ${isDark ? "text-amber-300" : "text-amber-700"}`}>MOP Bags (50kg)</p>
-                    </div>
-                  </div>
-
-                  <div className="pt-3 border-t border-slate-700/30 flex justify-between items-center">
-                    <span className={`text-xs font-bold ${isDark ? "text-slate-400" : "text-slate-600"}`}>Total Estimated Fertilizer Cost:</span>
-                    <span className="text-2xl font-black text-emerald-500">₹{estimatedCostINR.toLocaleString()}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* SECTION: e-NAM MANDI MARKET LINKAGE */}
-        {activeNav === "mandi" && (
-          <div className="space-y-6">
-            <div className={`rounded-3xl p-6 border transition-all ${
-              isDark ? "border-emerald-800/40 bg-[#072017]" : "border-slate-200 bg-white shadow-xl"
-            }`}>
-              <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-                <div>
-                  <h2 className={`text-xl font-black flex items-center gap-2 ${isDark ? "text-white" : "text-slate-900"}`}>
-                    <TrendingUp className="text-emerald-500" size={24} />
-                    {t.mandiTitle}
-                  </h2>
-                  <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-600"}`}>Direct APMC Mandi Market Prices & Institutional Buyer Match</p>
-                </div>
-                <div className={`rounded-2xl border p-3.5 text-xs flex items-center gap-3 ${
-                  isDark ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-400" : "border-emerald-300 bg-emerald-50 text-emerald-900 shadow-xs"
-                }`}>
-                  <Award size={22} className="shrink-0 text-emerald-500" />
-                  <div>
-                    <p className={`font-black ${isDark ? "text-white" : "text-slate-900"}`}>{t.bestPriceToday}: {bestMandiItem.mandiName}</p>
-                    <p className="text-[11px]">{bestMandiItem.crop} @ ₹{bestMandiItem.modalPriceINR} {bestMandiItem.unit}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Mandi Cards Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {MANDI_PRICES_FEED.map((mandi) => (
-                  <div key={mandi.id} className={`rounded-2xl border p-4 flex justify-between items-start transition ${
-                    isDark ? "border-emerald-900/60 bg-[#04160f]" : "border-slate-200 bg-white shadow-xs hover:border-emerald-500"
-                  }`}>
-                    <div>
-                      <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">{mandi.crop}</span>
-                      <h3 className={`font-black text-base mt-0.5 ${isDark ? "text-white" : "text-slate-900"}`}>{mandi.mandiName}</h3>
-                      <p className={`text-xs mt-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}><MapPin size={12} className="inline mr-1" />{mandi.distanceKm} km away • Updated {mandi.lastUpdated}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-2xl font-black text-emerald-500">₹{mandi.modalPriceINR}</p>
-                      <span className="text-[11px] font-bold text-amber-500">{mandi.trend}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Produce Listing Form */}
-              <div className={`mt-8 rounded-2xl border p-6 ${isDark ? "border-emerald-900/60 bg-[#04160f]" : "border-slate-200 bg-slate-50"}`}>
-                <h3 className={`text-base font-black mb-4 flex items-center gap-2 ${isDark ? "text-white" : "text-slate-900"}`}>
-                  <PlusCircle size={18} className="text-emerald-500" />
-                  {t.listProduce}
-                </h3>
-                <form onSubmit={handleProduceSubmit} className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-                  <div>
-                    <label className="block font-bold mb-1">Crop Type</label>
-                    <select
-                      value={produceFormCrop}
-                      onChange={(e) => setProduceFormCrop(e.target.value)}
-                      className={`w-full rounded-xl border p-2.5 outline-none font-bold ${
-                        isDark ? "border-emerald-900 bg-[#04160f] text-white" : "border-slate-300 bg-white text-slate-800"
-                      }`}
-                    >
-                      <option value="Tomato">Tomato (Desi / Hybrid)</option>
-                      <option value="Potato">Potato (Jyoti)</option>
-                      <option value="Wheat">Wheat (Sharbati)</option>
-                      <option value="Cotton">Cotton (Long Staple)</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block font-bold mb-1">Quantity (Quintals)</label>
-                    <input
-                      type="number"
-                      value={produceFormQty}
-                      onChange={(e) => setProduceFormQty(Number(e.target.value))}
-                      className={`w-full rounded-xl border p-2.5 outline-none ${
-                        isDark ? "border-emerald-900 bg-[#04160f] text-white" : "border-slate-300 bg-white text-slate-800"
-                      }`}
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-bold mb-1">Expected Price (₹/Quintal)</label>
-                    <input
-                      type="number"
-                      value={produceFormPrice}
-                      onChange={(e) => setProduceFormPrice(Number(e.target.value))}
-                      className={`w-full rounded-xl border p-2.5 outline-none ${
-                        isDark ? "border-emerald-900 bg-[#04160f] text-white" : "border-slate-300 bg-white text-slate-800"
-                      }`}
-                    />
-                  </div>
-                  <div className="sm:col-span-3">
-                    <button type="submit" className="w-full rounded-xl bg-emerald-500 py-3 font-black text-slate-950 hover:bg-emerald-400 transition shadow">
-                      List Produce for Verified Institutional Buyers
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* SECTION: AGRI-INPUT MARKETPLACE */}
-        {activeNav === "market" && (
-          <div className="space-y-6">
-            <div className={`rounded-3xl p-6 border transition-all ${
-              isDark ? "border-emerald-800/40 bg-[#072017]" : "border-slate-200 bg-white shadow-xl"
-            }`}>
-              <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-                <div>
-                  <h2 className={`text-xl font-black flex items-center gap-2 ${isDark ? "text-white" : "text-slate-900"}`}>
-                    <ShoppingCart className="text-emerald-500" size={24} />
-                    Agri-Input Marketplace (Certified Partners)
-                  </h2>
-                  <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-600"}`}>Order directly from certified agri-dealers near your farm parcel</p>
-                </div>
-                <div className="flex gap-2 overflow-x-auto">
-                  {["all", "bio-control", "fungicide", "bactericide", "fertilizer"].map((cat) => (
-                    <button key={cat} onClick={() => setSelectedProductCategory(cat)} className={`rounded-xl px-3 py-1.5 text-xs font-bold border uppercase transition ${
-                      selectedProductCategory === cat
-                        ? "border-emerald-500 bg-emerald-500/20 text-emerald-300 font-black"
-                        : isDark ? "border-emerald-900 text-slate-400" : "border-slate-300 text-slate-600"
-                    }`}>
-                      {cat}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredProducts.map((prod) => (
-                  <div key={prod.id} className={`rounded-2xl border p-4 flex flex-col justify-between transition ${
-                    isDark ? "border-emerald-900/60 bg-[#04160f]" : "border-slate-200 bg-white shadow-xs hover:border-emerald-500"
-                  }`}>
-                    <div>
-                      <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">{prod.category}</span>
-                      <h3 className={`font-black text-base mt-1 ${isDark ? "text-white" : "text-slate-900"}`}>{prod.name}</h3>
-                      <p className={`text-xs mt-0.5 ${isDark ? "text-slate-400" : "text-slate-600"}`}>{prod.brand} • {prod.unit}</p>
-                      <p className="text-xs text-emerald-500 font-bold mt-2"><MapPin size={12} className="inline mr-1" />{prod.dealerName}</p>
-                    </div>
-
-                    <div className="mt-4 pt-3 border-t border-slate-700/30 flex items-center justify-between">
-                      <span className="text-xl font-black text-emerald-500">₹{prod.priceINR}</span>
-                      <button onClick={() => handleSimulatePurchase(prod)} className="rounded-xl bg-emerald-500 px-4 py-2 text-xs font-black text-slate-950 hover:bg-emerald-400 transition shadow">
-                        Order Now
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* SECTION: TIER FEATURES */}
-        {activeNav === "pricing" && (
-          <div className="space-y-6">
-            <div className={`rounded-3xl p-6 border transition-all ${
-              isDark ? "border-emerald-800/40 bg-[#072017]" : "border-slate-200 bg-white shadow-xl shadow-slate-200/50"
-            }`}>
-              <h2 className={`text-2xl font-black flex items-center gap-2 mb-6 ${isDark ? "text-white" : "text-slate-900"}`}>
-                <Zap className="text-amber-500" size={26} />
-                Agri Nirvana Tier Features (100% Free Open Access)
-              </h2>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {SUBSCRIPTION_PLANS.map((plan) => (
-                  <div key={plan.id} className={`relative rounded-3xl border p-6 flex flex-col justify-between transition-all ${
-                    userPlan === plan.id
-                      ? "border-emerald-500 ring-2 ring-emerald-500/50"
-                      : isDark ? "border-emerald-900/60 bg-[#04160f]" : "border-slate-200 bg-white shadow-xs hover:border-emerald-500"
-                  }`}>
-                    {plan.popular && (
-                      <span className="absolute -top-3 right-6 rounded-full bg-amber-500 px-3 py-1 text-[10px] font-black text-slate-950 uppercase tracking-widest shadow">
-                        {plan.badge}
-                      </span>
-                    )}
-
-                    <div>
-                      <span className={`text-xs font-extrabold uppercase tracking-wider ${isDark ? "text-emerald-400" : "text-emerald-700"}`}>
-                        {plan.badge}
-                      </span>
-                      <h3 className={`text-xl font-black mt-1 ${isDark ? "text-white" : "text-slate-900"}`}>{plan.name}</h3>
-                      <div className="my-4">
-                        <span className={`text-3xl font-black ${isDark ? "text-white" : "text-slate-900"}`}>₹0 (Free)</span>
-                        <span className="text-xs text-emerald-500 block font-bold mt-1">Free Open Access</span>
-                      </div>
-
-                      <div className="space-y-2.5 my-6 text-xs">
-                        {plan.features.map((feat, idx) => (
-                          <div key={idx} className="flex items-start gap-2">
-                            <Check size={16} className="text-emerald-500 shrink-0 mt-0.5" />
-                            <span className={isDark ? "text-slate-200" : "text-slate-700"}>{feat}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={() => handleSimulateUpgrade(plan.id)}
-                      disabled={userPlan === plan.id}
-                      className={`w-full rounded-2xl py-3 text-xs font-black transition shadow ${
-                        userPlan === plan.id
-                          ? "bg-emerald-500/20 text-emerald-400 cursor-default"
-                          : plan.popular
-                          ? "bg-amber-500 text-slate-950 hover:bg-amber-400"
-                          : isDark
-                          ? "bg-emerald-500 text-slate-950 hover:bg-emerald-400"
-                          : "bg-emerald-600 text-white hover:bg-emerald-700"
-                      }`}
-                    >
-                      {userPlan === plan.id ? "Currently Active Tier" : "Activate Tier Features (Free)"}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-      </main>
-
-      {/* REPORT OUTBREAK MODAL */}
-      {reportModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
-          <div className={`w-full max-w-md rounded-3xl border p-6 shadow-2xl ${
-            isDark ? "border-emerald-800 bg-[#072017] text-white" : "border-slate-200 bg-white text-slate-900"
-          }`}>
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-black flex items-center gap-2">
-                <ShieldAlert className="text-amber-400" size={20} />
-                Report Outbreak to Community
-              </h3>
-              <button onClick={() => setReportModalOpen(false)} className="hover:opacity-75"><X size={18} /></button>
-            </div>
-            <form onSubmit={handleOutbreakSubmit} className="space-y-4 text-xs">
-              <div>
-                <label className="block font-bold mb-1">Crop Type</label>
-                <select value={reportCrop} onChange={(e) => setReportCrop(e.target.value)} className="w-full rounded-xl border p-2.5 outline-none bg-transparent">
-                  <option value="Tomato">Tomato</option>
-                  <option value="Potato">Potato</option>
-                  <option value="Wheat">Wheat</option>
-                  <option value="Cotton">Cotton</option>
-                </select>
-              </div>
-              <div>
-                <label className="block font-bold mb-1">Disease / Pest Observed</label>
-                <input type="text" value={reportDisease} onChange={(e) => setReportDisease(e.target.value)} className="w-full rounded-xl border p-2.5 outline-none bg-transparent" />
-              </div>
-              <div>
-                <label className="block font-bold mb-1">Your Location PIN Code</label>
-                <input type="text" value={reportPincode} onChange={(e) => setReportPincode(e.target.value)} className="w-full rounded-xl border p-2.5 outline-none bg-transparent" />
-              </div>
-              <button type="submit" className="w-full rounded-xl bg-amber-500 py-3 font-black text-slate-950 hover:bg-amber-400 transition shadow">
-                Broadcast Outbreak Alert to 25km Radius
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Footer */}
-      <footer className={`mt-16 border-t py-8 text-center text-xs transition-colors ${
-        isDark ? "border-emerald-900/40 bg-[#03100a] text-slate-400" : "border-slate-200 bg-slate-100 text-slate-600"
-      }`}>
-        <div className="mx-auto max-w-7xl px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className={`flex items-center gap-2 font-extrabold ${isDark ? "text-white" : "text-slate-900"}`}>
-            <Leaf size={16} className="text-emerald-600" />
-            <span>Agri Nirvana Platform (100% Free Open Access)</span>
-          </div>
-          <p>© 2026 Agri Nirvana AgTech Systems. Powered by Three.js 3D Engine & Hugging Face AI.</p>
-        </div>
-      </footer>
-    </div>
-  );
-}
