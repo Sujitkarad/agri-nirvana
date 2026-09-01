@@ -9,27 +9,51 @@ export default function DiagnosisHistoryView({
 }) {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
   const [selectedCropFilter, setSelectedCropFilter] = useState("All");
   const [sortBy, setSortBy] = useState("newest"); // "newest" | "oldest"
+  const [offset, setOffset] = useState(0);
+  const [limit] = useState(20);
+  const [total, setTotal] = useState(0);
 
   const loadHistory = async () => {
     setLoading(true);
-    const res = await fetchDiagnosisHistoryApi(selectedCropFilter);
-    if (res && res.history) {
-      setHistory(res.history);
+    setErrorMessage("");
+    try {
+      const res = await fetchDiagnosisHistoryApi(selectedCropFilter, limit, offset);
+      if (res && res.history) {
+        setHistory(res.history);
+        setTotal(typeof res.total === "number" ? res.total : res.history.length);
+      } else {
+        setHistory([]);
+        setTotal(0);
+      }
+    } catch (err) {
+      setHistory([]);
+      setTotal(0);
+      setErrorMessage(err.message || "Failed to load history.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   useEffect(() => {
-    loadHistory();
+    setOffset(0);
   }, [selectedCropFilter]);
+
+  useEffect(() => {
+    loadHistory();
+  }, [selectedCropFilter, offset]);
 
   const handleDelete = async (e, id) => {
     e.stopPropagation();
     if (window.confirm("Are you sure you want to delete this diagnosis record from your history?")) {
-      await deleteDiagnosisItemApi(id);
-      loadHistory();
+      try {
+        await deleteDiagnosisItemApi(id);
+        loadHistory();
+      } catch (err) {
+        setErrorMessage(err.message || "Failed to delete diagnosis item.");
+      }
     }
   };
 
@@ -139,6 +163,13 @@ export default function DiagnosisHistoryView({
       {/* HISTORY CARDS GRID */}
       {loading ? (
         <div className="p-12 text-center text-xs text-slate-400 font-mono">Loading diagnosis history...</div>
+      ) : errorMessage ? (
+        <div className={`rounded-3xl border p-8 text-center space-y-2 ${
+          isDark ? "border-rose-900/40 bg-[#04160f]" : "border-rose-200 bg-rose-50"
+        }`}>
+          <h3 className="text-sm font-black text-rose-400">Unable to load diagnosis history</h3>
+          <p className="text-xs text-slate-400">{errorMessage}</p>
+        </div>
       ) : sortedHistory.length === 0 ? (
         /* SECTION 22 EMPTY STATE */
         <div className={`rounded-3xl border p-12 text-center space-y-4 ${
@@ -205,6 +236,32 @@ export default function DiagnosisHistoryView({
               </div>
             );
           })}
+        </div>
+      )}
+
+      {!loading && !errorMessage && total > limit && (
+        <div className="flex items-center justify-between">
+          <span className="text-[11px] text-slate-400">
+            Showing {Math.min(offset + 1, total)}–{Math.min(offset + history.length, total)} of {total}
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setOffset((prev) => Math.max(0, prev - limit))}
+              disabled={offset === 0}
+              className="rounded-lg border px-3 py-1 text-xs font-bold disabled:opacity-40"
+            >
+              Previous
+            </button>
+            <button
+              type="button"
+              onClick={() => setOffset((prev) => (prev + limit < total ? prev + limit : prev))}
+              disabled={offset + limit >= total}
+              className="rounded-lg border px-3 py-1 text-xs font-bold disabled:opacity-40"
+            >
+              Next
+            </button>
+          </div>
         </div>
       )}
     </div>

@@ -1,0 +1,24 @@
+# GPU-ready Dockerfile for Agri Nirvana training
+# Base image includes CUDA and PyTorch runtime
+FROM pytorch/pytorch:2.1.0-cuda11.8-cudnn8-runtime
+
+# Create working directory
+WORKDIR /workspace
+
+# Install system deps
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    curl \
+    ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+# Upgrade pip and install Python deps from project requirements if present
+COPY backend/requirements.txt /workspace/backend/requirements.txt
+RUN python -m pip install --upgrade pip setuptools wheel && \
+    if [ -f /workspace/backend/requirements.txt ]; then pip install -r /workspace/backend/requirements.txt; fi
+
+# Copy project files (training runner references project workspace)
+COPY . /workspace
+
+# Default command prints help; users run training command explicitly
+ENTRYPOINT ["/bin/bash", "-lc"]

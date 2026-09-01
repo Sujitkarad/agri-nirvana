@@ -1,0 +1,77 @@
+name: GPU Training
+
+# Run on a self-hosted runner with GPU capabilities. Configure a self-hosted runner with NVIDIA drivers and Docker+NVIDIA Container Toolkit.
+# Secrets required: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, S3_BUCKET, S3_DATA_PREFIX
+
+on:
+  workflow_dispatch:
+    inputs:
+      epochs:
+        description: 'Number of epochs'
+        required: false
+        default: '10'
+      batch_size:
+        description: 'Batch size'
+        required: false
+        default: '32'
+      lr:
+        description: 'Learning rate'
+        required: false
+        default: '1e-4'
+      pretrained:
+        description: 'Use torchvision pretrained weights'
+        required: false
+        default: 'true'
+
+jobs:
+  train:
+    name: Train on GPU
+    runs-on: [self-hosted, gpu]
+    permissions: read-all
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Create workspace folders
+        run: |
+          mkdir -p /tmp/agri_data
+          mkdir -p /tmp/agri_checkpoints
+
+      - name: Sync dataset from S3
+        run: |
+          aws s3 sync s3://${{ secrets.S3_BUCKET }}/${{ secrets.S3_DATA_PREFIX }} /tmp/agri_data --no-progress
+
+      - name: Build training image
+        run: |
+          docker build -t agri-train:latest -f backend/ml/docker/Dockerfile.gpu .
+
+      - name: Run training container
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          S3_BUCKET: ${{ secrets.S3_BUCKET }}
+        run: |
+          docker run --gpus all --rm \
+            -v ${{ github.workspace }}:/workspace \
+            -v /tmp/agri_data:/data \
+            -v /tmp/agri_checkpoints:/checkpoints \
+            -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e AWS_REGION -e S3_BUCKET \
+            agri-train:latest \
+            bash -lc "python backend/ml/training/run_training.py --data /data --epochs ${{ github.event.inputs.epochs }} --batch-size ${{ github.event.inputs.batch_size }} --lr ${{ github.event.inputs.lr }} --out /checkpoints/efficientnet_b3.pth --pretrained --log-dir /checkpoints/tensorboard --amp"
+
+      - name: Upload checkpoint to S3
+        run: |
+          aws s3 cp /tmp/agri_checkpoints/efficientnet_b3.pth s3://${{ secrets.S3_BUCKET }}/checkpoints/ --no-progress || true
+          aws s3 cp /tmp/agri_checkpoints/efficientnet_b3.pth.best.pth s3://${{ secrets.S3_BUCKET }}/checkpoints/ || true
+
+      - name: Upload logs to S3
+        run: |
+          aws s3 sync /tmp/agri_checkpoints/tensorboard s3://${{ secrets.S3_BUCKET }}/runs/ --no-progress || true

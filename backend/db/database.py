@@ -3,7 +3,7 @@ import sqlite3
 import json
 import uuid
 from datetime import datetime
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 from backend.config import settings
 
 class Database:
@@ -32,6 +32,17 @@ class Database:
                 created_at TEXT
             )
         """)
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_diagnoses_user_created ON diagnoses(user_id, created_at DESC)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_diagnoses_crop ON diagnoses(crop_type)")
+
+        # Improve concurrency for production-like workloads: enable WAL and relaxed synchronous
+        try:
+            cursor.execute("PRAGMA journal_mode=WAL;")
+            cursor.execute("PRAGMA synchronous=NORMAL;")
+        except Exception:
+            # Best-effort; some SQLite builds may not support these pragmas
+            pass
+
         conn.commit()
         conn.close()
 
@@ -69,15 +80,34 @@ class Database:
         saved_doc["createdAt"] = created_at
         return saved_doc
 
-    def get_history(self, crop_filter: Optional[str] = None) -> List[Dict[str, Any]]:
+    def get_history(
+        self,
+        user_id: str,
+        crop_filter: Optional[str] = None,
+        limit: int = 20,
+        offset: int = 0
+    ) -> Tuple[List[Dict[str, Any]], int]:
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
 
+        filters = ["user_id = ?"]
+        params: List[Any] = [user_id]
         if crop_filter and crop_filter != "All":
-            cursor.execute("SELECT * FROM diagnoses WHERE crop_type = ? ORDER BY created_at DESC", (crop_filter,))
-        else:
-            cursor.execute("SELECT * FROM diagnoses ORDER BY created_at DESC")
+            filters.append("crop_type = ?")
+            params.append(crop_filter)
+        where_clause = " AND ".join(filters)
+
+        cursor.execute(
+            f"SELECT COUNT(*) as total FROM diagnoses WHERE {where_clause}",
+            params
+        )
+        total = int(cursor.fetchone()["total"])
+
+        cursor.execute(
+            f"SELECT * FROM diagnoses WHERE {where_clause} ORDER BY created_at DESC LIMIT ? OFFSET ?",
+            [*params, limit, offset]
+        )
 
         rows = cursor.fetchall()
         conn.close()
@@ -100,13 +130,13 @@ class Database:
                 "isMock": bool(r["is_mock"]),
                 "createdAt": r["created_at"]
             })
-        return results
+        return results, total
 
-    def get_diagnosis_by_id(self, diag_id: str) -> Optional[Dict[str, Any]]:
+    def get_diagnosis_by_id(self, diag_id: str, user_id: str) -> Optional[Dict[str, Any]]:
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM diagnoses WHERE id = ?", (diag_id,))
+        cursor.execute("SELECT * FROM diagnoses WHERE id = ? AND user_id = ?", (diag_id, user_id))
         row = cursor.fetchone()
         conn.close()
 
@@ -130,13 +160,39 @@ class Database:
             "createdAt": row["created_at"]
         }
 
-    def delete_diagnosis(self, diag_id: str) -> bool:
+    def delete_diagnosis(self, diag_id: str, user_id: str) -> bool:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        cursor.execute("DELETE FROM diagnoses WHERE id = ?", (diag_id,))
+
+        # Retrieve image URL first so we can attempt cleanup of the file on disk
+        cursor.execute("SELECT image_url FROM diagnoses WHERE id = ? AND user_id = ?", (diag_id, user_id))
+        row = cursor.fetchone()
+        if not row:
+            conn.close()
+            return False
+
+        image_url = row[0] if row and row[0] else None
+
+        cursor.execute("DELETE FROM diagnoses WHERE id = ? AND user_id = ?", (diag_id, user_id))
         affected = cursor.rowcount
         conn.commit()
         conn.close()
+
+        # Attempt to remove the associated uploaded file (best-effort)
+        if image_url:
+            try:
+                # Parse URL to extract the path component robustly
+                from urllib.parse import urlparse
+                parsed = urlparse(image_url)
+                file_name = os.path.basename(parsed.path)
+                if file_name:
+                    file_path = os.path.join(settings.UPLOAD_DIR, file_name)
+                    if os.path.exists(file_path):
+                        os.remove(file_path)
+            except Exception:
+                # Best-effort cleanup; don't fail the delete operation if file removal fails
+                pass
+
         return affected > 0
 
 db = Database()

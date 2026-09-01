@@ -30,6 +30,10 @@ export default function DiseaseLeaf3DModel({ disease, theme = "light" }) {
     let THREE;
     let scene, camera, renderer, animationFrameId;
     let leafMesh, lesionMesh, mainGroup;
+    let domElem;
+    let onMouseDown;
+    let onMouseMove;
+    let onMouseUp;
 
     let isMouseDown = false;
     let previousMousePosition = { x: 0, y: 0 };
@@ -165,15 +169,15 @@ export default function DiseaseLeaf3DModel({ disease, theme = "light" }) {
       scene.add(mainGroup);
 
       // Interactive Rotation Drag Listeners
-      const domElem = renderer.domElement;
-      
-      const onMouseDown = (e) => {
+      domElem = renderer.domElement;
+
+      onMouseDown = (e) => {
         isMouseDown = true;
         setIsDragging(true);
         previousMousePosition = { x: e.clientX, y: e.clientY };
       };
 
-      const onMouseMove = (e) => {
+      onMouseMove = (e) => {
         if (!isMouseDown || !mainGroup) return;
         const deltaX = e.clientX - previousMousePosition.x;
         const deltaY = e.clientY - previousMousePosition.y;
@@ -184,7 +188,7 @@ export default function DiseaseLeaf3DModel({ disease, theme = "light" }) {
         previousMousePosition = { x: e.clientX, y: e.clientY };
       };
 
-      const onMouseUp = () => {
+      onMouseUp = () => {
         isMouseDown = false;
         setIsDragging(false);
       };
@@ -212,18 +216,21 @@ export default function DiseaseLeaf3DModel({ disease, theme = "light" }) {
         renderer.render(scene, camera);
       };
       animate();
-
-      return () => {
-        domElem.removeEventListener("mousedown", onMouseDown);
-        window.removeEventListener("mousemove", onMouseMove);
-        window.removeEventListener("mouseup", onMouseUp);
-      };
     }).catch(() => {
       setWebglSupported(false);
     });
 
     return () => {
       if (animationFrameId) cancelAnimationFrame(animationFrameId);
+      if (domElem && onMouseDown) {
+        domElem.removeEventListener("mousedown", onMouseDown);
+      }
+      if (onMouseMove) {
+        window.removeEventListener("mousemove", onMouseMove);
+      }
+      if (onMouseUp) {
+        window.removeEventListener("mouseup", onMouseUp);
+      }
       if (renderer) renderer.dispose();
     };
   }, [disease, theme]);

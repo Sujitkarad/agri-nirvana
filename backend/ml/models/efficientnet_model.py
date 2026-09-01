@@ -1,3 +1,4 @@
+import os
 from PIL import Image
 from typing import Dict, Any
 from backend.ml.models.base import CropDiseaseModel
@@ -20,6 +21,7 @@ class EfficientNetCropDiseaseModel(CropDiseaseModel):
         self.checkpoint_path = checkpoint_path
         self.model_loaded = False
         self.model = None
+        self.class_labels = None  # populated from checkpoint meta if available
 
         if HAS_TORCH:
             self._init_model()
@@ -39,9 +41,52 @@ class EfficientNetCropDiseaseModel(CropDiseaseModel):
             
             if self.checkpoint_path and os.path.exists(self.checkpoint_path):
                 checkpoint = torch.load(self.checkpoint_path, map_location=self.device)
-                self.model.load_state_dict(checkpoint)
-                self.model_loaded = True
-                print(f"[ML Engine] Loaded EfficientNet-B3 PyTorch checkpoint from {self.checkpoint_path}")
+                # Check whether checkpoint is a meta dict (training script saved meta) or a plain state_dict
+                if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:
+                    state = checkpoint['model_state_dict']
+                    # save class mapping if present
+                    self.class_labels = checkpoint.get('classes', None)
+                else:
+                    state = checkpoint
+
+                # Detect classifier weight key and adjust model head if shapes mismatch
+                ck_num_classes = None
+                for k, v in state.items():
+                    if k.endswith('classifier.1.weight'):
+                        ck_num_classes = v.shape[0]
+                        break
+
+                current_num = self.model.classifier[1].out_features
+                in_feat = self.model.classifier[1].in_features
+
+                if ck_num_classes is not None and ck_num_classes != current_num:
+                    # Replace classifier to match checkpoint's number of classes
+                    try:
+                        self.model.classifier[1] = nn.Linear(in_feat, ck_num_classes)
+                        print(f"[ML Engine] Adjusted classifier from {current_num} to {ck_num_classes} classes to match checkpoint")
+                        # If no class labels provided in meta, produce placeholder labels
+                        if not self.class_labels:
+                            self.class_labels = [f"Class_{i}" for i in range(ck_num_classes)]
+                    except Exception as e:
+                        print(f"[ML Engine Warning] Failed to adjust classifier: {e}")
+
+                # Try loading state_dict; first strict=True then fallback to strict=False
+                try:
+                    self.model.load_state_dict(state)
+                    self.model_loaded = True
+                    print(f"[ML Engine] Loaded EfficientNet-B3 PyTorch checkpoint from {self.checkpoint_path}")
+                except Exception as e:
+                    print(f"[ML Engine Warning] Error(s) in loading state_dict for EfficientNet: {e}")
+                    try:
+                        self.model.load_state_dict(state, strict=False)
+                        self.model_loaded = True
+                        print(f"[ML Engine] Loaded checkpoint with strict=False (partial load).")
+                    except Exception as e2:
+                        print(f"[ML Engine Error] Failed to load checkpoint: {e2}")
+                        self.model_loaded = False
+
+                if self.class_labels:
+                    print(f"[ML Engine] Class labels: {len(self.class_labels)} classes loaded")
             else:
                 print(f"[ML Engine] PyTorch EfficientNet-B3 initialized. Checkpoint not found at '{self.checkpoint_path}', ready for training or evaluation.")
             
@@ -69,8 +114,15 @@ class EfficientNetCropDiseaseModel(CropDiseaseModel):
         if not self.model_loaded or self.model is None:
             # Fallback when checkpoint file is pending training completion
             crop_kb = KNOWLEDGE_BASE.get(crop_type, KNOWLEDGE_BASE["Default"])
-            condition = "Early Blight" if "Early Blight" in crop_kb else list(crop_kb.keys())[0]
-            disease_info = crop_kb[condition]
+            # Defensive handling if knowledge base is malformed/empty for this crop
+            conditions = list(crop_kb.keys()) if isinstance(crop_kb, dict) else []
+            if not conditions:
+                condition = "Unknown"
+                disease_info = {"severity": "Unknown", "symptoms": [], "recommendations": {}}
+            else:
+                condition = "Early Blight" if "Early Blight" in crop_kb else conditions[0]
+                disease_info = crop_kb.get(condition, {})
+
             return {
                 "crop": crop_type,
                 "condition": condition,
@@ -81,7 +133,8 @@ class EfficientNetCropDiseaseModel(CropDiseaseModel):
                 "recommendations": disease_info.get("recommendations", {}),
                 "model_name": f"{self.model_name} (Architecture Standard)",
                 "model_version": self.model_version,
-                "is_mock": False
+                # This is a fallback deterministic output when checkpoint isn't loaded
+                "is_mock": True
             }
 
         try:
@@ -93,10 +146,23 @@ class EfficientNetCropDiseaseModel(CropDiseaseModel):
                 
             confidence_val = round(float(conf.item()), 2)
             
-            crop_kb = KNOWLEDGE_BASE.get(crop_type, KNOWLEDGE_BASE["Default"])
-            conditions = list(crop_kb.keys())
-            condition = conditions[pred_idx.item() % len(conditions)]
-            disease_info = crop_kb[condition]
+            # Prefer class_labels mapping from checkpoint if available
+            if self.class_labels and len(self.class_labels) > 0:
+                idx = pred_idx.item() % len(self.class_labels)
+                predicted_label = self.class_labels[idx]
+                # Map predicted_label (which may be class name) to KNOWLEDGE_BASE entry
+                crop_kb = KNOWLEDGE_BASE.get(crop_type, KNOWLEDGE_BASE["Default"])
+                disease_info = crop_kb.get(predicted_label, {}) if isinstance(crop_kb, dict) else {}
+                condition = predicted_label if predicted_label else list(crop_kb.keys())[0] if isinstance(crop_kb, dict) and crop_kb else "Unknown"
+            else:
+                crop_kb = KNOWLEDGE_BASE.get(crop_type, KNOWLEDGE_BASE["Default"])
+                conditions = list(crop_kb.keys()) if isinstance(crop_kb, dict) else []
+                if not conditions:
+                    condition = "Unknown"
+                    disease_info = {"severity": "Unknown", "symptoms": [], "recommendations": {}}
+                else:
+                    condition = conditions[pred_idx.item() % len(conditions)]
+                    disease_info = crop_kb.get(condition, {})
 
             return {
                 "crop": crop_type,
@@ -108,21 +174,28 @@ class EfficientNetCropDiseaseModel(CropDiseaseModel):
                 "recommendations": disease_info.get("recommendations", {}),
                 "model_name": self.model_name,
                 "model_version": self.model_version,
-                "is_mock": False
+                # This is a real-model path: mark as non-mock only if model_loaded
+                "is_mock": not self.model_loaded
             }
         except Exception as e:
             print(f"[ML Engine Predict Error] {e}")
             crop_kb = KNOWLEDGE_BASE.get(crop_type, KNOWLEDGE_BASE["Default"])
-            condition = list(crop_kb.keys())[0]
-            disease_info = crop_kb[condition]
+            conditions = list(crop_kb.keys()) if isinstance(crop_kb, dict) else []
+            if not conditions:
+                condition = "Unknown"
+                disease_info = {"severity": "Moderate", "symptoms": [], "recommendations": {}}
+            else:
+                condition = conditions[0]
+                disease_info = crop_kb.get(condition, {})
+
             return {
                 "crop": crop_type,
                 "condition": condition,
                 "confidence": 0.75,
                 "severity": "Moderate",
                 "pathogen": "Biological agent",
-                "symptoms": disease_info["symptoms"],
-                "recommendations": disease_info["recommendations"],
+                "symptoms": disease_info.get("symptoms", []),
+                "recommendations": disease_info.get("recommendations", {}),
                 "model_name": self.model_name,
                 "model_version": self.model_version,
                 "is_mock": False

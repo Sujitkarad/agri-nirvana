@@ -5,12 +5,14 @@ import { diagnoseBySymptomDescription } from "../data/agriData";
 export default function VoiceSymptomDiagnosisCard({ onDiagnoseSymptom, isDark = false }) {
   const [symptomText, setSymptomText] = useState("");
   const [isListening, setIsListening] = useState(false);
+  const [statusMessage, setStatusMessage] = useState("");
 
   const handleVoiceListen = () => {
     if (!("webkitSpeechRecognition" in window) && !("SpeechRecognition" in window)) {
-      alert("Voice recognition is not supported on this browser. You can type your symptoms!");
+      setStatusMessage("Voice recognition is not supported in this browser. Please type your symptoms.");
       return;
     }
+    setStatusMessage("");
 
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     const recognition = new SpeechRecognition();
@@ -87,6 +89,9 @@ export default function VoiceSymptomDiagnosisCard({ onDiagnoseSymptom, isDark = 
           <Sparkles size={14} /> Diagnose
         </button>
       </form>
+      {statusMessage && (
+        <p className="mt-2 text-[11px] text-amber-400 font-medium">{statusMessage}</p>
+      )}
     </div>
   );
 }

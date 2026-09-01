@@ -101,7 +101,10 @@ cd agri-nirvana
 # 3. Install Dependencies
 npm install
 
-# 4. Start Local Development Server
+# 4. Configure Environment Variables
+cp .env.example .env
+
+# 5. Start Local Development Server
 npm run dev
 ```
 
