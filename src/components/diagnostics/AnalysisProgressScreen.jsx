@@ -11,12 +11,11 @@ export default function AnalysisProgressScreen({
 
   const visionSteps = [
     { label: "Image loaded & resolution validated", sub: "File type, size, and minimum 150×150px quality check passed" },
-    { label: "Stage A: Plant region detection", sub: "Canvas pixel sampling — verifying green/plant content in image" },
-    { label: "Stage B: HSV color profile extraction", sub: "64×64 pixel grid sampled — extracting hue, saturation, value distributions" },
-    { label: `Running disease classification for ${crop}`, sub: "AgriNirvana Neural Vision v3.0 — scoring against 45 disease profiles" },
-    { label: "Estimating disease severity", sub: "Brown/dark pixel ratio mapped to necrotic area percentage" },
-    { label: "Fetching treatment & IPM advisory", sub: "Matching diagnosis to Maharashtra agronomic knowledge base" },
-    { label: "Preparing structured diagnostic report", sub: "Generating organic, chemical, preventive recommendations & drone telemetry" },
+    { label: "Stage A: Pre-Flight Image Quality Gate", sub: "Checking brightness, contrast, and focus to prevent blurry misdiagnoses" },
+    { label: "Stage B: Dispatching to Neural Vision Engine", sub: `Evaluating ${crop} foliar patterns with trained pathology models` },
+    { label: "Stage C: Confidence & Diagnostic Gating", sub: "Enforcing reliability thresholds and entropy checks" },
+    { label: "Stage D: Differential diagnosis & IPM advisory", sub: "Validating against certified Krishi Vigyan Kendra protocols" },
+    { label: "Preparing structured diagnostic report", sub: "Compiling verified recommendations and safety notices" },
   ];
 
   const symptomSteps = [

@@ -94,15 +94,24 @@ class Database:
         saved_doc["createdAt"] = created_at
         return saved_doc
 
-    def get_history(self, crop_filter: Optional[str] = None) -> List[Dict[str, Any]]:
+    def get_history(self, user_id: Optional[str] = None, crop_filter: Optional[str] = None) -> List[Dict[str, Any]]:
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
 
+        query = "SELECT * FROM diagnoses WHERE 1=1"
+        params = []
+
+        if user_id:
+            query += " AND user_id = ?"
+            params.append(user_id)
+
         if crop_filter and crop_filter != "All":
-            cursor.execute("SELECT * FROM diagnoses WHERE crop_type = ? ORDER BY created_at DESC", (crop_filter,))
-        else:
-            cursor.execute("SELECT * FROM diagnoses ORDER BY created_at DESC")
+            query += " AND crop_type = ?"
+            params.append(crop_filter)
+
+        query += " ORDER BY created_at DESC"
+        cursor.execute(query, tuple(params))
 
         rows = cursor.fetchall()
         conn.close()
@@ -127,11 +136,16 @@ class Database:
             })
         return results
 
-    def get_diagnosis_by_id(self, diag_id: str) -> Optional[Dict[str, Any]]:
+    def get_diagnosis_by_id(self, diag_id: str, user_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM diagnoses WHERE id = ?", (diag_id,))
+
+        if user_id:
+            cursor.execute("SELECT * FROM diagnoses WHERE id = ? AND user_id = ?", (diag_id, user_id))
+        else:
+            cursor.execute("SELECT * FROM diagnoses WHERE id = ?", (diag_id,))
+
         row = cursor.fetchone()
         conn.close()
 
@@ -151,14 +165,17 @@ class Database:
             "recommendations": json.loads(row["recommendations"]) if row["recommendations"] else {},
             "modelName": row["model_name"],
             "modelVersion": row["model_version"],
-            "isMock": bool(row["is_mock"]),
+            "isMock": bool(row["is_mock"]) if "is_mock" in row.keys() else False,
             "createdAt": row["created_at"]
         }
 
-    def delete_diagnosis(self, diag_id: str) -> bool:
+    def delete_diagnosis(self, diag_id: str, user_id: Optional[str] = None) -> bool:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        cursor.execute("DELETE FROM diagnoses WHERE id = ?", (diag_id,))
+        if user_id:
+            cursor.execute("DELETE FROM diagnoses WHERE id = ? AND user_id = ?", (diag_id, user_id))
+        else:
+            cursor.execute("DELETE FROM diagnoses WHERE id = ?", (diag_id,))
         affected = cursor.rowcount
         conn.commit()
         conn.close()

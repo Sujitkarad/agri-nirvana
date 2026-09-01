@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -25,6 +26,16 @@ class Settings(BaseSettings):
     SQLITE_FALLBACK_DB: str = "backend/db/history.db"
 
     ALLOWED_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5173,https://agri-nirvana.vercel.app"
+
+    # Gemini Vision Backend API Configuration
+    GEMINI_API_KEY: Optional[str] = None
+    GEMINI_RATE_LIMIT_PER_MINUTE: int = 15
+    GEMINI_MODEL: str = "gemini-1.5-flash"
+
+    # Farmer Authentication & Security
+    JWT_SECRET: str = "agri-nirvana-jwt-production-secret-2026"
+    JWT_ALGORITHM: str = "HS256"
+    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7
 
     model_config = SettingsConfigDict(
         env_file=".env",

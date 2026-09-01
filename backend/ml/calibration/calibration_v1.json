@@ -1,0 +1,10 @@
+{
+  "version": "v1.0-temperature-scaling",
+  "calibrated": true,
+  "temperature": 1.517,
+  "ece_before": 0.2222,
+  "ece_after": 0.143,
+  "validation_samples": 40,
+  "validation_classes": 8,
+  "timestamp": "2026-09-01T23:00:00Z"
+}

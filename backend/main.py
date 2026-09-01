@@ -46,9 +46,11 @@ app.add_middleware(
 )
 
 from backend.routes.ai_chat import router as ai_chat_router
+from backend.routes.auth import router as auth_router
 from backend.routes.diagnosis import router as diagnosis_router
 from backend.routes.field_intelligence import router as field_intelligence_router
 
+app.include_router(auth_router, prefix=settings.API_V1_STR)
 app.include_router(ai_chat_router, prefix=settings.API_V1_STR)
 app.include_router(diagnosis_router, prefix=settings.API_V1_STR)
 app.include_router(field_intelligence_router, prefix=settings.API_V1_STR)
@@ -99,13 +101,16 @@ async def get_supported_crops():
 
 @app.get(f"{settings.API_V1_STR}/model/status")
 async def get_model_status():
+    models_ready = bool(inference_engine._models_loaded and inference_engine.provider_type == "real")
     return {
         "success": True,
         "model_name": inference_engine.model_name,
         "model_version": inference_engine.model_version,
         "provider_type": inference_engine.provider_type,
-        "is_mock": inference_engine.provider_type != "real" or not inference_engine._models_loaded,
-        "models_loaded": inference_engine._models_loaded,
+        "is_mock": not models_ready,
+        "models_loaded": models_ready,
+        "is_calibrated": getattr(inference_engine, "_is_calibrated", False),
+        "gemini_configured": bool(settings.GEMINI_API_KEY),
         "confidence_threshold": inference_engine.threshold,
         "max_image_size_mb": settings.MAX_IMAGE_SIZE_MB,
         "supported_crops": inference_engine.supported_crops(),

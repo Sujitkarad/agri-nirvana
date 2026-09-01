@@ -24,6 +24,14 @@ class ProductionInferenceEngine:
         self._plant_validator = None
         self._disease_classifier = None
         self._models_loaded = False
+        self._is_calibrated = False
+
+        try:
+            from backend.ml.calibration.temperature_scaling import calibrator
+            self._is_calibrated = calibrator.is_calibrated
+        except Exception:
+            self._is_calibrated = False
+
         if self.provider_type == "real":
             self._load_models()
 
@@ -200,7 +208,26 @@ class ProductionInferenceEngine:
             return self._abstain(
                 crop_type,
                 classification,
-                f"Model confidence {confidence:.2f} is below the configured reliability threshold {self.threshold:.2f}.",
+                f"Model confidence ({confidence:.2f}) is below the configured reliability threshold ({self.threshold:.2f}).",
+            )
+
+        top_preds = classification.get("top_predictions", [])
+        if len(top_preds) > 1:
+            margin = confidence - float(top_preds[1].get("confidence", 0.0))
+            if margin < 0.10:
+                return self._abstain(
+                    crop_type,
+                    classification,
+                    f"Ambiguous prediction: margin between top-2 candidate conditions ({margin:.2f}) is too narrow (< 0.10). Retake clearer photo.",
+                )
+
+        conf_diag = classification.get("confidence_diagnostics", {})
+        norm_entropy = float(conf_diag.get("normalized_entropy", 0.0))
+        if norm_entropy > 0.90:
+            return self._abstain(
+                crop_type,
+                classification,
+                f"Prediction entropy ({norm_entropy:.2f}) exceeds 0.90, indicating visual ambiguity across classes.",
             )
 
         from backend.ml.models.severity_estimator import estimate_severity

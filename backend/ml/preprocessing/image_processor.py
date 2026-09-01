@@ -38,20 +38,14 @@ def validate_and_preprocess_image(file_bytes: bytes, filename: str = "") -> Imag
 
     height, width, _ = img_np.shape
 
-    # 3. Dimension Resolution Check
-    if width < 50 or height < 50:
+    # 3. Dimension Resolution Check (<150x150 px strictly rejected)
+    if width < 150 or height < 150:
         return ImageQualityResult(
             is_valid=False,
-            error_message="Image resolution is too low (<50x50 px) for accurate AI computer vision diagnosis. Please upload a clearer photo."
+            error_message=f"Image resolution ({width}x{height} px) is too low (<150x150 px) for reliable crop diagnosis. Please take a closer, higher-resolution photo."
         )
-    elif width < 150 or height < 150:
-        # Gracefully upscale small previews to 224x224 for MobileNetV2
-        pil_img = pil_img.resize((224, 224), Image.Resampling.BILINEAR)
-        img_np = np.array(pil_img)
 
-    warnings = []
-
-    # 5. Darkness & Blur Check (OpenCV or Pillow fallback)
+    # 4. Darkness, Brightness & Blur Gate (OpenCV or Pillow fallback)
     if HAS_CV2:
         gray = cv2.cvtColor(img_np, cv2.COLOR_RGB2GRAY)
         mean_brightness = float(np.mean(gray))
@@ -60,14 +54,32 @@ def validate_and_preprocess_image(file_bytes: bytes, filename: str = "") -> Imag
         gray_pil = pil_img.convert("L")
         stat = ImageStat.Stat(gray_pil)
         mean_brightness = float(stat.mean[0])
-        # Approximate variance
         laplacian_var = float(stat.stddev[0] ** 2)
 
-    if mean_brightness < 40.0:
-        warnings.append("Image is extremely dark. Capture under clear natural sunlight for better accuracy.")
+    # Strict Quality Rejections
+    if mean_brightness < 35.0:
+        return ImageQualityResult(
+            is_valid=False,
+            error_message="Image is too dark for diagnostic evaluation (mean brightness < 35). Please retake in clear, natural daytime lighting."
+        )
 
-    if laplacian_var < 80.0:
-        warnings.append("Image appears blurry. Ensure the crop leaf is sharply in focus.")
+    if mean_brightness > 225.0:
+        return ImageQualityResult(
+            is_valid=False,
+            error_message="Image is washed out or overexposed (mean brightness > 225). Please avoid direct camera flash or glare and retake."
+        )
+
+    if laplacian_var < 70.0:
+        return ImageQualityResult(
+            is_valid=False,
+            error_message="Image is too blurry for reliable computer vision pathology (focus score < 70). Hold your camera steady and ensure the leaf lamina is in sharp focus."
+        )
+
+    warnings = []
+    if mean_brightness < 50.0:
+        warnings.append("Lighting is somewhat dim. Better daylight improves diagnostic confidence.")
+    if laplacian_var < 100.0:
+        warnings.append("Leaf focus is marginal. For critical decisions, take a sharper close-up.")
 
     return ImageQualityResult(
         is_valid=True,

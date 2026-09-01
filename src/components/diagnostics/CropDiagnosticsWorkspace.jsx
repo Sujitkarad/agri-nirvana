@@ -6,7 +6,8 @@ import {
   fetchSupportedCrops,
   analyzeCropImageApi,
   analyzeCropSymptomsApi,
-  fetchDiagnosisHistoryApi
+  fetchDiagnosisHistoryApi,
+  initFarmerSessionApi
 } from "../../services/diagnosisApi";
 
 import CropSelector from "./CropSelector";
@@ -70,8 +71,9 @@ export default function CropDiagnosticsWorkspace({
   const [isAgronomistModalOpen, setIsAgronomistModalOpen] = useState(false);
 
   useEffect(() => {
+    initFarmerSessionApi("farmer_default");
     fetchModelStatus().then((res) => {
-      if (res && res.success) setModelStatus(res);
+      if (res) setModelStatus(res);
     });
     fetchSupportedCrops().then((res) => {
       if (res && res.crops && res.crops.length > 0) setCrops(res.crops);

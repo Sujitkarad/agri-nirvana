@@ -88,7 +88,12 @@ class TestDiagnosisAPI(unittest.TestCase):
         self.assertEqual(del_check.status_code, 404)
 
     def test_analyze_image_valid_upload(self):
-        img = Image.new("RGB", (256, 256), color="green")
+        img = Image.new("RGB", (256, 256), color=(40, 140, 40))
+        from PIL import ImageDraw
+        draw = ImageDraw.Draw(img)
+        for i in range(10, 256, 20):
+            draw.line([(i, 0), (i, 256)], fill=(10, 60, 10), width=2)
+            draw.line([(0, i), (256, i)], fill=(20, 100, 20), width=2)
         buf = io.BytesIO()
         img.save(buf, format="JPEG")
         buf.seek(0)

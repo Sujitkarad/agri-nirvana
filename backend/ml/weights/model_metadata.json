@@ -1,0 +1,22 @@
+{
+  "model_architecture": "MobileNetV2-Custom",
+  "num_classes": 8,
+  "classes": [
+    "Corn___Common_rust",
+    "Corn___Northern_Leaf_Blight",
+    "Potato___Early_blight",
+    "Potato___Late_blight",
+    "Potato___healthy",
+    "Tomato___Early_blight",
+    "Tomato___Late_blight",
+    "Tomato___healthy"
+  ],
+  "best_validation_accuracy": 0.65,
+  "macro_f1": 0.5476,
+  "macro_recall": 0.65,
+  "expected_calibration_error": 0.2222,
+  "total_training_time_seconds": 19.71,
+  "calibrated": true,
+  "temperature": 1.517,
+  "trained_at": "2026-09-01T17:48:53Z"
+}
