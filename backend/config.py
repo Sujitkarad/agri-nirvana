@@ -5,13 +5,16 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Agri Nirvana - Crop AI Health Diagnostic API"
-    VERSION: str = "3.5.0"
+    VERSION: str = "4.0.0"
     API_V1_STR: str = "/api/v1"
 
     AI_MODEL_PROVIDER: str = "real"
     AI_CONFIDENCE_THRESHOLD: float = Field(default=0.70, ge=0.50, le=0.95)
-    # If this file exists, it takes precedence over the Hugging Face baseline.
-    LOCAL_TRAINED_MODEL_PATH: str = "backend/ml/models/weights/agri_nirvana_efficientnet_b0.pt"
+    AI_MIN_TOP2_MARGIN: float = Field(default=0.10, ge=0.0, le=0.50)
+    AI_MAX_NORMALIZED_ENTROPY: float = Field(default=0.90, ge=0.0, le=1.0)
+    # Production checkpoint. The runtime checks this path first and only then
+    # falls back to the Hugging Face baseline when explicitly unavailable.
+    LOCAL_TRAINED_MODEL_PATH: str = "backend/ml/models/weights/agri_nirvana_efficientnet_v2_s.pt"
     HF_MODEL_ID: str = "linkanjarad/mobilenet_v2_1.0_224-plant-disease-identification"
 
     AI_CHAT_MODEL: str = "openai/gpt-oss-120b:fastest"
@@ -27,12 +30,10 @@ class Settings(BaseSettings):
 
     ALLOWED_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5173,https://agri-nirvana.vercel.app"
 
-    # Gemini Vision Backend API Configuration
     GEMINI_API_KEY: Optional[str] = None
     GEMINI_RATE_LIMIT_PER_MINUTE: int = 15
     GEMINI_MODEL: str = "gemini-1.5-flash"
 
-    # Farmer Authentication & Security
     JWT_SECRET: str = "agri-nirvana-jwt-production-secret-2026"
     JWT_ALGORITHM: str = "HS256"
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7
