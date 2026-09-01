@@ -65,6 +65,11 @@ class EfficientNetDiseaseClassifier:
         logits = self.model(tensor)[0] / self.temperature
         global_probs = F.softmax(logits, dim=0)
 
+        global_idx = int(torch.argmax(global_probs).item())
+        global_raw = self.id2label[global_idx]
+        global_crop, global_condition = _parse_class_label(global_raw)
+        global_confidence = float(global_probs[global_idx].item())
+
         candidates = []
         crop_probability_mass = 1.0
         requested_crop = (crop_filter or "").strip().lower()
@@ -86,9 +91,6 @@ class EfficientNetDiseaseClassifier:
             crop, condition = _parse_class_label(raw)
             candidates.append((probability, idx, raw, crop, condition))
 
-        # If the requested crop is not represented by the checkpoint, preserve
-        # the safe behavior of exposing the global prediction rather than lying
-        # about its crop-conditioned probability.
         if not candidates:
             candidates = [
                 (p, i, self.id2label[i], *_parse_class_label(self.id2label[i]))
@@ -122,6 +124,9 @@ class EfficientNetDiseaseClassifier:
                 ) if len(predictions) > 1 else best["confidence"],
                 "temperature": self.temperature,
                 "crop_probability_mass": round(crop_probability_mass, 4),
+                "global_top_crop": global_crop,
+                "global_top_condition": global_condition,
+                "global_top_probability": round(global_confidence, 4),
                 "calibration_status": "temperature_scaled" if self.calibration else "not_calibrated",
                 "confidence_type": "global_calibrated_probability",
             },
