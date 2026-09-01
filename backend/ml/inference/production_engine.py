@@ -1,10 +1,11 @@
 """Production-safe crop diagnosis engine.
 
-The runtime engine never invents a diagnosis when the model is unavailable,
-the selected crop is outside the model's training classes, or confidence is
-below the configured reliability threshold.
+The runtime engine prefers Agri Nirvana's locally trained EfficientNetV2-S
+checkpoint and only falls back to the Hugging Face baseline when the local
+checkpoint is unavailable. Low-confidence and ambiguous predictions abstain.
 """
 
+from pathlib import Path
 from typing import Any, Dict, List
 
 from PIL import Image
@@ -24,44 +25,70 @@ class ProductionInferenceEngine:
         self._plant_validator = None
         self._disease_classifier = None
         self._models_loaded = False
+        self._model_source = "unavailable"
         self._is_calibrated = False
-
-        try:
-            from backend.ml.calibration.temperature_scaling import calibrator
-            self._is_calibrated = calibrator.is_calibrated
-        except Exception:
-            self._is_calibrated = False
 
         if self.provider_type == "real":
             self._load_models()
 
     def _load_models(self) -> None:
+        """Load the trained local checkpoint first, then use HF as a fallback."""
         try:
             from backend.ml.models.plant_validator import PlantValidator
+            self._plant_validator = PlantValidator()
+        except Exception as exc:
+            print(f"[ProductionInferenceEngine] plant validator load failed: {exc}")
+            self._plant_validator = None
+
+        local_path = Path(settings.LOCAL_TRAINED_MODEL_PATH)
+        if local_path.is_file():
+            try:
+                from backend.ml.models.efficientnet_classifier import EfficientNetDiseaseClassifier
+
+                self._disease_classifier = EfficientNetDiseaseClassifier(str(local_path))
+                self._models_loaded = bool(self._disease_classifier.is_loaded)
+                if self._models_loaded:
+                    self._model_source = "local_trained"
+                    diagnostics = getattr(self._disease_classifier, "calibration", None)
+                    self._is_calibrated = diagnostics is not None
+                    print(
+                        f"[ProductionInferenceEngine] Loaded local model: "
+                        f"{local_path} ({self._disease_classifier.model_id})"
+                    )
+                    return
+            except Exception as exc:
+                print(f"[ProductionInferenceEngine] local model load failed: {exc}")
+
+        # Explicit fallback for deployments where the trained artifact has not
+        # been mounted yet. This never overrides a successfully loaded local model.
+        try:
             from backend.ml.models.disease_classifier import DiseaseClassifier
 
-            self._plant_validator = PlantValidator()
-            self._disease_classifier = DiseaseClassifier(
-                model_id=getattr(settings, "HF_MODEL_ID", None)
-            )
-            self._models_loaded = bool(
-                self._plant_validator
-                and self._disease_classifier
-                and self._disease_classifier.is_loaded
-            )
+            fallback = DiseaseClassifier(model_id=getattr(settings, "HF_MODEL_ID", None))
+            if fallback.is_loaded:
+                self._disease_classifier = fallback
+                self._models_loaded = True
+                self._model_source = "huggingface_fallback"
+                self._is_calibrated = False
+                print(
+                    "[ProductionInferenceEngine] WARNING: local trained checkpoint "
+                    "not found; using Hugging Face fallback model."
+                )
         except Exception as exc:
-            print(f"[ProductionInferenceEngine] model load failed: {exc}")
+            print(f"[ProductionInferenceEngine] fallback model load failed: {exc}")
             self._models_loaded = False
 
     @property
     def model_name(self) -> str:
-        if self._models_loaded:
+        if self._models_loaded and self._disease_classifier:
             return f"{self._disease_classifier.model_id} + ImageNet plant validator"
         return "Unavailable"
 
     @property
     def model_version(self) -> str:
-        return "v3-production-safe" if self._models_loaded else "unavailable"
+        if not self._models_loaded:
+            return "unavailable"
+        return "v4-local-efficientnet-v2-s" if self._model_source == "local_trained" else "v3-huggingface-fallback"
 
     def supported_crops(self) -> List[str]:
         if self._disease_classifier and self._disease_classifier.id2label:
@@ -98,6 +125,7 @@ class ProductionInferenceEngine:
             "supported_crops": self.supported_crops(),
             "modelName": self.model_name,
             "modelVersion": self.model_version,
+            "modelSource": self._model_source,
             "isMock": False,
         }
 
@@ -119,6 +147,7 @@ class ProductionInferenceEngine:
             },
             "modelName": self.model_name,
             "modelVersion": self.model_version,
+            "modelSource": self._model_source,
             "isMock": True,
         }
 
@@ -161,6 +190,7 @@ class ProductionInferenceEngine:
             },
             "modelName": self.model_name,
             "modelVersion": self.model_version,
+            "modelSource": self._model_source,
             "isMock": False,
         }
 
@@ -185,9 +215,7 @@ class ProductionInferenceEngine:
             return {
                 "status": "invalid_image",
                 "is_valid_crop_image": False,
-                "rejection_reason": validation.get(
-                    "rejection_reason", "Image does not appear to contain a crop leaf."
-                ),
+                "rejection_reason": validation.get("rejection_reason", "Image does not appear to contain a crop leaf."),
                 "cropType": crop_type,
                 "condition": "Invalid Image",
                 "confidence": 0.0,
@@ -196,12 +224,11 @@ class ProductionInferenceEngine:
                 "uncertainty": {"abstain": True, "reason": "Plant validation failed."},
                 "modelName": self.model_name,
                 "modelVersion": self.model_version,
+                "modelSource": self._model_source,
                 "isMock": False,
             }
 
-        classification = self._disease_classifier.classify(
-            pil_image, top_k=5, crop_filter=crop_type
-        )
+        classification = self._disease_classifier.classify(pil_image, top_k=5, crop_filter=crop_type)
         confidence = max(0.0, min(float(classification.get("confidence", 0.0)), 1.0))
 
         if confidence < self.threshold:
@@ -366,6 +393,8 @@ class ProductionInferenceEngine:
             },
             "modelName": self.model_name,
             "modelVersion": self.model_version,
+            "modelSource": self._model_source,
+            "calibrationStatus": classification.get("confidence_diagnostics", {}).get("calibration_status", "unknown"),
             "isMock": False,
         }
 
