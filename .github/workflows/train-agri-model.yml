@@ -4,21 +4,21 @@ on:
   workflow_dispatch:
     inputs:
       epochs:
-        description: Training epochs (3-5 recommended on GitHub CPU)
+        description: "Training epochs (80 recommended for high-accuracy GPU training)"
         required: false
-        default: "5"
+        default: "80"
       batch_size:
-        description: Batch size
+        description: "Batch size (16 for 8-12 GB GPU; lower if needed)"
         required: false
         default: "16"
       learning_rate:
-        description: Learning rate
+        description: "Initial classifier learning rate"
         required: false
-        default: "0.0003"
+        default: "0.0001"
       max_per_class:
-        description: Maximum images per class (0 = all; 250 recommended on GitHub CPU)
+        description: "Maximum images per class (0 = use the complete dataset)"
         required: false
-        default: "250"
+        default: "0"
 
 jobs:
   train:
@@ -51,6 +51,7 @@ jobs:
           print('PyTorch:', torch.__version__)
           print('TorchVision:', torchvision.__version__)
           print('CUDA available:', torch.cuda.is_available())
+          print('Model: EfficientNetV2-S, 384x384')
           PY
 
       - name: Download PlantVillage
@@ -65,38 +66,55 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           root = Path('backend/ml/datasets/plant_disease')
+          total = 0
           for split in ('train', 'val', 'test'):
               classes = [p for p in (root / split).iterdir() if p.is_dir()]
               images = sum(1 for p in (root / split).rglob('*') if p.suffix.lower() in {'.jpg','.jpeg','.png','.webp','.bmp'})
+              total += images
               print(f'{split}: {images} images, {len(classes)} classes')
+          print('total:', total)
+          if total == 0:
+              raise SystemExit('Dataset is empty')
           PY
 
-      - name: Train EfficientNet-B0
+      - name: Train high-accuracy EfficientNetV2-S
         run: |
           python -m backend.ml.training.train_pipeline \
             --data backend/ml/datasets/plant_disease \
             --epochs ${{ inputs.epochs }} \
             --batch-size ${{ inputs.batch_size }} \
             --lr ${{ inputs.learning_rate }} \
-            --workers 0
+            --image-size 384 \
+            --warmup-epochs 5 \
+            --freeze-epochs 5 \
+            --patience 12 \
+            --workers 2
 
       - name: Verify trained model
         run: |
           test -s backend/ml/models/weights/agri_nirvana_efficientnet_b0.pt
           test -s backend/ml/models/weights/agri_nirvana_efficientnet_b0.json
+          test -s backend/ml/training/training_report.json
           python - <<'PY'
           import json
           p='backend/ml/models/weights/agri_nirvana_efficientnet_b0.json'
           d=json.load(open(p, encoding='utf-8'))
-          print('Training completed successfully')
+          print('Architecture:', d.get('architecture'))
+          print('Image size:', d.get('image_size'))
+          print('Best epoch:', d.get('best_epoch'))
+          print('Test metrics:')
           print(json.dumps(d.get('metrics', {}), indent=2))
+          print('Calibration:')
+          print(json.dumps(d.get('calibration', {}), indent=2))
           PY
 
       - name: Upload trained model artifact
         uses: actions/upload-artifact@v4
         with:
-          name: agri-nirvana-efficientnet-b0
+          name: agri-nirvana-efficientnet-v2-s
           path: |
             backend/ml/models/weights/agri_nirvana_efficientnet_b0.pt
             backend/ml/models/weights/agri_nirvana_efficientnet_b0.json
+            backend/ml/models/weights/temperature_calibration.json
+            backend/ml/training/training_report.json
           retention-days: 30
