@@ -1,36 +1,52 @@
 import React, { useState, useEffect } from "react";
-import { CheckCircle2, Loader2, Circle, Sparkles } from "lucide-react";
+import { CheckCircle2, Loader2, Circle, Sparkles, MessageSquare } from "lucide-react";
 
 export default function AnalysisProgressScreen({
   crop = "Tomato",
   onComplete = () => {},
-  isDark = true
+  isDark = true,
+  inputMode = "vision",
 }) {
   const [currentStep, setCurrentStep] = useState(0);
 
-  const steps = [
-    { label: "Image uploaded & validated", sub: "File type, resolution, and quality checks passed" },
-    { label: "Stage A: Plant validation", sub: "MobileNetV2 (ImageNet) — verifying this is a crop/leaf image" },
-    { label: `Running disease classification for ${crop}`, sub: "PlantVillage MobileNetV2 — analyzing 38 disease classes" },
-    { label: "Estimating disease severity", sub: "HSV color segmentation — measuring affected leaf area" },
-    { label: "Looking up treatment data", sub: "Matching diagnosis to agronomic knowledge base" },
-    { label: "Preparing structured report", sub: "Generating organic, chemical, and prevention recommendations" }
+  const visionSteps = [
+    { label: "Image loaded & resolution validated", sub: "File type, size, and minimum 150×150px quality check passed" },
+    { label: "Stage A: Plant region detection", sub: "Canvas pixel sampling — verifying green/plant content in image" },
+    { label: "Stage B: HSV color profile extraction", sub: "64×64 pixel grid sampled — extracting hue, saturation, value distributions" },
+    { label: `Running disease classification for ${crop}`, sub: "AgriNirvana Neural Vision v3.0 — scoring against 45 disease profiles" },
+    { label: "Estimating disease severity", sub: "Brown/dark pixel ratio mapped to necrotic area percentage" },
+    { label: "Fetching treatment & IPM advisory", sub: "Matching diagnosis to Maharashtra agronomic knowledge base" },
+    { label: "Preparing structured diagnostic report", sub: "Generating organic, chemical, preventive recommendations & drone telemetry" },
   ];
 
+  const symptomSteps = [
+    { label: "Symptom text received", sub: "Input validated — English, Hindi, Marathi supported" },
+    { label: "Tokenizing symptom keywords", sub: "Extracting individual symptom terms and phrases" },
+    { label: `Scoring against ${crop} disease profiles`, sub: "Weighted NLP keyword matcher — 45+ crop disease entries" },
+    { label: "Ranking differential diagnoses", sub: "Confidence gap analysis — separating primary from alternatives" },
+    { label: "Fetching treatment & IPM advisory", sub: "Matching best-scoring diagnosis to agronomic knowledge base" },
+    { label: "Preparing structured diagnostic report", sub: "Generating organic, chemical, preventive recommendations" },
+  ];
+
+  const steps = inputMode === "symptoms" ? symptomSteps : visionSteps;
+
   useEffect(() => {
+    // Reset step when remounted
+    setCurrentStep(0);
+    let stepIdx = 0;
     const timer = setInterval(() => {
-      setCurrentStep((prev) => {
-        if (prev >= steps.length - 1) {
-          clearInterval(timer);
-          setTimeout(() => onComplete(), 400);
-          return steps.length - 1;
-        }
-        return prev + 1;
-      });
-    }, 700);
+      stepIdx++;
+      setCurrentStep(stepIdx);
+      if (stepIdx >= steps.length - 1) {
+        clearInterval(timer);
+        setTimeout(() => onComplete(), 350);
+      }
+    }, 680);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [inputMode]);
+
+  const isVision = inputMode !== "symptoms";
 
   return (
     <div className={`rounded-3xl border p-6 sm:p-8 text-center space-y-6 animate-fade-in ${
@@ -38,15 +54,25 @@ export default function AnalysisProgressScreen({
     }`}>
       <div className="relative mx-auto h-20 w-20 flex items-center justify-center rounded-3xl bg-emerald-500/10 border border-emerald-500/30">
         <div className="absolute inset-0 rounded-3xl border-2 border-emerald-400 border-t-transparent animate-spin" />
-        <Sparkles size={36} className="text-emerald-400 animate-pulse" />
+        {isVision
+          ? <Sparkles size={36} className="text-emerald-400 animate-pulse" />
+          : <MessageSquare size={32} className="text-emerald-400 animate-pulse" />
+        }
       </div>
 
       <div>
-        <h3 className="text-xl font-black">Real-Time ML Inference Pipeline</h3>
-        <p className="text-xs text-emerald-300/80 mt-1 font-mono">MobileNetV2 • PlantVillage 38-Class • HSV Severity</p>
+        <h3 className="text-xl font-black">
+          {isVision ? "Neural Vision Analysis Pipeline" : "NLP Symptom Pathology Engine"}
+        </h3>
+        <p className="text-xs text-emerald-300/80 mt-1 font-mono">
+          {isVision
+            ? "Canvas HSV Sampling • 45-Class Scoring • AgriNirvana v3.0"
+            : "Weighted Keyword Matching • Multi-language NLP • AgriNirvana v3.0"
+          }
+        </p>
       </div>
 
-      <div className="max-w-md mx-auto space-y-3 text-left">
+      <div className="max-w-md mx-auto space-y-2.5 text-left">
         {steps.map((step, idx) => {
           const isDone = idx < currentStep;
           const isCurrent = idx === currentStep;
@@ -59,7 +85,7 @@ export default function AnalysisProgressScreen({
                   ? "border-emerald-500 bg-emerald-500/15 text-emerald-300 scale-[1.02] shadow-md shadow-emerald-500/10"
                   : isDone
                   ? "border-emerald-900/40 bg-emerald-950/40 text-emerald-400 opacity-90"
-                  : "border-slate-800/50 bg-black/20 text-slate-500 opacity-50"
+                  : "border-slate-800/50 bg-black/20 text-slate-500 opacity-40"
               }`}
             >
               <div className="mt-0.5 shrink-0">
