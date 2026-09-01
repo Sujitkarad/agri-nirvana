@@ -36,7 +36,6 @@ brain/
 # Python & ML
 __pycache__/
 *.py[cod]
-*$py.class
 *.pyc
 venv/
 .venv/
@@ -44,3 +43,7 @@ env/
 *.sqlite3
 *.db
 !backend/db/schema.sql
+
+# ML datasets and generated weights (store large artifacts outside git)
+backend/ml/datasets/*
+backend/ml/models/weights/*
