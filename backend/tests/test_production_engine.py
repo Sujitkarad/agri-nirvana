@@ -15,6 +15,8 @@ class TestProductionEngine(unittest.TestCase):
         engine._models_loaded = False
         engine._plant_validator = None
         engine._disease_classifier = None
+        engine._model_source = "unavailable"
+        engine._is_calibrated = False
         return engine
 
     def test_engine_abstains_for_unsupported_crop(self):

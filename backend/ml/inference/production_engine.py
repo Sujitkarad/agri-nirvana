@@ -79,16 +79,20 @@ class ProductionInferenceEngine:
             self._models_loaded = False
 
     @property
+    def model_source(self) -> str:
+        return getattr(self, "_model_source", "unavailable")
+
+    @property
     def model_name(self) -> str:
-        if self._models_loaded and self._disease_classifier:
+        if getattr(self, "_models_loaded", False) and getattr(self, "_disease_classifier", None):
             return f"{self._disease_classifier.model_id} + ImageNet plant validator"
         return "Unavailable"
 
     @property
     def model_version(self) -> str:
-        if not self._models_loaded:
+        if not getattr(self, "_models_loaded", False):
             return "unavailable"
-        return "v4-local-efficientnet-v2-s" if self._model_source == "local_trained" else "v3-huggingface-fallback"
+        return "v4-local-efficientnet-v2-s" if self.model_source == "local_trained" else "v3-huggingface-fallback"
 
     def supported_crops(self) -> List[str]:
         if self._disease_classifier and self._disease_classifier.id2label:
@@ -114,6 +118,18 @@ class ProductionInferenceEngine:
                     f"The current AI model is not trained for '{crop_type}'. "
                     "No disease prediction was generated."
                 ),
+                "remedy": (
+                    f"Select one of the supported crops: {', '.join(self.supported_crops())}. "
+                    "For other crops, request field evaluation from an agronomist."
+                ),
+                "image_quality": {
+                    "status": "pass",
+                    "width": 0,
+                    "height": 0,
+                    "sharpness": 0.0,
+                    "brightness": 0.0,
+                    "aspect_ratio": 1.0,
+                },
             },
             "crop": {"name": crop_type, "confidence_pct": 0},
             "cropType": crop_type,
@@ -125,7 +141,7 @@ class ProductionInferenceEngine:
             "supported_crops": self.supported_crops(),
             "modelName": self.model_name,
             "modelVersion": self.model_version,
-            "modelSource": self._model_source,
+            "modelSource": self.model_source,
             "isMock": False,
         }
 
@@ -147,7 +163,7 @@ class ProductionInferenceEngine:
             },
             "modelName": self.model_name,
             "modelVersion": self.model_version,
-            "modelSource": self._model_source,
+            "modelSource": self.model_source,
             "isMock": True,
         }
 
