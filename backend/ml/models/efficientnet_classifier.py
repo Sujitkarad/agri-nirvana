@@ -1,7 +1,8 @@
 """Inference adapter for Agri Nirvana's trained EfficientNet disease model.
 
 Supports the current EfficientNetV2-S checkpoint as well as legacy EfficientNet-B0
-checkpoints so deployment can be upgraded without changing API callers.
+checkpoints. Crop filtering never renormalizes probabilities, preventing a crop
+selection from artificially inflating diagnostic confidence.
 """
 from __future__ import annotations
 
@@ -22,7 +23,8 @@ class EfficientNetDiseaseClassifier:
         self.class_to_idx = checkpoint["class_to_idx"]
         self.id2label = {int(k): v for k, v in checkpoint["idx_to_class"].items()}
         self.image_size = int(checkpoint.get("image_size", 224))
-        self.temperature = float(checkpoint.get("calibration", {}).get("temperature", 1.0))
+        self.calibration = checkpoint.get("calibration", {}) or {}
+        self.temperature = float(self.calibration.get("temperature", 1.0))
         if self.temperature <= 0:
             self.temperature = 1.0
 
@@ -61,22 +63,38 @@ class EfficientNetDiseaseClassifier:
         image = pil_image.convert("RGB")
         tensor = self.transform(image).unsqueeze(0).to(self.device)
         logits = self.model(tensor)[0] / self.temperature
-        probs = F.softmax(logits, dim=0)
+        global_probs = F.softmax(logits, dim=0)
 
         candidates = []
-        for idx, probability in enumerate(probs.tolist()):
+        crop_probability_mass = 1.0
+        requested_crop = (crop_filter or "").strip().lower()
+        use_crop_filter = requested_crop not in ("", "all", "general", "auto")
+
+        if use_crop_filter:
+            matching_indices = []
+            for idx, raw_label in self.id2label.items():
+                crop, _ = _parse_class_label(str(raw_label))
+                if requested_crop == crop.lower() or requested_crop in crop.lower():
+                    matching_indices.append(idx)
+            crop_probability_mass = float(global_probs[matching_indices].sum().item()) if matching_indices else 0.0
+        else:
+            matching_indices = list(range(len(global_probs)))
+
+        for idx in matching_indices:
+            probability = float(global_probs[idx].item())
             raw = self.id2label[idx]
             crop, condition = _parse_class_label(raw)
-            if crop_filter and crop_filter.lower() not in ("all", "general", "auto"):
-                if crop_filter.lower() != crop.lower() and crop_filter.lower() not in crop.lower():
-                    continue
             candidates.append((probability, idx, raw, crop, condition))
 
+        # If the requested crop is not represented by the checkpoint, preserve
+        # the safe behavior of exposing the global prediction rather than lying
+        # about its crop-conditioned probability.
         if not candidates:
             candidates = [
                 (p, i, self.id2label[i], *_parse_class_label(self.id2label[i]))
-                for i, p in enumerate(probs.tolist())
+                for i, p in enumerate(global_probs.tolist())
             ]
+
         candidates.sort(reverse=True, key=lambda x: x[0])
         top = candidates[:top_k]
         predictions = [
@@ -103,6 +121,8 @@ class EfficientNetDiseaseClassifier:
                     best["confidence"] - predictions[1]["confidence"], 4
                 ) if len(predictions) > 1 else best["confidence"],
                 "temperature": self.temperature,
-                "calibration_status": "temperature_scaled",
+                "crop_probability_mass": round(crop_probability_mass, 4),
+                "calibration_status": "temperature_scaled" if self.calibration else "not_calibrated",
+                "confidence_type": "global_calibrated_probability",
             },
         }
