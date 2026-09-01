@@ -4,11 +4,11 @@ on:
   workflow_dispatch:
     inputs:
       epochs:
-        description: "Training epochs (80 recommended for high-accuracy GPU training)"
+        description: "Training epochs"
         required: false
         default: "80"
       batch_size:
-        description: "Batch size (16 for 8-12 GB GPU; lower if needed)"
+        description: "Batch size"
         required: false
         default: "16"
       learning_rate:
@@ -16,7 +16,7 @@ on:
         required: false
         default: "0.0001"
       max_per_class:
-        description: "Maximum images per class (0 = use the complete dataset)"
+        description: "Maximum images per class (0 = complete dataset)"
         required: false
         default: "0"
 
@@ -31,19 +31,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-
       - name: Install ML dependencies
         run: |
           python -m pip install --upgrade pip
           pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu
           pip install --no-cache-dir pillow numpy scikit-learn datasets huggingface_hub
           pip install --no-cache-dir -r backend/requirements.txt
-
       - name: Verify ML environment
         run: |
           python - <<'PY'
@@ -51,16 +48,14 @@ jobs:
           print('PyTorch:', torch.__version__)
           print('TorchVision:', torchvision.__version__)
           print('CUDA available:', torch.cuda.is_available())
-          print('Model: EfficientNetV2-S, 384x384')
+          print('Architecture: EfficientNetV2-S / 384x384')
           PY
-
       - name: Download PlantVillage
         run: |
           rm -rf backend/ml/datasets/plant_disease
           python -m backend.ml.training.download_plantvillage \
             --output backend/ml/datasets/plant_disease \
             --max-per-class ${{ inputs.max_per_class }}
-
       - name: Verify dataset
         run: |
           python - <<'PY'
@@ -72,12 +67,10 @@ jobs:
               images = sum(1 for p in (root / split).rglob('*') if p.suffix.lower() in {'.jpg','.jpeg','.png','.webp','.bmp'})
               total += images
               print(f'{split}: {images} images, {len(classes)} classes')
-          print('total:', total)
           if total == 0:
               raise SystemExit('Dataset is empty')
           PY
-
-      - name: Train high-accuracy EfficientNetV2-S
+      - name: Train EfficientNetV2-S
         run: |
           python -m backend.ml.training.train_pipeline \
             --data backend/ml/datasets/plant_disease \
@@ -89,32 +82,29 @@ jobs:
             --freeze-epochs 5 \
             --patience 12 \
             --workers 2
-
-      - name: Verify trained model
+      - name: Verify trained checkpoint
         run: |
-          test -s backend/ml/models/weights/agri_nirvana_efficientnet_b0.pt
-          test -s backend/ml/models/weights/agri_nirvana_efficientnet_b0.json
+          test -s backend/ml/models/weights/agri_nirvana_efficientnet_v2_s.pt
+          test -s backend/ml/models/weights/agri_nirvana_efficientnet_v2_s.json
           test -s backend/ml/training/training_report.json
           python - <<'PY'
           import json
-          p='backend/ml/models/weights/agri_nirvana_efficientnet_b0.json'
+          p='backend/ml/models/weights/agri_nirvana_efficientnet_v2_s.json'
           d=json.load(open(p, encoding='utf-8'))
+          assert d.get('architecture') == 'efficientnet_v2_s', d.get('architecture')
           print('Architecture:', d.get('architecture'))
           print('Image size:', d.get('image_size'))
           print('Best epoch:', d.get('best_epoch'))
-          print('Test metrics:')
           print(json.dumps(d.get('metrics', {}), indent=2))
-          print('Calibration:')
           print(json.dumps(d.get('calibration', {}), indent=2))
           PY
-
       - name: Upload trained model artifact
         uses: actions/upload-artifact@v4
         with:
           name: agri-nirvana-efficientnet-v2-s
           path: |
-            backend/ml/models/weights/agri_nirvana_efficientnet_b0.pt
-            backend/ml/models/weights/agri_nirvana_efficientnet_b0.json
+            backend/ml/models/weights/agri_nirvana_efficientnet_v2_s.pt
+            backend/ml/models/weights/agri_nirvana_efficientnet_v2_s.json
             backend/ml/models/weights/temperature_calibration.json
             backend/ml/training/training_report.json
           retention-days: 30
