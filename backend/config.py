@@ -4,11 +4,13 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Agri Nirvana - Crop AI Health Diagnostic API"
-    VERSION: str = "3.4.0"
+    VERSION: str = "3.5.0"
     API_V1_STR: str = "/api/v1"
 
     AI_MODEL_PROVIDER: str = "real"
     AI_CONFIDENCE_THRESHOLD: float = Field(default=0.70, ge=0.50, le=0.95)
+    # If this file exists, it takes precedence over the Hugging Face baseline.
+    LOCAL_TRAINED_MODEL_PATH: str = "backend/ml/models/weights/agri_nirvana_efficientnet_b0.pt"
     HF_MODEL_ID: str = "linkanjarad/mobilenet_v2_1.0_224-plant-disease-identification"
 
     AI_CHAT_MODEL: str = "openai/gpt-oss-120b:fastest"
@@ -22,8 +24,6 @@ class Settings(BaseSettings):
     DATABASE_NAME: str = "agri_nirvana"
     SQLITE_FALLBACK_DB: str = "backend/db/history.db"
 
-    # Keep local development origins plus the deployed Vite frontend by default.
-    # Override this with ALLOWED_ORIGINS in production when using a custom domain.
     ALLOWED_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5173,https://agri-nirvana.vercel.app"
 
     model_config = SettingsConfigDict(
