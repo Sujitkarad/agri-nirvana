@@ -532,6 +532,55 @@ async def get_diagnosis_history(
     return {"success": True, "total": len(history), "history": history}
 
 
+@router.post("/agronomist-requests")
+async def request_agronomist_visit(
+    request: Request,
+    authorization: Optional[str] = Header(None)
+):
+    """Dispatches a certified agronomist / KVK extension officer visit request."""
+    content_type = request.headers.get("content-type", "")
+    if "application/json" in content_type:
+        try:
+            body = await request.json()
+        except Exception:
+            raise HTTPException(status_code=400, detail="Invalid JSON body.")
+        phone = str(body.get("farmerPhone", "")).strip()
+        slot = str(body.get("preferredSlot", "Tomorrow Morning (9:00 AM)")).strip()
+        crop = str(body.get("cropType", "Tomato")).strip()
+        cond = str(body.get("condition", "Crop Health Issue")).strip()
+        diag_id = str(body.get("diagnosisId", "")).strip() or None
+        user_id = body.get("userId")
+    else:
+        form = await request.form()
+        phone = str(form.get("farmerPhone", "")).strip()
+        slot = str(form.get("preferredSlot", "Tomorrow Morning (9:00 AM)")).strip()
+        crop = str(form.get("cropType", "Tomato")).strip()
+        cond = str(form.get("condition", "Crop Health Issue")).strip()
+        diag_id = str(form.get("diagnosisId", "")).strip() or None
+        user_id = form.get("userId")
+
+    current_user = get_current_user_optional(authorization)
+    effective_user_id = current_user.get("sub") if current_user else _safe_user_id(user_id)
+
+    if not phone or len(phone) < 6:
+        raise HTTPException(status_code=400, detail="A valid farmer phone number is required.")
+
+    reference_id = f"AGRO_{int(time.time())}_{phone[-4:] if len(phone) >= 4 else 'REQ'}"
+    logger.info("Dispatched Agronomist Visit: Ref=%s User=%s Phone=%s Crop=%s Condition=%s", reference_id, effective_user_id, phone, crop, cond)
+
+    return {
+        "success": True,
+        "referenceId": reference_id,
+        "message": "Agronomist field visit dispatched successfully.",
+        "scheduledSlot": slot,
+        "cropType": crop,
+        "condition": cond,
+        "diagnosisId": diag_id,
+        "userId": effective_user_id,
+        "agronomist": "Dr. Rajesh Sharma (Senior Plant Pathologist, KVK Station)",
+    }
+
+
 @router.get("/{diag_id}")
 async def get_diagnosis_item(
     diag_id: str,

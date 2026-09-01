@@ -112,6 +112,30 @@ class TestDiagnosisAPI(unittest.TestCase):
         response = client.post("/api/v1/diagnosis/analyze", files=files, data=data)
         self.assertEqual(response.status_code, 400)
 
+    def test_agronomist_visit_request_success(self):
+        payload = {
+            "farmerPhone": "+919876543210",
+            "preferredSlot": "Tomorrow Morning (9:00 AM)",
+            "cropType": "Tomato",
+            "condition": "Early Blight",
+            "userId": "test_farmer"
+        }
+        response = client.post("/api/v1/diagnosis/agronomist-requests", json=payload)
+        self.assertEqual(response.status_code, 200)
+        res = response.json()
+        self.assertTrue(res["success"])
+        self.assertIn("referenceId", res)
+        self.assertTrue(res["referenceId"].startswith("AGRO_"))
+        self.assertEqual(res["cropType"], "Tomato")
+
+    def test_agronomist_visit_request_invalid_phone(self):
+        payload = {
+            "farmerPhone": "12",
+            "cropType": "Tomato"
+        }
+        response = client.post("/api/v1/diagnosis/agronomist-requests", json=payload)
+        self.assertEqual(response.status_code, 400)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -7,6 +7,10 @@ export default function DosageCalculatorModal({ isOpen, onClose, disease, isDark
 
   if (!isOpen || !disease) return null;
 
+  const cropName = typeof disease.crop === "object" ? (disease.crop?.name || "Crop") : (disease.crop || disease.cropType || "Crop");
+  const conditionName = typeof disease.condition === "object" ? (disease.condition?.name || "Target Condition") : (disease.diseaseName || disease.condition || disease.diagnosis || "Target Condition");
+  const severityName = typeof disease.severity === "object" ? (disease.severity?.tier || "Moderate") : (disease.severity || "Moderate");
+
   const areaInAcres = unit === "hectares" ? acres * 2.471 : acres;
   const waterLiters = Math.round(areaInAcres * 200); // 200L water per acre standard
   const sprayTanks = Math.round(waterLiters / 15); // 15L backpack knapsack sprayer
@@ -46,10 +50,10 @@ export default function DosageCalculatorModal({ isOpen, onClose, disease, isDark
           <div className={`p-3 rounded-2xl border flex items-center justify-between ${isDark ? "bg-emerald-950/40 border-emerald-900/50" : "bg-emerald-50 border-emerald-200"}`}>
             <div>
               <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600">Target Treatment</span>
-              <h4 className="text-sm font-black">{disease.crop} — {disease.diseaseName}</h4>
+              <h4 className="text-sm font-black">{cropName} — {conditionName}</h4>
             </div>
             <span className="rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-bold px-3 py-1 border border-emerald-500/30">
-              {disease.severity} Severity
+              {severityName} Severity
             </span>
           </div>
 

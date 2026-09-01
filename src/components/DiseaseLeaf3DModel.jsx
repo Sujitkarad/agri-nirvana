@@ -18,8 +18,12 @@ export default function DiseaseLeaf3DModel({ disease, theme = "light" }) {
   const [isDragging, setIsDragging] = useState(false);
   const isDark = theme === "cyber" || theme === "dark" || theme === "monochrome";
 
-  const isHealthy = disease?.severity === "Healthy";
+  const rawSev = typeof disease?.severity === "object" ? disease?.severity?.tier : disease?.severity;
+  const isHealthy = String(rawSev || "").toLowerCase() === "healthy";
   const confidence = disease?.confidence || 95;
+  const diseaseName = typeof disease?.condition === "object"
+    ? (disease.condition?.name || "Leaf Lesion Spot")
+    : (disease?.diseaseName || disease?.condition || disease?.diagnosis || "Leaf Lesion Spot");
 
   useEffect(() => {
     if (!detectWebGL()) {
@@ -243,7 +247,7 @@ export default function DiseaseLeaf3DModel({ disease, theme = "light" }) {
           <span className="text-3xl">🍃</span>
         </div>
         <p className="mt-2 text-xs font-mono font-bold text-amber-400">
-          Lesion Zone: {disease?.diseaseName || "Late Blight Spot"}
+          Lesion Zone: {diseaseName}
         </p>
       </div>
     );
@@ -255,7 +259,7 @@ export default function DiseaseLeaf3DModel({ disease, theme = "light" }) {
       <div className="absolute top-3 left-3 z-10 flex items-center gap-2 rounded-full border border-emerald-500/40 bg-slate-950/80 px-3 py-1 text-[10px] font-mono text-emerald-300">
         <span className={`h-2 w-2 rounded-full ${isHealthy ? "bg-emerald-400 animate-pulse" : "bg-red-500 animate-ping"}`} />
         <span>
-          {isHealthy ? "3D HEALTHY CELLULAR MATRIX" : `3D LESION HIGHLIGHT: ${disease?.diseaseName}`}
+          {isHealthy ? "3D HEALTHY CELLULAR MATRIX" : `3D LESION HIGHLIGHT: ${diseaseName}`}
         </span>
       </div>
 

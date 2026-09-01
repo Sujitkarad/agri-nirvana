@@ -489,9 +489,16 @@ export default function DiagnosisResultCard({
           )}
 
           {recommendations.expert_help && (
-            <div className="p-4 rounded-2xl border border-amber-500/30 bg-amber-950/20 text-slate-200 space-y-1">
+            <div className="p-4 rounded-2xl border border-amber-500/30 bg-amber-950/20 text-slate-200 space-y-2">
               <div className="font-bold text-amber-300 flex items-center gap-1.5">👨‍🌾 Agricultural Expert Guidance</div>
               <p className="text-slate-300">{recommendations.expert_help}</p>
+              <button
+                type="button"
+                onClick={onOpenAgronomist}
+                className="mt-1 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 hover:bg-amber-500/30 text-[11px] font-bold transition"
+              >
+                <UserCheck size={13} /> Dispatch Certified Agronomist
+              </button>
             </div>
           )}
         </div>
@@ -562,6 +569,13 @@ export default function DiagnosisResultCard({
           </span>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onOpenAgronomist}
+            className="shrink-0 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-xs font-black text-emerald-300 hover:bg-emerald-500/20 transition flex items-center gap-1.5"
+          >
+            <UserCheck size={14} /> Request Agronomist
+          </button>
           {canPrescribeTreatment && (
             <button
               type="button"

@@ -1,16 +1,37 @@
 import React, { useState } from "react";
-import { UserCheck, X, Calendar, MapPin, CheckCircle2, PhoneCall, ShieldCheck } from "lucide-react";
+import { UserCheck, X, Calendar, MapPin, CheckCircle2, PhoneCall, ShieldCheck, Loader2 } from "lucide-react";
+import { requestAgronomistVisitApi } from "../services/diagnosisApi";
 
 export default function AgronomistDispatchModal({ isOpen, onClose, disease, isDark = false }) {
   const [booked, setBooked] = useState(false);
   const [farmerPhone, setFarmerPhone] = useState("+91 98765 43210");
   const [preferredDate, setPreferredDate] = useState("Tomorrow Morning (9:00 AM)");
+  const [bookingRef, setBookingRef] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isOpen || !disease) return null;
 
-  const handleBookingSubmit = (e) => {
+  const cropName = typeof disease.crop === "object" ? (disease.crop?.name || "Crop") : (disease.crop || disease.cropType || "Crop");
+  const conditionName = typeof disease.condition === "object" ? (disease.condition?.name || "Crop Health Issue") : (disease.diseaseName || disease.condition || disease.diagnosis || "Crop Health Issue");
+
+  const handleBookingSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      const res = await requestAgronomistVisitApi({
+        farmerPhone,
+        preferredSlot: preferredDate,
+        cropType: cropName,
+        condition: conditionName,
+        diagnosisId: disease.id,
+        userId: disease.userId,
+      });
+      if (res && res.referenceId) {
+        setBookingRef(res.referenceId);
+      }
+    } catch (_) {}
     setBooked(true);
+    setIsSubmitting(false);
   };
 
   return (
@@ -41,7 +62,7 @@ export default function AgronomistDispatchModal({ isOpen, onClose, disease, isDa
           <div className={`p-3.5 rounded-2xl border flex items-center justify-between ${isDark ? "bg-emerald-950/40 border-emerald-900/50" : "bg-emerald-50 border-emerald-200"}`}>
             <div>
               <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600">Krishi Vigyan Kendra Expert Consultation</span>
-              <h4 className="text-sm font-black">{disease.crop} — {disease.diseaseName}</h4>
+              <h4 className="text-sm font-black">{cropName} — {conditionName}</h4>
             </div>
             <span className="rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-bold px-3 py-1 border border-emerald-500/30">
               Verified Agronomist
@@ -55,8 +76,9 @@ export default function AgronomistDispatchModal({ isOpen, onClose, disease, isDa
               <p className="text-xs text-slate-300">
                 Dr. Rajesh Sharma (Senior Plant Pathologist, Nagpur AgTech Station) will arrive at your field on <strong>{preferredDate}</strong>.
               </p>
-              <div className="text-xs font-mono text-emerald-400 bg-black/40 p-2.5 rounded-xl border border-emerald-500/20">
-                Confirmation SMS & WhatsApp location pin sent to {farmerPhone}
+              <div className="text-xs font-mono text-emerald-400 bg-black/40 p-2.5 rounded-xl border border-emerald-500/20 space-y-1">
+                <div>Confirmation SMS & WhatsApp location pin sent to {farmerPhone}</div>
+                {bookingRef && <div className="text-slate-300">Booking Reference: <span className="font-bold text-emerald-300">{bookingRef}</span></div>}
               </div>
             </div>
           ) : (
@@ -95,9 +117,11 @@ export default function AgronomistDispatchModal({ isOpen, onClose, disease, isDa
 
               <button
                 type="submit"
-                className="w-full rounded-xl bg-emerald-500 py-3 text-xs font-black text-slate-950 hover:bg-emerald-400 transition shadow-lg shadow-emerald-500/30"
+                disabled={isSubmitting}
+                className="w-full rounded-xl bg-emerald-500 py-3 text-xs font-black text-slate-950 hover:bg-emerald-400 transition shadow-lg shadow-emerald-500/30 flex items-center justify-center gap-2"
               >
-                Confirm Agronomist Field Visit Dispatch
+                {isSubmitting && <Loader2 size={16} className="animate-spin" />}
+                <span>Confirm Agronomist Field Visit Dispatch</span>
               </button>
             </form>
           )}

@@ -8,7 +8,10 @@ export default function DroneMissionGeneratorModal({ isOpen, onClose, disease, i
 
   if (!isOpen || !disease) return null;
 
-  const mission = generateDroneMavLinkMission(disease.crop, acres, disease.diseaseName);
+  const cropName = typeof disease.crop === "object" ? (disease.crop?.name || "Tomato") : String(disease.crop || disease.cropType || "Tomato");
+  const diseaseTitle = typeof disease.condition === "object" ? (disease.condition?.name || "Crop Health Issue") : (disease.diseaseName || disease.condition || disease.diagnosis || "Crop Health Issue");
+
+  const mission = generateDroneMavLinkMission(cropName, acres, diseaseTitle);
 
   const downloadFile = (content, filename, type) => {
     const blob = new Blob([content], { type });
@@ -23,12 +26,13 @@ export default function DroneMissionGeneratorModal({ isOpen, onClose, disease, i
   };
 
   const handleExport = () => {
+    const safeCropSlug = cropName.toLowerCase().replace(/\s+/g, "_");
     if (fileFormat === "mavlink") {
-      downloadFile(mission.mavlinkString, `drone_spot_spray_${disease.crop.toLowerCase()}.waypoint`, "text/plain");
+      downloadFile(mission.mavlinkString, `drone_spot_spray_${safeCropSlug}.waypoint`, "text/plain");
     } else if (fileFormat === "kml") {
-      downloadFile(mission.kmlString, `drone_spot_spray_${disease.crop.toLowerCase()}.kml`, "application/vnd.google-earth.kml+xml");
+      downloadFile(mission.kmlString, `drone_spot_spray_${safeCropSlug}.kml`, "application/vnd.google-earth.kml+xml");
     } else if (fileFormat === "gcode") {
-      downloadFile(mission.gcodeString, `drone_spot_spray_${disease.crop.toLowerCase()}.gcode`, "text/plain");
+      downloadFile(mission.gcodeString, `drone_spot_spray_${safeCropSlug}.gcode`, "text/plain");
     }
   };
 
@@ -60,7 +64,7 @@ export default function DroneMissionGeneratorModal({ isOpen, onClose, disease, i
           <div className={`p-4 rounded-2xl border flex items-center justify-between ${isDark ? "bg-emerald-950/40 border-emerald-900/50" : "bg-emerald-50 border-emerald-200"}`}>
             <div>
               <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600">Spot-Spraying Flight Target</span>
-              <h4 className="text-sm font-black">{disease.crop} — {disease.diseaseName}</h4>
+              <h4 className="text-sm font-black">{cropName} — {diseaseTitle}</h4>
             </div>
             <span className="rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-bold px-3 py-1 border border-emerald-500/30">
               68% Chemical Reduction

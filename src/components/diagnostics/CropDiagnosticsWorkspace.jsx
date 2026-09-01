@@ -218,6 +218,7 @@ export default function CropDiagnosticsWorkspace({
               crop={selectedCrop}
               onComplete={handleAnalysisProgressComplete}
               isDark={isDark}
+              inputMode={inputMode}
             />
           ) : workflowState === "error" ? (
             /* ERROR STATE — Backend offline or request failed */
@@ -477,6 +478,13 @@ export default function CropDiagnosticsWorkspace({
                     >
                       🥔 Potato Sample
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => handleLoadPresetSample("Soybean", "/samples/sample_soybean_leaf.jpg", "Soybean Leaf Sample")}
+                      className="px-2.5 py-1 rounded-lg bg-teal-500/10 border border-teal-500/30 text-teal-300 hover:bg-teal-500/20 transition font-bold"
+                    >
+                      🌱 Soybean Sample
+                    </button>
                   </div>
 
                   <div className="flex justify-end pt-2">
@@ -563,6 +571,8 @@ export default function CropDiagnosticsWorkspace({
       {activeSubTab === "history" && (
         <DiagnosisHistoryView
           onSelectRecord={(rec) => {
+            const cropName = typeof rec?.crop === "object" ? (rec.crop?.name || "Tomato") : (rec?.crop || rec?.cropType || "Tomato");
+            setSelectedCrop(cropName);
             setCurrentDiagnosis(rec);
             setWorkflowState("result");
             setActiveSubTab("diagnostic");
@@ -590,21 +600,36 @@ export default function CropDiagnosticsWorkspace({
       <DosageCalculatorModal
         isOpen={isDosageModalOpen}
         onClose={() => setIsDosageModalOpen(false)}
-        disease={currentDiagnosis || { crop: selectedCrop, diseaseName: "Early Blight" }}
+        disease={currentDiagnosis ? {
+          ...currentDiagnosis,
+          crop: typeof currentDiagnosis.crop === "object" ? (currentDiagnosis.crop?.name || selectedCrop) : (currentDiagnosis.crop || selectedCrop),
+          diseaseName: typeof currentDiagnosis.condition === "object" ? (currentDiagnosis.condition?.name || "Diagnosed Condition") : (currentDiagnosis.condition || "Diagnosed Condition"),
+          severity: typeof currentDiagnosis.severity === "object" ? (currentDiagnosis.severity?.tier || "Moderate") : (currentDiagnosis.severity || "Moderate")
+        } : { crop: selectedCrop, diseaseName: "Early Blight", severity: "Moderate" }}
         isDark={isDark}
       />
 
       <DroneMissionGeneratorModal
         isOpen={isDroneModalOpen}
         onClose={() => setIsDroneModalOpen(false)}
-        disease={currentDiagnosis || { crop: selectedCrop, diseaseName: "Early Blight" }}
+        disease={currentDiagnosis ? {
+          ...currentDiagnosis,
+          crop: typeof currentDiagnosis.crop === "object" ? (currentDiagnosis.crop?.name || selectedCrop) : (currentDiagnosis.crop || selectedCrop),
+          diseaseName: typeof currentDiagnosis.condition === "object" ? (currentDiagnosis.condition?.name || "Diagnosed Condition") : (currentDiagnosis.condition || "Diagnosed Condition"),
+          severity: typeof currentDiagnosis.severity === "object" ? (currentDiagnosis.severity?.tier || "Moderate") : (currentDiagnosis.severity || "Moderate")
+        } : { crop: selectedCrop, diseaseName: "Early Blight", severity: "Moderate" }}
         isDark={isDark}
       />
 
       <AgronomistDispatchModal
         isOpen={isAgronomistModalOpen}
         onClose={() => setIsAgronomistModalOpen(false)}
-        disease={currentDiagnosis || { crop: selectedCrop, diseaseName: "Early Blight" }}
+        disease={currentDiagnosis ? {
+          ...currentDiagnosis,
+          crop: typeof currentDiagnosis.crop === "object" ? (currentDiagnosis.crop?.name || selectedCrop) : (currentDiagnosis.crop || selectedCrop),
+          diseaseName: typeof currentDiagnosis.condition === "object" ? (currentDiagnosis.condition?.name || "Diagnosed Condition") : (currentDiagnosis.condition || "Diagnosed Condition"),
+          severity: typeof currentDiagnosis.severity === "object" ? (currentDiagnosis.severity?.tier || "Moderate") : (currentDiagnosis.severity || "Moderate")
+        } : { crop: selectedCrop, diseaseName: "Early Blight", severity: "Moderate" }}
         isDark={isDark}
       />
     </div>
