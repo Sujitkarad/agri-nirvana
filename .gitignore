@@ -32,3 +32,5 @@ pnpm-debug.log*
 brain/
 
 .vercel
+backend/ml/models/checkpoints/
+backend/ml/datasets/
