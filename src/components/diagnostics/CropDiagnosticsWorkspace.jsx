@@ -91,6 +91,24 @@ export default function CropDiagnosticsWorkspace({
     setWorkflowState("idle");
   };
 
+  const handleLoadPresetSample = async (crop, samplePath, label) => {
+    setSelectedCrop(crop);
+    setImagePreview(samplePath);
+    setWorkflowState("idle");
+    setAnalysisError(null);
+    try {
+      const resp = await fetch(samplePath);
+      if (resp.ok) {
+        const blob = await resp.blob();
+        const file = new File([blob], `sample_${crop.toLowerCase()}.jpg`, { type: blob.type || "image/jpeg" });
+        setSelectedFile(file);
+      }
+    } catch (_) {
+      setSelectedFile(null);
+    }
+    showToast(`Loaded ${label}`);
+  };
+
   const handleRunAnalysis = () => {
     if (!imagePreview && inputMode === "vision") {
       showToast("Please upload or capture a crop leaf photo first.");
@@ -231,13 +249,7 @@ export default function CropDiagnosticsWorkspace({
               <div className="flex flex-wrap items-center gap-3">
                 <button
                   type="button"
-                  onClick={() => {
-                    setSelectedCrop("Tomato");
-                    setImagePreview("/samples/sample_tomato_early_blight.jpg");
-                    setSelectedFile(null);
-                    setWorkflowState("idle");
-                    setAnalysisError(null);
-                  }}
+                  onClick={() => handleLoadPresetSample("Tomato", "/samples/sample_tomato_early_blight.jpg", "Tomato Early Blight Sample")}
                   className="flex items-center gap-2 rounded-xl bg-emerald-500 px-6 py-3 text-xs font-black text-slate-950 hover:bg-emerald-400 transition shadow-lg"
                 >
                   <Sparkles size={16} /> Load Demo Leaf Sample & Retry
@@ -446,36 +458,21 @@ export default function CropDiagnosticsWorkspace({
                     </span>
                     <button
                       type="button"
-                      onClick={() => {
-                        setSelectedCrop("Tomato");
-                        setImagePreview("/samples/sample_tomato_early_blight.jpg");
-                        setSelectedFile(null);
-                        showToast("Loaded Tomato Early Blight Sample Leaf");
-                      }}
+                      onClick={() => handleLoadPresetSample("Tomato", "/samples/sample_tomato_early_blight.jpg", "Tomato Early Blight Sample")}
                       className="px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/20 transition font-bold"
                     >
                       🍅 Tomato Sample
                     </button>
                     <button
                       type="button"
-                      onClick={() => {
-                        setSelectedCrop("Cotton");
-                        setImagePreview("/samples/sample_cotton_leaf.jpg");
-                        setSelectedFile(null);
-                        showToast("Loaded Cotton Leaf Sample");
-                      }}
+                      onClick={() => handleLoadPresetSample("Cotton", "/samples/sample_cotton_leaf.jpg", "Cotton Leaf Sample")}
                       className="px-2.5 py-1 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/20 transition font-bold"
                     >
                       ☁️ Cotton Sample
                     </button>
                     <button
                       type="button"
-                      onClick={() => {
-                        setSelectedCrop("Potato");
-                        setImagePreview("/samples/sample_potato_leaf.jpg");
-                        setSelectedFile(null);
-                        showToast("Loaded Potato Blight Sample");
-                      }}
+                      onClick={() => handleLoadPresetSample("Potato", "/samples/sample_potato_leaf.jpg", "Potato Blight Sample")}
                       className="px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 hover:bg-amber-500/20 transition font-bold"
                     >
                       🥔 Potato Sample
