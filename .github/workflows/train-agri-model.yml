@@ -53,15 +53,18 @@ jobs:
           print('CUDA device:', torch.cuda.get_device_name(0))
           print('Architecture: EfficientNetV2-L / 448x448')
           PY
-      - name: Materialize public training and evaluation datasets
+      - name: Materialize relevant public datasets
         run: |
-          python -m backend.ml.training.import_datasets --output backend/ml/datasets --plantvillage --plantdoc --farmer-field
-      - name: Verify PlantDoc dataset
-        run: |
-          python -m backend.ml.training.audit_dataset --data backend/ml/datasets/plantdoc --min-per-class 5
-      - name: Verify PlantVillage training dataset
+          python -m backend.ml.training.import_datasets --output backend/ml/datasets --plantvillage --plantdoc --farmer-field --sugarcane-specialist
+      - name: Audit PlantVillage training dataset
         run: |
           python -m backend.ml.training.audit_dataset --data backend/ml/datasets/plant_disease --min-per-class 5
+      - name: Audit PlantDoc field dataset
+        run: |
+          python -m backend.ml.training.audit_dataset --data backend/ml/datasets/plantdoc --min-per-class 5
+      - name: Audit sugarcane specialist dataset
+        run: |
+          python -m backend.ml.training.audit_dataset --data backend/ml/datasets/sugarcane_specialist --min-per-class 5
       - name: Verify expert field and OOD datasets
         run: |
           test -d backend/ml/datasets/field_ood/field
@@ -72,10 +75,20 @@ jobs:
           echo "OOD images: ${OOD_COUNT}"
           test "${FIELD_COUNT}" -gt 0
           test "${OOD_COUNT}" -gt 0
-      - name: Train maximum-capacity EfficientNetV2-L
+      - name: Train production EfficientNetV2-L
         run: |
-          python -m backend.ml.training.train_pipeline_large --data backend/ml/datasets/plant_disease --output backend/ml/models/weights/agri_nirvana_efficientnet_v2_l.pt --epochs ${{ inputs.epochs }} --batch-size ${{ inputs.batch_size }} --lr ${{ inputs.learning_rate }} --image-size 448 --warmup-epochs 8 --freeze-epochs 8 --patience 15 --workers 2
-      - name: Verify trained checkpoint and benchmark quality
+          python -m backend.ml.training.train_pipeline_large \
+            --data backend/ml/datasets/plant_disease \
+            --output backend/ml/models/weights/agri_nirvana_efficientnet_v2_l.pt \
+            --epochs ${{ inputs.epochs }} \
+            --batch-size ${{ inputs.batch_size }} \
+            --lr ${{ inputs.learning_rate }} \
+            --image-size 448 \
+            --warmup-epochs 8 \
+            --freeze-epochs 8 \
+            --patience 15 \
+            --workers 2
+      - name: Verify production checkpoint quality
         run: |
           test -s backend/ml/models/weights/agri_nirvana_efficientnet_v2_l.pt
           test -s backend/ml/models/weights/agri_nirvana_efficientnet_v2_l.json
@@ -93,18 +106,51 @@ jobs:
           assert ece <= 0.15, f'Calibration quality gate failed: ECE {ece:.4f} > 0.15'
           print(json.dumps(metrics, indent=2))
           PY
-      - name: Evaluate field and OOD data
+      - name: Train sugarcane specialist EfficientNetV2-L
         run: |
-          python -m backend.ml.training.evaluate_field_ood --checkpoint backend/ml/models/weights/agri_nirvana_efficientnet_v2_l.pt --field-data backend/ml/datasets/field_ood/field --ood-data backend/ml/datasets/field_ood/ood --output backend/ml/training/field_ood_evaluation.json
-      - name: Upload trained model, manifests and evaluation
+          python -m backend.ml.training.train_pipeline_large \
+            --data backend/ml/datasets/sugarcane_specialist \
+            --output backend/ml/models/weights/agri_nirvana_sugarcane_efficientnet_v2_l.pt \
+            --epochs 60 \
+            --batch-size ${{ inputs.batch_size }} \
+            --lr 0.000075 \
+            --image-size 448 \
+            --warmup-epochs 6 \
+            --freeze-epochs 6 \
+            --patience 10 \
+            --workers 2
+      - name: Verify sugarcane specialist
+        run: |
+          test -s backend/ml/models/weights/agri_nirvana_sugarcane_efficientnet_v2_l.pt
+          test -s backend/ml/models/weights/agri_nirvana_sugarcane_efficientnet_v2_l.json
+          python - <<'PY'
+          import json
+          p='backend/ml/models/weights/agri_nirvana_sugarcane_efficientnet_v2_l.json'
+          d=json.load(open(p, encoding='utf-8'))
+          assert d.get('architecture') == 'efficientnet_v2_l'
+          assert int(d.get('image_size', 0)) == 448
+          assert len(d.get('class_to_idx', {})) == 11
+          print(json.dumps(d.get('metrics', {}), indent=2))
+          PY
+      - name: Evaluate field and OOD data against production model
+        run: |
+          python -m backend.ml.training.evaluate_field_ood \
+            --checkpoint backend/ml/models/weights/agri_nirvana_efficientnet_v2_l.pt \
+            --field-data backend/ml/datasets/field_ood/field \
+            --ood-data backend/ml/datasets/field_ood/ood \
+            --output backend/ml/training/field_ood_evaluation.json
+      - name: Upload trained models, manifests and evaluations
         uses: actions/upload-artifact@v4
         with:
-          name: agri-nirvana-efficientnet-v2-l
+          name: agri-nirvana-model-suite
           path: |
             backend/ml/models/weights/agri_nirvana_efficientnet_v2_l.pt
             backend/ml/models/weights/agri_nirvana_efficientnet_v2_l.json
+            backend/ml/models/weights/agri_nirvana_sugarcane_efficientnet_v2_l.pt
+            backend/ml/models/weights/agri_nirvana_sugarcane_efficientnet_v2_l.json
             backend/ml/training/training_report.json
             backend/ml/training/field_ood_evaluation.json
             backend/ml/datasets/dataset_manifest.json
             backend/ml/datasets/field_ood/manifest.json
+            backend/ml/datasets/sugarcane_specialist/manifest.json
           retention-days: 30
