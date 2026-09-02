@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -16,6 +17,10 @@ from sklearn.metrics import accuracy_score, f1_score
 from torchvision import datasets, models, transforms
 
 VALID_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".bmp"}
+
+
+def _safe_name(value: str) -> str:
+    return "_".join(value.replace("/", "_").split())
 
 
 def _count_images(root: Path) -> int:
@@ -62,14 +67,14 @@ def _predict(model, root: Path, image_size: int, device: torch.device):
 
 def evaluate_field(model, class_to_idx, image_size, root, device):
     y_true, y_pred, max_prob, classes = _predict(model, root, image_size, device)
-    known = set(class_to_idx)
-    overlap = sorted(set(classes) & known)
+    known = {_safe_name(name): idx for name, idx in class_to_idx.items()}
+    overlap = sorted(set(classes) & set(known))
     if len(overlap) == 0:
         raise ValueError("Field dataset has no class overlap with the production taxonomy")
     keep = np.asarray([classes[int(i)] in known for i in y_true])
     if not keep.any():
         raise ValueError("Field dataset contains no evaluable known classes")
-    remap = np.asarray([class_to_idx[classes[int(i)]] if classes[int(i)] in known else -1 for i in y_true])
+    remap = np.asarray([known[classes[int(i)]] if classes[int(i)] in known else -1 for i in y_true])
     y_true_known = remap[keep]
     y_pred_known = y_pred[keep]
     return {
@@ -89,7 +94,7 @@ def evaluate_ood(model, image_size, root, device):
         transforms.Resize(int(image_size * 1.14)),
         transforms.CenterCrop(image_size),
         transforms.ToTensor(),
-        transforms.Normalize((0.485, 0.456, 0.229), (0.229, 0.224, 0.225)),
+        transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
     ])
     paths = [p for p in root.rglob("*") if p.is_file() and p.suffix.lower() in VALID_EXTENSIONS]
     from PIL import Image
