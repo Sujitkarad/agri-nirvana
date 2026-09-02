@@ -763,23 +763,89 @@ export default function App() {
                 </button>
               </div>
 
-              {/* GIS Radar Map Visual Card */}
-              <div className="relative h-80 w-full rounded-2xl border border-emerald-500/30 bg-[#04160f] overflow-hidden p-4 flex flex-col items-center justify-center">
-                <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#10b981_1px,transparent_1px)] [background-size:16px_16px]" />
-                
-                {/* Concentric Radar Rings */}
-                <div className="absolute h-64 w-64 rounded-full border border-emerald-500/30 flex items-center justify-center animate-pulse">
-                  <div className="h-44 w-44 rounded-full border border-emerald-500/40 flex items-center justify-center">
-                    <div className="h-24 w-24 rounded-full border border-emerald-500/60" />
-                  </div>
+              {/* GIS Radar Map Visual Card — Pinterest Radar UI */}
+              <div className="relative w-full rounded-2xl border border-emerald-500/30 bg-[#04160f] overflow-hidden flex flex-col items-center justify-center" style={{minHeight: "360px"}}>
+                {/* Radar Background Image */}
+                <img
+                  src="/images/radar_intro.jpg"
+                  alt="GIS Radar Sweep"
+                  className="absolute inset-0 w-full h-full object-cover opacity-80"
+                  style={{mixBlendMode: "screen"}}
+                />
+
+                {/* Sweep Animation Overlay */}
+                <div className="absolute inset-0 pointer-events-none" style={{
+                  background: "conic-gradient(from 0deg, transparent 270deg, rgba(16,185,129,0.18) 330deg, transparent 360deg)",
+                  animation: "radar-sweep 3s linear infinite",
+                }}>
                 </div>
 
-                <div className="relative z-10 text-center space-y-2">
-                  <span className="rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-mono font-bold text-emerald-300 border border-emerald-500/40">
-                    📡 Active 25km GIS Cluster Radar
+                {/* Grid Lines */}
+                <div className="absolute inset-0 opacity-10" style={{
+                  backgroundImage: "linear-gradient(#10b981 1px, transparent 1px), linear-gradient(90deg, #10b981 1px, transparent 1px)",
+                  backgroundSize: "40px 40px",
+                }} />
+
+                {/* Outbreak Ping Dots */}
+                {outbreakList.map((ob, i) => {
+                  const angles = [42, 165, 245];
+                  const radii = [0.28, 0.38, 0.22];
+                  const angle = (angles[i % angles.length] * Math.PI) / 180;
+                  const r = radii[i % radii.length];
+                  const cx = 50 + r * 50 * Math.cos(angle);
+                  const cy = 50 + r * 50 * Math.sin(angle);
+                  const colors = ["#f59e0b","#ef4444","#f97316"];
+                  return (
+                    <div
+                      key={ob.id}
+                      className="absolute z-20 flex items-center justify-center"
+                      style={{ left: `${cx}%`, top: `${cy}%`, transform: "translate(-50%,-50%)" }}
+                      title={`${ob.crop} — ${ob.disease} (${ob.distKm}km)`}
+                    >
+                      <span className="relative flex h-4 w-4">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{backgroundColor: colors[i % colors.length]}}></span>
+                        <span className="relative inline-flex rounded-full h-4 w-4 border-2 border-white/30" style={{backgroundColor: colors[i % colors.length]}}></span>
+                      </span>
+                      <span className="absolute left-5 whitespace-nowrap rounded bg-black/80 px-1.5 py-0.5 text-[9px] font-bold text-white border border-emerald-500/40">
+                        {ob.crop} • {ob.distKm}km
+                      </span>
+                    </div>
+                  );
+                })}
+
+                {/* Center Pulse */}
+                <div className="absolute z-20" style={{left:"50%",top:"50%",transform:"translate(-50%,-50%)"}}>
+                  <span className="relative flex h-3 w-3">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
                   </span>
-                  <p className="text-sm font-bold text-white">3 Outbreak Clusters Detected Near Your PIN Code (440001)</p>
                 </div>
+
+                {/* HUD Info Bar */}
+                <div className="absolute top-3 left-3 right-3 z-20 flex items-center justify-between">
+                  <span className="rounded-full bg-black/80 px-3 py-1 text-[10px] font-mono font-bold text-emerald-300 border border-emerald-500/40 backdrop-blur">
+                    📡 LIVE · 25km GIS Cluster Radar
+                  </span>
+                  <span className="rounded-full bg-black/80 px-3 py-1 text-[10px] font-mono font-bold text-amber-400 border border-amber-500/40 backdrop-blur">
+                    ⚠ {outbreakList.length} CLUSTERS ACTIVE
+                  </span>
+                </div>
+
+                {/* Bottom Legend */}
+                <div className="absolute bottom-3 left-3 right-3 z-20 flex items-center gap-4 justify-center">
+                  {[["#f59e0b","HIGH"], ["#f97316","MED"], ["#ef4444","CRITICAL"]].map(([c,l]) => (
+                    <span key={l} className="flex items-center gap-1.5 text-[9px] font-mono font-bold text-white/70">
+                      <span className="inline-block w-2.5 h-2.5 rounded-full" style={{backgroundColor:c}}></span>{l}
+                    </span>
+                  ))}
+                </div>
+
+                <style>{`
+                  @keyframes radar-sweep {
+                    from { transform: rotate(0deg); }
+                    to { transform: rotate(360deg); }
+                  }
+                `}</style>
               </div>
 
               {/* Outbreak Cards Grid */}
@@ -800,6 +866,7 @@ export default function App() {
             </div>
           </div>
         )}
+
 
         {/* SECTION: NPK FERTILIZER & YIELD CALCULATOR */}
         {activeNav === "calc" && (
