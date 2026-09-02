@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       runner:
-        description: "GitHub Actions runner label (use a CUDA-capable runner for V2-L training)"
+        description: "Runner label; use a CUDA-capable GitHub larger or self-hosted runner"
         required: false
         default: "ubuntu-latest"
       epochs:
@@ -12,7 +12,7 @@ on:
         required: false
         default: "100"
       batch_size:
-        description: "Training batch size (reduce if GPU memory is limited)"
+        description: "Training batch size"
         required: false
         default: "8"
       learning_rate:
@@ -41,15 +41,16 @@ jobs:
           pip install --no-cache-dir torch torchvision
           pip install --no-cache-dir pillow numpy scikit-learn datasets huggingface_hub
           pip install --no-cache-dir -r backend/requirements.txt
-      - name: Verify ML environment
+      - name: Verify CUDA and ML environment
         run: |
           python - <<'PY'
           import torch, torchvision
           print('PyTorch:', torch.__version__)
           print('TorchVision:', torchvision.__version__)
           print('CUDA available:', torch.cuda.is_available())
-          if torch.cuda.is_available():
-              print('CUDA device:', torch.cuda.get_device_name(0))
+          if not torch.cuda.is_available():
+              raise SystemExit('CUDA GPU is required for the 448x448 EfficientNetV2-L training run. Select a CUDA-capable larger/self-hosted runner.')
+          print('CUDA device:', torch.cuda.get_device_name(0))
           print('Architecture: EfficientNetV2-L / 448x448')
           PY
       - name: Materialize public training and evaluation datasets
