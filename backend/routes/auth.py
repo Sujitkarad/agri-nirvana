@@ -1,7 +1,7 @@
 """Farmer Authentication & Session Security for Agri Nirvana.
 
-Uses HMAC-SHA256 signed tokens to verify farmer identity and enforce
-server-side ownership on diagnosis history.
+Uses HMAC-SHA256 signed tokens. A production signing secret must be supplied
+through the environment; no reusable secret is embedded in source control.
 """
 
 import base64
@@ -25,6 +25,16 @@ class SessionRequest(BaseModel):
     name: Optional[str] = Field(default="Farmer", max_length=64)
 
 
+def _require_jwt_secret() -> str:
+    secret = settings.JWT_SECRET.strip()
+    if len(secret) < 32:
+        raise HTTPException(
+            status_code=503,
+            detail="Authentication is not configured. Set JWT_SECRET to a strong random secret (32+ characters).",
+        )
+    return secret
+
+
 def _b64encode(data: bytes) -> str:
     return base64.urlsafe_b64encode(data).decode("utf-8").rstrip("=")
 
@@ -35,7 +45,8 @@ def _b64decode(s: str) -> bytes:
 
 
 def create_access_token(user_id: str, extra: Optional[Dict[str, Any]] = None) -> str:
-    header = {"alg": "HS256", "typ": "JWT"}
+    secret = _require_jwt_secret()
+    header = {"alg": settings.JWT_ALGORITHM, "typ": "JWT"}
     now = int(time.time())
     payload = {
         "sub": user_id,
@@ -47,55 +58,41 @@ def create_access_token(user_id: str, extra: Optional[Dict[str, Any]] = None) ->
     header_b64 = _b64encode(json.dumps(header, separators=(",", ":")).encode("utf-8"))
     payload_b64 = _b64encode(json.dumps(payload, separators=(",", ":")).encode("utf-8"))
     message = f"{header_b64}.{payload_b64}".encode("utf-8")
-
-    signature = hmac.new(
-        settings.JWT_SECRET.encode("utf-8"),
-        message,
-        hashlib.sha256
-    ).digest()
-    sig_b64 = _b64encode(signature)
-
-    return f"{header_b64}.{payload_b64}.{sig_b64}"
+    signature = hmac.new(secret.encode("utf-8"), message, hashlib.sha256).digest()
+    return f"{header_b64}.{payload_b64}.{_b64encode(signature)}"
 
 
 def decode_access_token(token: str) -> Optional[Dict[str, Any]]:
+    secret = settings.JWT_SECRET.strip()
+    if len(secret) < 32:
+        return None
     try:
         parts = token.split(".")
         if len(parts) != 3:
             return None
-
         header_b64, payload_b64, sig_b64 = parts
+        header = json.loads(_b64decode(header_b64).decode("utf-8"))
+        if header.get("alg") != settings.JWT_ALGORITHM or header.get("typ") != "JWT":
+            return None
         message = f"{header_b64}.{payload_b64}".encode("utf-8")
-        expected_sig = hmac.new(
-            settings.JWT_SECRET.encode("utf-8"),
-            message,
-            hashlib.sha256
-        ).digest()
-
+        expected_sig = hmac.new(secret.encode("utf-8"), message, hashlib.sha256).digest()
         actual_sig = _b64decode(sig_b64)
         if not hmac.compare_digest(expected_sig, actual_sig):
             return None
-
-        payload_bytes = _b64decode(payload_b64)
-        payload = json.loads(payload_bytes.decode("utf-8"))
-
+        payload = json.loads(_b64decode(payload_b64).decode("utf-8"))
         if payload.get("exp", 0) < int(time.time()):
             return None
-
+        if not payload.get("sub"):
+            return None
         return payload
     except Exception:
         return None
 
 
 def get_current_user_optional(authorization: Optional[str] = Header(None)) -> Optional[Dict[str, Any]]:
-    if not authorization:
+    if not authorization or not authorization.startswith("Bearer "):
         return None
-
-    if not authorization.startswith("Bearer "):
-        return None
-
-    token = authorization[7:].strip()
-    return decode_access_token(token)
+    return decode_access_token(authorization[7:].strip())
 
 
 def get_current_user_required(authorization: Optional[str] = Header(None)) -> Dict[str, Any]:
@@ -112,19 +109,12 @@ def get_current_user_required(authorization: Optional[str] = Header(None)) -> Di
 @router.post("/session")
 async def create_farmer_session(req: SessionRequest):
     user_id = req.farmerId.strip() or "farmer_anonymous"
-    token = create_access_token(
-        user_id=user_id,
-        extra={"phone": req.phone, "name": req.name}
-    )
+    token = create_access_token(user_id=user_id, extra={"phone": req.phone, "name": req.name})
     return {
         "success": True,
         "token_type": "bearer",
         "access_token": token,
-        "user": {
-            "userId": user_id,
-            "phone": req.phone,
-            "name": req.name,
-        },
+        "user": {"userId": user_id, "phone": req.phone, "name": req.name},
     }
 
 
