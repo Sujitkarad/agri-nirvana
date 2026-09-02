@@ -6,15 +6,15 @@ on:
       epochs:
         description: "Training epochs"
         required: false
-        default: "80"
+        default: "100"
       batch_size:
-        description: "Batch size"
+        description: "Batch size (reduce if GPU memory is limited)"
         required: false
-        default: "16"
+        default: "8"
       learning_rate:
         description: "Initial classifier learning rate"
         required: false
-        default: "0.0001"
+        default: "0.000075"
       max_per_class:
         description: "Maximum images per class (0 = complete dataset)"
         required: false
@@ -48,7 +48,7 @@ jobs:
           print('PyTorch:', torch.__version__)
           print('TorchVision:', torchvision.__version__)
           print('CUDA available:', torch.cuda.is_available())
-          print('Architecture: EfficientNetV2-S / 384x384')
+          print('Architecture: EfficientNetV2-L / 448x448')
           PY
       - name: Import PlantDoc field-condition evaluation dataset
         run: |
@@ -83,20 +83,20 @@ jobs:
       - name: Audit PlantVillage leakage and support
         run: |
           python -m backend.ml.training.audit_dataset --data backend/ml/datasets/plant_disease --min-per-class 5
-      - name: Train EfficientNetV2-S
+      - name: Train maximum-capacity EfficientNetV2-L
         run: |
-          python -m backend.ml.training.train_pipeline --data backend/ml/datasets/plant_disease --epochs ${{ inputs.epochs }} --batch-size ${{ inputs.batch_size }} --lr ${{ inputs.learning_rate }} --image-size 384 --warmup-epochs 5 --freeze-epochs 5 --patience 12 --workers 2
+          python -m backend.ml.training.train_pipeline_large --data backend/ml/datasets/plant_disease --output backend/ml/models/weights/agri_nirvana_efficientnet_v2_l.pt --epochs ${{ inputs.epochs }} --batch-size ${{ inputs.batch_size }} --lr ${{ inputs.learning_rate }} --image-size 448 --warmup-epochs 8 --freeze-epochs 8 --patience 15 --workers 2
       - name: Verify trained checkpoint and benchmark quality
         run: |
-          test -s backend/ml/models/weights/agri_nirvana_efficientnet_v2_s.pt
-          test -s backend/ml/models/weights/agri_nirvana_efficientnet_v2_s.json
+          test -s backend/ml/models/weights/agri_nirvana_efficientnet_v2_l.pt
+          test -s backend/ml/models/weights/agri_nirvana_efficientnet_v2_l.json
           test -s backend/ml/training/training_report.json
           python - <<'PY'
           import json
-          p='backend/ml/models/weights/agri_nirvana_efficientnet_v2_s.json'
+          p='backend/ml/models/weights/agri_nirvana_efficientnet_v2_l.json'
           d=json.load(open(p, encoding='utf-8'))
-          assert d.get('architecture') == 'efficientnet_v2_s'
-          assert int(d.get('image_size', 0)) == 384
+          assert d.get('architecture') == 'efficientnet_v2_l'
+          assert int(d.get('image_size', 0)) == 448
           metrics=d.get('metrics', {})
           macro_f1=float(metrics.get('macro_f1', 0.0))
           ece=float(metrics.get('expected_calibration_error', 1.0))
@@ -106,15 +106,14 @@ jobs:
           PY
       - name: Evaluate field and OOD data
         run: |
-          python -m backend.ml.training.evaluate_field_ood --checkpoint backend/ml/models/weights/agri_nirvana_efficientnet_v2_s.pt --field-data backend/ml/datasets/field_ood/field --ood-data backend/ml/datasets/field_ood/ood --output backend/ml/training/field_ood_evaluation.json
+          python -m backend.ml.training.evaluate_field_ood --checkpoint backend/ml/models/weights/agri_nirvana_efficientnet_v2_l.pt --field-data backend/ml/datasets/field_ood/field --ood-data backend/ml/datasets/field_ood/ood --output backend/ml/training/field_ood_evaluation.json
       - name: Upload trained model, manifests and evaluation
         uses: actions/upload-artifact@v4
         with:
-          name: agri-nirvana-efficientnet-v2-s
+          name: agri-nirvana-efficientnet-v2-l
           path: |
-            backend/ml/models/weights/agri_nirvana_efficientnet_v2_s.pt
-            backend/ml/models/weights/agri_nirvana_efficientnet_v2_s.json
-            backend/ml/models/weights/temperature_calibration.json
+            backend/ml/models/weights/agri_nirvana_efficientnet_v2_l.pt
+            backend/ml/models/weights/agri_nirvana_efficientnet_v2_l.json
             backend/ml/training/training_report.json
             backend/ml/training/field_ood_evaluation.json
             backend/ml/datasets/dataset_manifest.json
