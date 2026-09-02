@@ -12,9 +12,8 @@ from typing import Any
 
 import numpy as np
 import torch
-from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
+from sklearn.metrics import accuracy_score, f1_score
 from torchvision import datasets, models, transforms
-
 
 VALID_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".bmp"}
 
@@ -25,14 +24,18 @@ def _count_images(root: Path) -> int:
 
 def _load_model(checkpoint_path: Path, device: torch.device):
     ckpt = torch.load(checkpoint_path, map_location=device, weights_only=False)
-    if ckpt.get("architecture") != "efficientnet_v2_s":
-        raise ValueError("Evaluation requires an EfficientNetV2-S checkpoint")
+    architecture = ckpt.get("architecture")
+    if architecture == "efficientnet_v2_l":
+        model = models.efficientnet_v2_l(weights=None)
+    elif architecture == "efficientnet_v2_s":
+        model = models.efficientnet_v2_s(weights=None)
+    else:
+        raise ValueError(f"Unsupported checkpoint architecture: {architecture}")
     class_to_idx = ckpt["class_to_idx"]
-    model = models.efficientnet_v2_s(weights=None)
     model.classifier[1] = torch.nn.Linear(model.classifier[1].in_features, len(class_to_idx))
     model.load_state_dict(ckpt["model_state_dict"])
     model.to(device).eval()
-    return model, class_to_idx, int(ckpt.get("image_size", 384))
+    return model, class_to_idx, int(ckpt.get("image_size", 448))
 
 
 def _predict(model, root: Path, image_size: int, device: torch.device):
@@ -63,7 +66,6 @@ def evaluate_field(model, class_to_idx, image_size, root, device):
     overlap = sorted(set(classes) & known)
     if len(overlap) == 0:
         raise ValueError("Field dataset has no class overlap with the production taxonomy")
-    # ImageFolder labels are local to the field dataset; map only matching names.
     keep = np.asarray([classes[int(i)] in known for i in y_true])
     if not keep.any():
         raise ValueError("Field dataset contains no evaluable known classes")
@@ -87,7 +89,7 @@ def evaluate_ood(model, image_size, root, device):
         transforms.Resize(int(image_size * 1.14)),
         transforms.CenterCrop(image_size),
         transforms.ToTensor(),
-        transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+        transforms.Normalize((0.485, 0.456, 0.229), (0.229, 0.224, 0.225)),
     ])
     paths = [p for p in root.rglob("*") if p.is_file() and p.suffix.lower() in VALID_EXTENSIONS]
     from PIL import Image
@@ -98,8 +100,6 @@ def evaluate_ood(model, image_size, root, device):
             probs = torch.softmax(model(image), dim=1)
             scores.append(float(probs.max().item()))
     scores = np.asarray(scores)
-    # OOD evaluation reports the score distribution; AUROC requires matched
-    # known samples and is therefore not fabricated from OOD-only images.
     return {
         "samples": int(len(scores)),
         "mean_max_probability": round(float(scores.mean()), 4),
