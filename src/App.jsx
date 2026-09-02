@@ -636,16 +636,15 @@ export default function App() {
 
             {/* RIGHT: 3D Model */}
             <div className="lg:col-span-5 flex items-center justify-center">
-              <div className={`relative w-full rounded-3xl border transition-all ${
-                isDark ? "border-emerald-500/30 bg-[#072017]/80 shadow-2xl glow-emerald" : "border-slate-200 bg-white/90 shadow-xl"
-              }`} style={{minHeight: "380px", maxWidth: "460px"}}>
+              <div className={`relative w-full rounded-3xl overflow-hidden transition-all ${
+                isDark
+                  ? "border border-emerald-500/20 bg-[#040f08] shadow-[0_0_80px_-20px_rgba(16,185,129,0.35)]"
+                  : "border border-emerald-200/60 bg-gradient-to-br from-emerald-50 to-white shadow-2xl"
+              }`} style={{minHeight: "460px", maxWidth: "480px"}}>
                 <Hero3DCropModel theme={theme} />
-                <div className="absolute top-3 right-3 flex items-center gap-1.5 rounded-xl bg-black/70 backdrop-blur px-3 py-1.5 border border-emerald-500/30">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="text-[10px] font-mono font-bold text-emerald-300">AI Vision · LIVE</span>
-                </div>
               </div>
             </div>
+
           </div>
         </section>
       )}
