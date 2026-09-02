@@ -1,10 +1,10 @@
 # Agri Nirvana pretrained model training
 
-Agri Nirvana trains its disease classifier with transfer learning from ImageNet-pretrained EfficientNetV2-S. The backbone is not trained from random initialization.
+Agri Nirvana trains its disease classifier with transfer learning from ImageNet-pretrained **EfficientNetV2-L**. The backbone is not trained from random initialization.
 
 ## Pipeline
 
-1. Load `EfficientNetV2-S` with torchvision ImageNet weights.
+1. Load `EfficientNetV2-L` with torchvision ImageNet weights.
 2. Replace the final classifier with the production disease taxonomy.
 3. Freeze the feature extractor for the initial warm-up/frozen stage.
 4. Train the classifier head with class-balanced cross entropy and label smoothing.
@@ -15,19 +15,32 @@ Agri Nirvana trains its disease classifier with transfer learning from ImageNet-
 9. Evaluate the calibrated model once on the untouched test set.
 10. Run separate field and OOD evaluation before production release.
 
-## Default training settings
+## Maximum-capacity training settings
 
-- Architecture: EfficientNetV2-S
+- Architecture: EfficientNetV2-L
 - Pretraining: ImageNet
-- Resolution: 384x384
-- Epochs: 80
-- Batch size: 16
-- Classifier learning rate: 1e-4
-- Backbone learning rate after unfreezing: 1e-5
-- Warm-up: 5 epochs
-- Frozen stage: 5 epochs
-- Early stopping patience: 12
+- Resolution: 448x448
+- Epochs: 100
+- Batch size: 8
+- Classifier learning rate: 7.5e-5
+- Backbone learning rate after unfreezing: 7.5e-6
+- Warm-up: 8 epochs
+- Frozen stage: 8 epochs
+- Early stopping patience: 15
+- AMP: enabled automatically when CUDA is available
 
-## Important
+## Compute requirement
+
+EfficientNetV2-L at 448x448 is intentionally a high-capacity training configuration. The repository workflow currently defaults to `ubuntu-latest`; standard GitHub-hosted runners are CPU machines, while GPU-backed larger runners are a separate GitHub feature. citeturn0search1turn0search4 For practical full training, use a CUDA-capable larger or self-hosted runner and route the workflow to it with the appropriate runner label. Self-hosted runners can be targeted with labels such as `self-hosted`, `linux`, `x64`, and `gpu`. citeturn0search2turn0search6
+
+## Quality gates
+
+The training workflow requires:
+
+- Macro-F1 >= 0.70
+- ECE <= 0.15
+- real field evaluation data
+- real OOD evaluation data
+- exact-duplicate leakage audit
 
 PlantVillage/PlantDoc results must not be presented as Maharashtra field accuracy. A production checkpoint must pass the repository quality gates and representative field/OOD evaluation. Never bypass missing field/OOD data with synthetic or fabricated images.
