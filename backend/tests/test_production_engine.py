@@ -2,16 +2,24 @@ import unittest
 
 from PIL import Image
 
+from backend.config import settings
 from backend.ml.inference.production_engine import ProductionInferenceEngine
 from backend.ml.models.plant_validator import PlantValidator
 from backend.ml.models.severity_estimator import estimate_severity
 
 
 class TestProductionEngine(unittest.TestCase):
+    def setUp(self):
+        settings.JWT_SECRET = "test-only-secret-do-not-use-in-production-32chars"
+
     def _engine(self, provider="mock"):
         engine = ProductionInferenceEngine.__new__(ProductionInferenceEngine)
         engine.provider_type = provider
         engine.threshold = 0.70
+        engine.min_margin = 0.10
+        engine.max_entropy = 0.90
+        engine.min_crop_mass = 0.45
+        engine.require_local = True
         engine._models_loaded = False
         engine._plant_validator = None
         engine._disease_classifier = None
@@ -30,6 +38,11 @@ class TestProductionEngine(unittest.TestCase):
         self.assertEqual(result["status"], "model_unavailable")
         self.assertTrue(result["isMock"])
         self.assertEqual(result["confidence"], 0.0)
+
+    def test_engine_abstains_when_local_model_is_unavailable(self):
+        result = self._engine("real").analyze(Image.new("RGB", (256, 256), "green"), "Tomato")
+        self.assertEqual(result["status"], "model_unavailable")
+        self.assertTrue(result["uncertainty"]["abstain"])
 
 
 class TestPlantValidatorQualityGate(unittest.TestCase):
