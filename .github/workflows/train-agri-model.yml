@@ -52,20 +52,20 @@ jobs:
           PY
       - name: Import PlantDoc field-condition evaluation dataset
         run: |
-          python -m backend.ml.training.import_datasets \
-            --output backend/ml/datasets \
-            --plantdoc
+          python -m backend.ml.training.import_datasets --output backend/ml/datasets --plantdoc
       - name: Verify PlantDoc dataset
         run: |
-          python -m backend.ml.training.audit_dataset \
-            --data backend/ml/datasets/plantdoc \
-            --min-per-class 5
+          python -m backend.ml.training.audit_dataset --data backend/ml/datasets/plantdoc --min-per-class 5
+      - name: Require real field and OOD evaluation data
+        run: |
+          test -d backend/ml/datasets/field_ood/field
+          test -d backend/ml/datasets/field_ood/ood
+          test "$(find backend/ml/datasets/field_ood/field -type f | wc -l)" -gt 0
+          test "$(find backend/ml/datasets/field_ood/ood -type f | wc -l)" -gt 0
       - name: Download PlantVillage
         run: |
           rm -rf backend/ml/datasets/plant_disease
-          python -m backend.ml.training.download_plantvillage \
-            --output backend/ml/datasets/plant_disease \
-            --max-per-class ${{ inputs.max_per_class }}
+          python -m backend.ml.training.download_plantvillage --output backend/ml/datasets/plant_disease --max-per-class ${{ inputs.max_per_class }}
       - name: Verify PlantVillage dataset
         run: |
           python - <<'PY'
@@ -82,22 +82,11 @@ jobs:
           PY
       - name: Audit PlantVillage leakage and support
         run: |
-          python -m backend.ml.training.audit_dataset \
-            --data backend/ml/datasets/plant_disease \
-            --min-per-class 5
+          python -m backend.ml.training.audit_dataset --data backend/ml/datasets/plant_disease --min-per-class 5
       - name: Train EfficientNetV2-S
         run: |
-          python -m backend.ml.training.train_pipeline \
-            --data backend/ml/datasets/plant_disease \
-            --epochs ${{ inputs.epochs }} \
-            --batch-size ${{ inputs.batch_size }} \
-            --lr ${{ inputs.learning_rate }} \
-            --image-size 384 \
-            --warmup-epochs 5 \
-            --freeze-epochs 5 \
-            --patience 12 \
-            --workers 2
-      - name: Verify trained checkpoint and quality
+          python -m backend.ml.training.train_pipeline --data backend/ml/datasets/plant_disease --epochs ${{ inputs.epochs }} --batch-size ${{ inputs.batch_size }} --lr ${{ inputs.learning_rate }} --image-size 384 --warmup-epochs 5 --freeze-epochs 5 --patience 12 --workers 2
+      - name: Verify trained checkpoint and benchmark quality
         run: |
           test -s backend/ml/models/weights/agri_nirvana_efficientnet_v2_s.pt
           test -s backend/ml/models/weights/agri_nirvana_efficientnet_v2_s.json
@@ -106,23 +95,19 @@ jobs:
           import json
           p='backend/ml/models/weights/agri_nirvana_efficientnet_v2_s.json'
           d=json.load(open(p, encoding='utf-8'))
-          assert d.get('architecture') == 'efficientnet_v2_s', d.get('architecture')
-          assert int(d.get('image_size', 0)) == 384, d.get('image_size')
+          assert d.get('architecture') == 'efficientnet_v2_s'
+          assert int(d.get('image_size', 0)) == 384
           metrics=d.get('metrics', {})
           macro_f1=float(metrics.get('macro_f1', 0.0))
           ece=float(metrics.get('expected_calibration_error', 1.0))
           assert macro_f1 >= 0.70, f'Macro-F1 quality gate failed: {macro_f1:.4f} < 0.70'
           assert ece <= 0.15, f'Calibration quality gate failed: ECE {ece:.4f} > 0.15'
-          print('Architecture:', d.get('architecture'))
-          print('Image size:', d.get('image_size'))
-          print('Classes:', d.get('num_classes'))
-          print('Best epoch:', d.get('best_epoch'))
-          print('Macro-F1:', macro_f1)
-          print('ECE:', ece)
           print(json.dumps(metrics, indent=2))
-          print(json.dumps(d.get('calibration', {}), indent=2))
           PY
-      - name: Upload trained model and dataset manifest
+      - name: Evaluate field and OOD data
+        run: |
+          python -m backend.ml.training.evaluate_field_ood --checkpoint backend/ml/models/weights/agri_nirvana_efficientnet_v2_s.pt --field-data backend/ml/datasets/field_ood/field --ood-data backend/ml/datasets/field_ood/ood --output backend/ml/training/field_ood_evaluation.json
+      - name: Upload trained model, manifests and evaluation
         uses: actions/upload-artifact@v4
         with:
           name: agri-nirvana-efficientnet-v2-s
@@ -131,5 +116,6 @@ jobs:
             backend/ml/models/weights/agri_nirvana_efficientnet_v2_s.json
             backend/ml/models/weights/temperature_calibration.json
             backend/ml/training/training_report.json
+            backend/ml/training/field_ood_evaluation.json
             backend/ml/datasets/dataset_manifest.json
           retention-days: 30
