@@ -1,8 +1,12 @@
 """Production-safe crop diagnosis engine.
 
-The runtime engine prefers Agri Nirvana's locally trained EfficientNetV2-S
-checkpoint and only falls back to the Hugging Face baseline when the local
-checkpoint is unavailable. Low-confidence and ambiguous predictions abstain.
+Rules for the production path:
+- only the versioned local EfficientNetV2-S checkpoint is accepted;
+- no silent Hugging Face/model substitution;
+- crop evidence is checked before disease confidence is trusted;
+- global calibrated probabilities remain global after crop filtering;
+- low confidence, ambiguity, high entropy, and crop mismatch abstain;
+- treatment recommendations are returned only for a successful diagnosis.
 """
 
 from pathlib import Path
@@ -22,17 +26,20 @@ class ProductionInferenceEngine:
     def __init__(self) -> None:
         self.provider_type = settings.AI_MODEL_PROVIDER.lower().strip()
         self.threshold = max(0.50, min(float(settings.AI_CONFIDENCE_THRESHOLD), 0.95))
+        self.min_margin = float(settings.AI_MIN_TOP2_MARGIN)
+        self.max_entropy = float(settings.AI_MAX_NORMALIZED_ENTROPY)
+        self.min_crop_mass = float(settings.AI_MIN_CROP_PROBABILITY_MASS)
+        self.require_local = bool(settings.AI_REQUIRE_LOCAL_CHECKPOINT)
         self._plant_validator = None
         self._disease_classifier = None
         self._models_loaded = False
         self._model_source = "unavailable"
         self._is_calibrated = False
-
         if self.provider_type == "real":
             self._load_models()
 
     def _load_models(self) -> None:
-        """Load the trained local checkpoint first, then use HF as a fallback."""
+        """Load only the production checkpoint; never substitute another model."""
         try:
             from backend.ml.models.plant_validator import PlantValidator
             self._plant_validator = PlantValidator()
@@ -41,58 +48,38 @@ class ProductionInferenceEngine:
             self._plant_validator = None
 
         local_path = Path(settings.LOCAL_TRAINED_MODEL_PATH)
-        if local_path.is_file():
-            try:
-                from backend.ml.models.efficientnet_classifier import EfficientNetDiseaseClassifier
+        if not local_path.is_file():
+            print(f"[ProductionInferenceEngine] production checkpoint missing: {local_path}")
+            return
 
-                self._disease_classifier = EfficientNetDiseaseClassifier(str(local_path))
-                self._models_loaded = bool(self._disease_classifier.is_loaded)
-                if self._models_loaded:
-                    self._model_source = "local_trained"
-                    diagnostics = getattr(self._disease_classifier, "calibration", None)
-                    self._is_calibrated = diagnostics is not None
-                    print(
-                        f"[ProductionInferenceEngine] Loaded local model: "
-                        f"{local_path} ({self._disease_classifier.model_id})"
-                    )
-                    return
-            except Exception as exc:
-                print(f"[ProductionInferenceEngine] local model load failed: {exc}")
-
-        # Explicit fallback for deployments where the trained artifact has not
-        # been mounted yet. This never overrides a successfully loaded local model.
         try:
-            from backend.ml.models.disease_classifier import DiseaseClassifier
-
-            fallback = DiseaseClassifier(model_id=getattr(settings, "HF_MODEL_ID", None))
-            if fallback.is_loaded:
-                self._disease_classifier = fallback
-                self._models_loaded = True
-                self._model_source = "huggingface_fallback"
-                self._is_calibrated = False
-                print(
-                    "[ProductionInferenceEngine] WARNING: local trained checkpoint "
-                    "not found; using Hugging Face fallback model."
-                )
+            from backend.ml.models.efficientnet_classifier import EfficientNetDiseaseClassifier
+            classifier = EfficientNetDiseaseClassifier(str(local_path))
+            if classifier.model_id != "agri-nirvana-efficientnet-v2-s":
+                raise ValueError("Production checkpoint must be EfficientNetV2-S")
+            self._disease_classifier = classifier
+            self._models_loaded = bool(classifier.is_loaded)
+            self._model_source = "local_trained"
+            self._is_calibrated = bool(getattr(classifier, "calibration", {}))
+            print(f"[ProductionInferenceEngine] Loaded production model: {local_path}")
         except Exception as exc:
-            print(f"[ProductionInferenceEngine] fallback model load failed: {exc}")
+            print(f"[ProductionInferenceEngine] production model load failed: {exc}")
+            self._disease_classifier = None
             self._models_loaded = False
 
     @property
     def model_source(self) -> str:
-        return getattr(self, "_model_source", "unavailable")
+        return self._model_source
 
     @property
     def model_name(self) -> str:
-        if getattr(self, "_models_loaded", False) and getattr(self, "_disease_classifier", None):
-            return f"{self._disease_classifier.model_id} + ImageNet plant validator"
+        if self._models_loaded and self._disease_classifier:
+            return f"{self._disease_classifier.model_id} + plant validation gate"
         return "Unavailable"
 
     @property
     def model_version(self) -> str:
-        if not getattr(self, "_models_loaded", False):
-            return "unavailable"
-        return "v4-local-efficientnet-v2-s" if self.model_source == "local_trained" else "v3-huggingface-fallback"
+        return "v5-efficientnet-v2-s" if self._models_loaded else "unavailable"
 
     def supported_crops(self) -> List[str]:
         if self._disease_classifier and self._disease_classifier.id2label:
@@ -106,81 +93,85 @@ class ProductionInferenceEngine:
                 return sorted(detected)
         return sorted(MODEL_SUPPORTED_CROPS)
 
-    def _unsupported_crop(self, crop_type: str) -> Dict[str, Any]:
+    def _base(self, crop_type: str) -> Dict[str, Any]:
         return {
-            "status": "unsupported_crop",
-            "is_valid_crop_image": False,
-            "validation": {
-                "is_plant": True,
-                "is_crop": True,
-                "crop_supported": False,
-                "rejection_reason": (
-                    f"The current AI model is not trained for '{crop_type}'. "
-                    "No disease prediction was generated."
-                ),
-                "remedy": (
-                    f"Select one of the supported crops: {', '.join(self.supported_crops())}. "
-                    "For other crops, request field evaluation from an agronomist."
-                ),
-                "image_quality": {
-                    "status": "pass",
-                    "width": 0,
-                    "height": 0,
-                    "sharpness": 0.0,
-                    "brightness": 0.0,
-                    "aspect_ratio": 1.0,
-                },
-            },
-            "crop": {"name": crop_type, "confidence_pct": 0},
             "cropType": crop_type,
-            "condition": "Unsupported Crop",
-            "confidence": 0.0,
-            "confidence_pct": 0,
-            "severity": "Unknown",
-            "uncertainty": {"abstain": True, "reason": "Crop is outside model training classes."},
-            "supported_crops": self.supported_crops(),
             "modelName": self.model_name,
             "modelVersion": self.model_version,
             "modelSource": self.model_source,
             "isMock": False,
         }
 
+    def _unsupported_crop(self, crop_type: str) -> Dict[str, Any]:
+        result = self._base(crop_type)
+        result.update({
+            "status": "unsupported_crop",
+            "is_valid_crop_image": False,
+            "validation": {
+                "is_plant": True,
+                "is_crop": True,
+                "crop_supported": False,
+                "rejection_reason": f"The current model is not trained for '{crop_type}'.",
+                "remedy": f"Supported crops: {', '.join(self.supported_crops())}.",
+            },
+            "crop": {"name": crop_type, "confidence_pct": 0},
+            "condition": "Unsupported Crop",
+            "confidence": 0.0,
+            "confidence_pct": 0,
+            "severity": "Unknown",
+            "uncertainty": {"abstain": True, "reason": "Crop is outside model training classes."},
+            "supported_crops": self.supported_crops(),
+        })
+        return result
+
     def _unavailable(self, crop_type: str) -> Dict[str, Any]:
-        return {
+        result = self._base(crop_type)
+        result.update({
             "status": "model_unavailable",
             "is_valid_crop_image": False,
-            "cropType": crop_type,
             "condition": "Model Unavailable",
             "confidence": 0.0,
             "confidence_pct": 0,
             "severity": "Unknown",
-            "uncertainty": {"abstain": True, "reason": "Real ML model is not loaded."},
+            "uncertainty": {"abstain": True, "reason": "The production checkpoint is not loaded."},
             "recommendations": {
-                "immediate": "Start the backend with a real ML model before using diagnosis.",
-                "monitoring": "No diagnosis available.",
-                "prevention": "Do not select disease-specific treatment from this result.",
+                "immediate": "Start the backend with the versioned production ML checkpoint.",
+                "monitoring": "No diagnosis is available.",
+                "prevention": "Do not apply disease-specific treatment from this result.",
                 "expert_help": "Consult a local agriculture expert if symptoms are severe.",
             },
-            "modelName": self.model_name,
-            "modelVersion": self.model_version,
-            "modelSource": self.model_source,
             "isMock": True,
-        }
+        })
+        return result
+
+    def _invalid_image(self, crop_type: str, reason: str) -> Dict[str, Any]:
+        result = self._base(crop_type)
+        result.update({
+            "status": "invalid_image",
+            "is_valid_crop_image": False,
+            "condition": "Invalid Image",
+            "confidence": 0.0,
+            "confidence_pct": 0,
+            "severity": "Unknown",
+            "uncertainty": {"abstain": True, "reason": reason},
+            "recommendations": {
+                "immediate": "Retake a clear close-up photo of the affected leaf in natural light.",
+                "monitoring": "No diagnosis was generated.",
+                "prevention": "Do not apply disease-specific treatment from this result.",
+                "expert_help": "Consult a KVK/agriculture extension officer if symptoms are severe.",
+            },
+        })
+        return result
 
     def _abstain(self, crop_type: str, classification: Dict[str, Any], reason: str) -> Dict[str, Any]:
         confidence = max(0.0, min(float(classification.get("confidence", 0.0)), 1.0))
-        top_predictions = classification.get("top_predictions", [])
-        return {
+        predictions = classification.get("top_predictions", [])
+        result = self._base(crop_type)
+        result.update({
             "status": "uncertain",
             "is_valid_crop_image": True,
-            "validation": {
-                "is_plant": True,
-                "is_crop": True,
-                "crop_supported": True,
-                "rejection_reason": None,
-            },
+            "validation": {"is_plant": True, "is_crop": True, "crop_supported": True, "rejection_reason": None},
             "crop": {"name": crop_type, "confidence_pct": round(confidence * 100)},
-            "cropType": crop_type,
             "condition": "Uncertain Result",
             "confidence": round(confidence, 4),
             "confidence_pct": round(confidence * 100),
@@ -193,22 +184,19 @@ class ProductionInferenceEngine:
                     "crop": p.get("crop", crop_type),
                     "condition": p.get("condition", ""),
                     "confidence_pct": round(float(p.get("confidence", 0)) * 100),
-                    "key_distinguishing_feature": "Visually similar foliar symptoms."
+                    "key_distinguishing_feature": "Visually similar symptoms require a clearer image or field confirmation.",
                 }
-                for p in top_predictions[1:3]
+                for p in predictions[1:3]
             ],
             "uncertainty": {"abstain": True, "reason": reason},
             "recommendations": {
-                "immediate": "Retake a clear close-up image of one leaf in natural light.",
-                "monitoring": "Do not apply a disease-specific chemical treatment from this result.",
+                "immediate": "Retake a sharp close-up image of one affected leaf in natural light.",
+                "monitoring": "Do not apply disease-specific chemical treatment from this result.",
                 "prevention": "Continue normal field scouting until a reliable diagnosis is available.",
                 "expert_help": "Consult a KVK/agriculture extension officer if symptoms are spreading.",
             },
-            "modelName": self.model_name,
-            "modelVersion": self.model_version,
-            "modelSource": self._model_source,
-            "isMock": False,
-        }
+        })
+        return result
 
     def analyze(self, pil_image: Image.Image, crop_type: str) -> Dict[str, Any]:
         from backend.ml.models.disease_classifier import normalize_crop_name
@@ -216,61 +204,53 @@ class ProductionInferenceEngine:
         crop_type = normalize_crop_name((crop_type or "").strip())
         if not crop_type or crop_type == "Unknown":
             return self._unsupported_crop("Unknown")
-
         if crop_type not in self.supported_crops():
             return self._unsupported_crop(crop_type)
-
-        if self.provider_type != "real" or not self._models_loaded:
+        if self.provider_type != "real" or not self._models_loaded or self._disease_classifier is None:
             return self._unavailable(crop_type)
-
         if pil_image is None:
             return self._abstain(crop_type, {}, "No image was provided.")
 
-        validation = self._plant_validator.validate(pil_image) if self._plant_validator else {"is_plant": True}
-        if not validation.get("is_plant", True):
-            return {
-                "status": "invalid_image",
-                "is_valid_crop_image": False,
-                "rejection_reason": validation.get("rejection_reason", "Image does not appear to contain a crop leaf."),
-                "cropType": crop_type,
-                "condition": "Invalid Image",
-                "confidence": 0.0,
-                "confidence_pct": 0,
-                "severity": "Unknown",
-                "uncertainty": {"abstain": True, "reason": "Plant validation failed."},
-                "modelName": self.model_name,
-                "modelVersion": self.model_version,
-                "modelSource": self._model_source,
-                "isMock": False,
-            }
+        if self._plant_validator is None:
+            return self._invalid_image(crop_type, "Plant validation model is unavailable; diagnosis is disabled for safety.")
+
+        validation = self._plant_validator.validate(pil_image)
+        if validation.get("image_quality", {}).get("status") == "fail":
+            return self._invalid_image(crop_type, validation.get("rejection_reason", "Image quality gate failed."))
+        if not validation.get("is_plant", False):
+            return self._invalid_image(crop_type, validation.get("rejection_reason", "Plant validation failed."))
 
         classification = self._disease_classifier.classify(pil_image, top_k=5, crop_filter=crop_type)
+        diagnostics = classification.get("confidence_diagnostics", {})
         confidence = max(0.0, min(float(classification.get("confidence", 0.0)), 1.0))
+        crop_mass = float(diagnostics.get("crop_probability_mass", 0.0))
+        crop_match = bool(diagnostics.get("crop_match", False))
+        global_crop = str(diagnostics.get("global_top_crop", ""))
 
+        if not crop_match or crop_mass < self.min_crop_mass:
+            return self._abstain(
+                crop_type,
+                classification,
+                f"Crop mismatch/weak crop evidence: requested={crop_type}, model_top_crop={global_crop}, crop_probability_mass={crop_mass:.2f}.",
+            )
         if confidence < self.threshold:
             return self._abstain(
-                crop_type,
-                classification,
-                f"Model confidence ({confidence:.2f}) is below the configured reliability threshold ({self.threshold:.2f}).",
+                crop_type, classification,
+                f"Calibrated confidence ({confidence:.2f}) is below the reliability threshold ({self.threshold:.2f}).",
             )
 
-        top_preds = classification.get("top_predictions", [])
-        if len(top_preds) > 1:
-            margin = confidence - float(top_preds[1].get("confidence", 0.0))
-            if margin < 0.10:
-                return self._abstain(
-                    crop_type,
-                    classification,
-                    f"Ambiguous prediction: margin between top-2 candidate conditions ({margin:.2f}) is too narrow (< 0.10). Retake clearer photo.",
-                )
-
-        conf_diag = classification.get("confidence_diagnostics", {})
-        norm_entropy = float(conf_diag.get("normalized_entropy", 0.0))
-        if norm_entropy > 0.90:
+        margin = float(diagnostics.get("top2_margin", 1.0))
+        if margin < self.min_margin:
             return self._abstain(
-                crop_type,
-                classification,
-                f"Prediction entropy ({norm_entropy:.2f}) exceeds 0.90, indicating visual ambiguity across classes.",
+                crop_type, classification,
+                f"Top-2 diagnostic margin ({margin:.2f}) is below the required margin ({self.min_margin:.2f}).",
+            )
+
+        entropy = float(diagnostics.get("normalized_entropy", 1.0))
+        if entropy > self.max_entropy:
+            return self._abstain(
+                crop_type, classification,
+                f"Prediction entropy ({entropy:.2f}) is above the maximum ({self.max_entropy:.2f}).",
             )
 
         from backend.ml.models.severity_estimator import estimate_severity
@@ -279,16 +259,14 @@ class ProductionInferenceEngine:
 
         raw_label = classification.get("raw_label", "")
         disease_info = get_disease_info(raw_label)
-        severity_result = estimate_severity(
-            pil_image,
-            model_confidence=confidence,
-            is_healthy=bool(classification.get("is_healthy")),
-        )
-
-        severity_map = {"healthy": "Healthy", "early": "Low", "moderate": "Moderate", "severe": "Severe"}
-        severity = severity_map.get(severity_result.get("severity"), "Moderate")
-        confidence_pct = round(confidence * 100)
         healthy = bool(classification.get("is_healthy")) or "healthy" in raw_label.lower()
+        severity_result = estimate_severity(pil_image, model_confidence=confidence, is_healthy=healthy)
+        severity_map = {"healthy": "Healthy", "early": "Low", "moderate": "Moderate", "severe": "Severe"}
+        severity = severity_map.get(severity_result.get("severity"), "Unknown")
+
+        # A non-healthy result must not silently receive a fabricated severity.
+        if not healthy and not severity_result.get("reliable", False):
+            return self._abstain(crop_type, classification, "Disease identified, but severity estimation is not reliable enough to report.")
 
         differential = [
             {
@@ -296,7 +274,7 @@ class ProductionInferenceEngine:
                 "condition": p.get("condition", ""),
                 "name": f"{p.get('crop', '')} — {p.get('condition', '')}",
                 "confidence_pct": round(float(p.get("confidence", 0)) * 100),
-                "key_distinguishing_feature": "Compare lesion margin, color and distribution before escalating treatment.",
+                "key_distinguishing_feature": "Compare lesion margin, color and distribution before treatment.",
             }
             for p in classification.get("top_predictions", [])[1:3]
         ]
@@ -307,7 +285,7 @@ class ProductionInferenceEngine:
             pathogen=disease_info.get("pathogen", ""),
             severity_tier=severity,
             necrotic_area_pct=severity_result.get("severity_percentage", 0.0),
-            confidence_pct=confidence_pct,
+            confidence_pct=round(confidence * 100),
             differential_diagnoses=differential,
             base_info=disease_info,
         )
@@ -325,94 +303,73 @@ class ProductionInferenceEngine:
         chem_item = chemical[0] if chemical else {}
         bio_item = biological[0] if biological else {}
 
-        treatment_plan = {
-            "organic": {
-                "name": bio_item.get("agent", "Biological control option"),
-                "dosage": bio_item.get("dosage", "Follow the registered product label."),
-                "applicationSchedule": bio_item.get("application_timing", "Follow the registered product label."),
-            },
-            "chemical": {
-                "name": chem_item.get("active_ingredient", "No verified chemical option returned"),
-                "dosage": chem_item.get("dosage", chem_item.get("dose_ml_per_15L", "Follow the registered product label.")),
-                "dose_15L_tank": chem_item.get("dose_ml_per_15L"),
-                "frac_code": chem_item.get("frac_code", structured_chem.get("frac_code")),
-                "rotation_partner": structured_chem.get("rotation_partner"),
-                "safetyIntervalDays": structured_chem.get("phi_days"),
-            },
-            "preventive": {
-                "cultural": cultural[0] if cultural else "Maintain field sanitation and scout regularly.",
-                "irrigation": "Avoid prolonged foliar wetness where agronomically appropriate.",
-            },
-        }
-
-        return {
+        result = self._base(crop_type)
+        result.update({
             "status": "success",
-            "image_quality": {"status": "pass", "score": 100, "reason": None},
+            "image_quality": validation.get("image_quality", {"status": "pass"}),
             "validation": {"is_plant": True, "is_crop": True, "crop_supported": True, "rejection_reason": None},
-            "crop": {"name": disease_info.get("crop", crop_type), "confidence_pct": confidence_pct},
+            "crop": {"name": disease_info.get("crop", crop_type), "confidence_pct": round(confidence * 100)},
             "plant_part": "leaf",
             "diagnosis": {
                 "category": disease_info.get("pathogen_category", "Unknown").lower(),
                 "name": disease_info.get("display_name", classification.get("condition", "Analyzed Disease")),
                 "causal_agent": disease_info.get("pathogen", ""),
-                "confidence_pct": confidence_pct,
+                "confidence_pct": round(confidence * 100),
             },
-            "evidence_features": advisory.get("symptoms_observed", []),
-            "differential_diagnoses": differential,
-            "uncertainty": {"abstain": False, "reason": ""},
-            "severity": {
-                "necrotic_area_pct": severity_result.get("severity_percentage", 0.0),
-                "tier": severity,
-                "confidence_pct": confidence_pct,
-            },
-            "agronomic_risk": {
-                "level": "Low" if healthy else ("Critical" if severity == "Severe" else "Moderate"),
-                "reason": "No active foliar pathogen detected." if healthy else "Disease detected; follow the verified advisory and monitor progression.",
-            },
-            "ipm": ipm,
-            "farmer_summary": advisory.get("farmer_summary", ""),
-            "is_valid_crop_image": True,
-            "confidence": round(confidence, 4),
-            "confidence_pct": confidence_pct,
-            "cropType": disease_info.get("crop", crop_type),
             "condition": disease_info.get("display_name", classification.get("condition", "Analyzed Disease")),
-            "pathogen": disease_info.get("pathogen", ""),
-            "pathogenCategory": disease_info.get("pathogen_category", "Unknown"),
-            "severityPercentage": severity_result.get("severity_percentage", 0.0),
-            "affectedSurface": "Healthy leaf tissue" if healthy else "Foliar lamina and canopy regions",
+            "confidence": round(confidence, 4),
+            "confidence_pct": round(confidence * 100),
+            "severity": severity,
+            "severityPercentage": round(float(severity_result.get("severity_percentage", 0.0))),
+            "evidence_features": advisory.get("symptoms_observed", []),
             "symptoms": advisory.get("symptoms_observed", []),
             "symptoms_observed": advisory.get("symptoms_observed", []),
-            "likely_cause": advisory.get("likely_cause", ""),
-            "immediate_precautions": advisory.get("immediate_precautions", []),
-            "treatment_organic": [f"{b.get('agent', '')} — {b.get('dosage', '')}" for b in biological],
-            "treatment_chemical": [f"{c.get('active_ingredient', '')} — {c.get('dose_ml_per_15L', c.get('dosage', 'Follow label'))}" for c in chemical],
+            "differential_diagnoses": differential,
+            "uncertainty": {"abstain": False, "reason": None},
+            "ipm": ipm,
+            "farmer_summary": advisory.get("farmer_summary", ""),
+            "treatment_organic": [
+                f"{b.get('agent', 'Biological option')} — {b.get('dosage', 'Follow the registered label.')}"
+                for b in biological
+            ],
+            "treatment_chemical": [
+                f"{c.get('active_ingredient', '')} — {c.get('dose_ml_per_15L', c.get('dosage', 'Follow label'))}"
+                for c in chemical
+            ],
             "prevention_tips": cultural,
             "structured_chemical": structured_chem,
             "regional_terms": regional_terms,
             "verification_note": verification_note,
-            "treatmentPlan": treatment_plan,
-            "droneMissionReady": {
-                "recommendedAltitudeMeters": 3.5,
-                "spotSprayRequired": not healthy,
-                "flowRateLitresPerHectare": 16.0,
-                "chemicalReductionPct": 78.0 if not healthy else 0.0,
+            "treatmentPlan": {
+                "organic": {
+                    "name": bio_item.get("agent", "Biological control option"),
+                    "dosage": bio_item.get("dosage", "Follow the registered product label."),
+                    "applicationSchedule": bio_item.get("application_timing", "Follow the registered product label."),
+                },
+                "chemical": {
+                    "name": chem_item.get("active_ingredient", "No verified chemical option returned"),
+                    "dosage": chem_item.get("dosage", chem_item.get("dose_ml_per_15L", "Follow the registered product label.")),
+                    "dose_15L_tank": chem_item.get("dose_ml_per_15L"),
+                    "frac_code": chem_item.get("frac_code", structured_chem.get("frac_code")),
+                    "rotation_partner": structured_chem.get("rotation_partner"),
+                    "safetyIntervalDays": structured_chem.get("phi_days"),
+                },
+                "preventive": {
+                    "cultural": cultural[0] if cultural else "Maintain field sanitation and scout regularly.",
+                    "irrigation": "Avoid prolonged foliar wetness where agronomically appropriate.",
+                },
             },
-            "lesionCoordinates3D": [] if healthy else [
-                {"x": 0.42, "y": 0.58, "radius": 0.12},
-                {"x": 0.61, "y": 0.35, "radius": 0.08},
-            ],
-            "recommendations": {
-                "immediate": (advisory.get("immediate_precautions") or ["Monitor crop closely"])[0],
-                "monitoring": "Scout the affected crop at least twice weekly and compare with previous scans.",
-                "prevention": (cultural or ["Maintain good field sanitation"])[0],
-                "expert_help": "Escalate severe or uncertain cases to a local KVK/agriculture extension officer.",
+            "droneMissionReady": False,
+            "is_low_confidence": False,
+            "provenance": {
+                "source": "local_efficientnet_v2_s",
+                "confidence_is_calibrated": self._is_calibrated,
+                "treatment_allowed": not healthy,
+                "crop_probability_mass": round(crop_mass, 4),
+                "global_top_crop": global_crop,
             },
-            "modelName": self.model_name,
-            "modelVersion": self.model_version,
-            "modelSource": self._model_source,
-            "calibrationStatus": classification.get("confidence_diagnostics", {}).get("calibration_status", "unknown"),
-            "isMock": False,
-        }
+        })
+        return result
 
 
 inference_engine = ProductionInferenceEngine()
