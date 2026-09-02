@@ -588,50 +588,117 @@ export default function App() {
 
       {/* 3. HERO SECTION (Only displayed on Home / Landing Page) */}
       {(activeNav === "workspace" || activeNav === "home") && (
-        <section className={`relative overflow-hidden border-b py-8 px-4 sm:px-6 transition-all duration-300 ${
+        <section className={`relative overflow-hidden border-b transition-all duration-300 ${
           isDark
-            ? "border-emerald-500/20 bg-gradient-to-b from-[#062419] via-[#041911] to-[#030705]"
-            : "border-slate-200/70 bg-gradient-to-b from-emerald-50/90 via-teal-50/40 to-slate-50"
-        }`}>
-          <div className="relative mx-auto max-w-7xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            <div className="lg:col-span-7 text-center lg:text-left space-y-4">
-              <h1 className={`text-3xl font-black tracking-tight sm:text-4xl lg:text-5xl ${
+            ? "border-emerald-500/20 bg-gradient-to-br from-[#062419] via-[#041911] to-[#030705]"
+            : "border-slate-200/70 bg-gradient-to-br from-emerald-50 via-teal-50/60 to-white"
+        }`} style={{minHeight: "calc(100vh - 64px)"}}>
+
+          {/* Animated Background Orbs */}
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            <div className={`absolute -top-32 -left-32 w-96 h-96 rounded-full blur-3xl opacity-20 ${isDark ? "bg-emerald-500" : "bg-emerald-300"}`}
+              style={{animation: "float 8s ease-in-out infinite"}} />
+            <div className={`absolute top-1/2 -right-24 w-80 h-80 rounded-full blur-3xl opacity-15 ${isDark ? "bg-teal-400" : "bg-teal-300"}`}
+              style={{animation: "float 10s ease-in-out infinite reverse"}} />
+            <div className={`absolute bottom-16 left-1/3 w-64 h-64 rounded-full blur-3xl opacity-10 ${isDark ? "bg-cyan-500" : "bg-cyan-200"}`}
+              style={{animation: "float 12s ease-in-out infinite"}} />
+            {/* Dot grid */}
+            <div className={`absolute inset-0 opacity-[0.04] ${isDark ? "bg-[radial-gradient(#10b981_1px,transparent_1px)]" : "bg-[radial-gradient(#047857_1px,transparent_1px)]"}`}
+              style={{backgroundSize: "28px 28px"}} />
+          </div>
+
+          <div className="relative mx-auto max-w-7xl px-4 sm:px-6 flex flex-col lg:grid lg:grid-cols-12 gap-10 items-center justify-center" style={{minHeight: "calc(100vh - 64px)", paddingTop: "3rem", paddingBottom: "3rem"}}>
+            {/* LEFT: Text Content */}
+            <div className="lg:col-span-7 text-center lg:text-left space-y-6 z-10">
+
+              {/* Badge */}
+              <div className="flex justify-center lg:justify-start">
+                <span className={`inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-bold tracking-wider uppercase ${
+                  isDark ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300" : "border-emerald-600/30 bg-emerald-50 text-emerald-700"
+                }`}>
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse inline-block" />
+                  AI-Powered AgTech Platform · India
+                </span>
+              </div>
+
+              <h1 className={`text-4xl font-black tracking-tight sm:text-5xl lg:text-6xl xl:text-7xl leading-[1.05] ${
                 isDark ? "ai-gradient-text" : "ai-gradient-text-light"
               }`}>
-                Build. Think. Discover.
+                Build. Think.<br />Discover.
               </h1>
-              <p className={`max-w-xl text-xs sm:text-sm leading-relaxed ${
+
+              <p className={`max-w-lg text-sm sm:text-base leading-relaxed ${
                 isDark ? "text-emerald-100/70" : "text-slate-600"
               }`}>
                 {t.heroSub}
               </p>
 
-              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 pt-2">
+              {/* Stat Pills */}
+              <div className="flex flex-wrap justify-center lg:justify-start gap-3">
+                {[
+                  ["🌾", "38 Disease Classes"],
+                  ["🛰️", "25km GIS Radar"],
+                  ["🚁", "Autonomous Drone Fleet"],
+                  ["🌤️", "Live Farm Weather"],
+                ].map(([icon, label]) => (
+                  <span key={label} className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold border ${
+                    isDark ? "border-emerald-800/60 bg-[#04160f] text-emerald-300" : "border-emerald-200 bg-white text-emerald-800 shadow-sm"
+                  }`}>
+                    {icon} {label}
+                  </span>
+                ))}
+              </div>
+
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-2">
                 <button
                   onClick={() => setActiveNav("diag")}
-                  className="rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 px-6 py-3 text-xs font-black text-slate-950 shadow-lg glow-emerald hover:brightness-110 flex items-center gap-2 transition hover:scale-[1.02] active:scale-[0.98]"
+                  className="rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 px-8 py-4 text-sm font-black text-slate-950 shadow-lg glow-emerald hover:brightness-110 flex items-center gap-2 transition hover:scale-[1.03] active:scale-[0.98]"
                 >
-                  <Camera size={16} /> Run AI Leaf Diagnostics
+                  <Camera size={18} /> Run AI Leaf Diagnostics
                 </button>
                 <button
                   onClick={() => setActiveNav("weather")}
-                  className="rounded-2xl border border-emerald-500/40 bg-emerald-500/10 px-6 py-3 text-xs font-bold text-emerald-300 hover:bg-emerald-500/20 flex items-center gap-2 transition active:scale-[0.98]"
+                  className={`rounded-2xl border px-8 py-4 text-sm font-bold flex items-center gap-2 transition active:scale-[0.98] hover:scale-[1.02] ${
+                    isDark ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20" : "border-emerald-500/50 bg-white text-emerald-700 hover:bg-emerald-50 shadow-sm"
+                  }`}
                 >
-                  <CloudSun size={16} /> View Farm Weather
+                  <CloudSun size={18} /> View Farm Weather
                 </button>
               </div>
             </div>
 
-            <div className="lg:col-span-5 flex flex-col items-center justify-center">
-              <div className={`relative rounded-3xl p-4 border transition-all ${
-                isDark ? "border-emerald-500/30 bg-[#072017]/80 shadow-2xl glow-emerald" : "border-slate-200 bg-white/90 shadow-xl"
-              }`}>
+            {/* RIGHT: 3D Model */}
+            <div className="lg:col-span-5 flex flex-col items-center justify-center z-10 w-full">
+              <div className={`relative w-full rounded-3xl border transition-all ${
+                isDark ? "border-emerald-500/30 bg-[#072017]/80 shadow-2xl glow-emerald" : "border-slate-200 bg-white/90 shadow-2xl"
+              }`} style={{minHeight: "420px", maxWidth: "480px"}}>
                 <Hero3DCropModel theme={theme} />
+                {/* Corner badge */}
+                <div className="absolute top-3 right-3 flex items-center gap-1.5 rounded-xl bg-black/70 backdrop-blur px-3 py-1.5 border border-emerald-500/30">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-[10px] font-mono font-bold text-emerald-300">AI Vision · LIVE</span>
+                </div>
               </div>
             </div>
           </div>
+
+          {/* Bottom scroll hint */}
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-1 opacity-50">
+            <span className={`text-[10px] font-mono uppercase tracking-widest ${isDark ? "text-emerald-400" : "text-slate-500"}`}>Scroll to explore</span>
+            <div className={`w-5 h-8 rounded-full border-2 flex items-start justify-center pt-1 ${isDark ? "border-emerald-500/40" : "border-slate-400/40"}`}>
+              <div className={`w-1 h-2 rounded-full animate-bounce ${isDark ? "bg-emerald-400" : "bg-slate-500"}`} />
+            </div>
+          </div>
+
+          <style>{`
+            @keyframes float {
+              0%, 100% { transform: translateY(0px) scale(1); }
+              50% { transform: translateY(-24px) scale(1.04); }
+            }
+          `}</style>
         </section>
       )}
+
 
       {/* Main Content Area */}
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
