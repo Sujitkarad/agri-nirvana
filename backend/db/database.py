@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional
 from backend.config import settings
 
+
 class Database:
     def __init__(self):
         self.db_path = settings.SQLITE_FALLBACK_DB
@@ -39,30 +40,30 @@ class Database:
         doc_id = str(uuid.uuid4())
         created_at = datetime.now(timezone.utc).isoformat()
 
-        # Extract safe scalar values whether they are strings or dicts
         crop_val = record.get("cropType") or record.get("crop")
         if isinstance(crop_val, dict):
-            crop_name = crop_val.get("name", "Tomato")
+            crop_name = str(crop_val.get("name") or "Unknown")
         else:
-            crop_name = str(crop_val or "Tomato")
+            crop_name = str(crop_val or "Unknown")
 
         cond_val = record.get("condition") or record.get("diagnosis")
         if isinstance(cond_val, dict):
-            cond_name = cond_val.get("name", "Healthy")
+            cond_name = str(cond_val.get("name") or "Uncertain Result")
         else:
-            cond_name = str(cond_val or "Healthy")
+            cond_name = str(cond_val or "Uncertain Result")
 
         sev_val = record.get("severity")
         if isinstance(sev_val, dict):
-            sev_name = sev_val.get("tier", "Moderate")
+            sev_name = str(sev_val.get("tier") or "Unknown")
         else:
-            sev_name = str(sev_val or "Moderate")
+            sev_name = str(sev_val or "Unknown")
 
-        conf_val = record.get("confidence", 0.90)
+        conf_val = record.get("confidence")
         try:
-            conf_float = float(conf_val)
+            conf_float = float(conf_val) if conf_val is not None else 0.0
         except (ValueError, TypeError):
-            conf_float = 0.85
+            conf_float = 0.0
+        conf_float = max(0.0, min(conf_float, 1.0))
 
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -73,16 +74,16 @@ class Database:
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             doc_id,
-            str(record.get("userId", "anonymous_farmer")),
-            crop_name,
+            str(record.get("userId", "anonymous_farmer"))[:128],
+            crop_name[:128],
             str(record.get("imageUrl", "")),
-            cond_name,
+            cond_name[:256],
             conf_float,
-            sev_name,
-            json.dumps(record.get("symptoms", [])),
-            json.dumps(record.get("recommendations", {})),
-            str(record.get("modelName", record.get("model_name", "AI Vision"))),
-            str(record.get("modelVersion", record.get("model_version", "v1.0"))),
+            sev_name[:64],
+            json.dumps(record.get("symptoms", []), ensure_ascii=False),
+            json.dumps(record.get("recommendations", {}), ensure_ascii=False),
+            str(record.get("modelName", record.get("model_name", "AI Vision")))[:256],
+            str(record.get("modelVersion", record.get("model_version", "unknown")))[:128],
             1 if record.get("isMock", record.get("is_mock", False)) else 0,
             created_at
         ))
@@ -165,7 +166,7 @@ class Database:
             "recommendations": json.loads(row["recommendations"]) if row["recommendations"] else {},
             "modelName": row["model_name"],
             "modelVersion": row["model_version"],
-            "isMock": bool(row["is_mock"]) if "is_mock" in row.keys() else False,
+            "isMock": bool(row["is_mock"]),
             "createdAt": row["created_at"]
         }
 
@@ -180,5 +181,6 @@ class Database:
         conn.commit()
         conn.close()
         return affected > 0
+
 
 db = Database()

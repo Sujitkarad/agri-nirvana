@@ -28,21 +28,25 @@ class TestProductionEngine(unittest.TestCase):
         return engine
 
     def test_engine_abstains_for_unsupported_crop(self):
-        result = self._engine("real")._unsupported_crop("Cotton")
+        result = self._engine("real").analyze(Image.new("RGB", (256, 256), "green"), "Cotton")
         self.assertEqual(result["status"], "unsupported_crop")
         self.assertTrue(result["uncertainty"]["abstain"])
         self.assertEqual(result["confidence"], 0.0)
+        self.assertFalse(result["isMock"])
 
-    def test_engine_never_labels_mock_as_real_diagnosis(self):
+    def test_engine_never_labels_unavailable_model_as_mock_or_real_diagnosis(self):
         result = self._engine().analyze(None, "Tomato")
         self.assertEqual(result["status"], "model_unavailable")
-        self.assertTrue(result["isMock"])
+        self.assertFalse(result["isMock"])
+        self.assertTrue(result["uncertainty"]["abstain"])
         self.assertEqual(result["confidence"], 0.0)
+        self.assertNotEqual(result["modelSource"], "mock")
 
     def test_engine_abstains_when_local_model_is_unavailable(self):
         result = self._engine("real").analyze(Image.new("RGB", (256, 256), "green"), "Tomato")
         self.assertEqual(result["status"], "model_unavailable")
         self.assertTrue(result["uncertainty"]["abstain"])
+        self.assertFalse(result["isMock"])
 
 
 class TestPlantValidatorQualityGate(unittest.TestCase):
