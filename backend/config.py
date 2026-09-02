@@ -15,12 +15,10 @@ class Settings(BaseSettings):
     AI_MIN_CROP_PROBABILITY_MASS: float = Field(default=0.45, ge=0.0, le=1.0)
     AI_REQUIRE_LOCAL_CHECKPOINT: bool = True
 
-    # Single production architecture/checkpoint. No silent model substitution.
-    # EfficientNetV2-L is the highest-capacity EfficientNetV2 variant used here.
     LOCAL_TRAINED_MODEL_PATH: str = "backend/ml/models/weights/agri_nirvana_efficientnet_v2_l.pt"
 
-    AI_CHAT_MODEL: str = "openai/gpt-oss-120b:fastest"
-    AI_CHAT_ALLOWED_MODELS: str = "openai/gpt-oss-120b:fastest,deepseek-ai/DeepSeek-V3-0324:fastest,Qwen/Qwen2.5-7B-Instruct-1M:fastest"
+    AI_CHAT_MODEL: str = "gpt-5.6-luna"
+    AI_CHAT_ALLOWED_MODELS: str = "gpt-5.6-luna,gpt-5.6-terra,gpt-5.6-sol"
 
     MAX_IMAGE_SIZE_MB: int = Field(default=10, ge=1, le=25)
     ALLOWED_EXTENSIONS: set[str] = {"jpg", "jpeg", "png", "webp"}
