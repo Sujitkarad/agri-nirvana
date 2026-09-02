@@ -5,7 +5,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Agri Nirvana - Crop AI Health Diagnostic API"
-    VERSION: str = "4.1.0"
+    VERSION: str = "4.2.0"
     API_V1_STR: str = "/api/v1"
 
     AI_MODEL_PROVIDER: str = "real"
@@ -16,7 +16,8 @@ class Settings(BaseSettings):
     AI_REQUIRE_LOCAL_CHECKPOINT: bool = True
 
     # Single production architecture/checkpoint. No silent model substitution.
-    LOCAL_TRAINED_MODEL_PATH: str = "backend/ml/models/weights/agri_nirvana_efficientnet_v2_s.pt"
+    # EfficientNetV2-L is the highest-capacity EfficientNetV2 variant used here.
+    LOCAL_TRAINED_MODEL_PATH: str = "backend/ml/models/weights/agri_nirvana_efficientnet_v2_l.pt"
 
     AI_CHAT_MODEL: str = "openai/gpt-oss-120b:fastest"
     AI_CHAT_ALLOWED_MODELS: str = "openai/gpt-oss-120b:fastest,deepseek-ai/DeepSeek-V3-0324:fastest,Qwen/Qwen2.5-7B-Instruct-1M:fastest"
@@ -35,7 +36,6 @@ class Settings(BaseSettings):
     GEMINI_RATE_LIMIT_PER_MINUTE: int = 15
     GEMINI_MODEL: str = "gemini-1.5-flash"
 
-    # Never ship a reusable production signing secret in source control.
     JWT_SECRET: str = ""
     JWT_ALGORITHM: str = "HS256"
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7
