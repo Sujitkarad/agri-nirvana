@@ -55,3 +55,5 @@ jobs:
           PYTHONPATH: .
           AI_MODEL_PROVIDER: mock
           AI_CONFIDENCE_THRESHOLD: '0.70'
+          # Test-only placeholder. Production secrets are never stored in CI config.
+          GEMINI_API_KEY: test-only-ci-placeholder
