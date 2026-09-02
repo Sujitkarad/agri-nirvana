@@ -50,13 +50,23 @@ jobs:
           print('CUDA available:', torch.cuda.is_available())
           print('Architecture: EfficientNetV2-S / 384x384')
           PY
+      - name: Import PlantDoc field-condition evaluation dataset
+        run: |
+          python -m backend.ml.training.import_datasets \
+            --output backend/ml/datasets \
+            --plantdoc
+      - name: Verify PlantDoc dataset
+        run: |
+          python -m backend.ml.training.audit_dataset \
+            --data backend/ml/datasets/plantdoc \
+            --min-per-class 5
       - name: Download PlantVillage
         run: |
           rm -rf backend/ml/datasets/plant_disease
           python -m backend.ml.training.download_plantvillage \
             --output backend/ml/datasets/plant_disease \
             --max-per-class ${{ inputs.max_per_class }}
-      - name: Verify dataset
+      - name: Verify PlantVillage dataset
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -70,7 +80,7 @@ jobs:
           if total == 0:
               raise SystemExit('Dataset is empty')
           PY
-      - name: Audit dataset leakage and support
+      - name: Audit PlantVillage leakage and support
         run: |
           python -m backend.ml.training.audit_dataset \
             --data backend/ml/datasets/plant_disease \
@@ -112,7 +122,7 @@ jobs:
           print(json.dumps(metrics, indent=2))
           print(json.dumps(d.get('calibration', {}), indent=2))
           PY
-      - name: Upload trained model artifact
+      - name: Upload trained model and dataset manifest
         uses: actions/upload-artifact@v4
         with:
           name: agri-nirvana-efficientnet-v2-s
@@ -121,4 +131,5 @@ jobs:
             backend/ml/models/weights/agri_nirvana_efficientnet_v2_s.json
             backend/ml/models/weights/temperature_calibration.json
             backend/ml/training/training_report.json
+            backend/ml/datasets/dataset_manifest.json
           retention-days: 30
