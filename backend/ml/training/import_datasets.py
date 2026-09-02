@@ -1,7 +1,18 @@
 """Materialize relevant public crop-disease datasets with provenance.
 
-Datasets are never committed to Git. The workflow downloads them into
-backend/ml/datasets, audits them, and keeps incompatible taxonomies separate.
+Dataset policy:
+- PlantVillage is the production 38-class training taxonomy.
+- PlantDoc is field-condition evaluation, not blindly merged because labels
+  and source distributions differ.
+- DigiGreen is expert-reviewed Indian field/OOD evaluation and remains out of
+  training until a reviewed taxonomy mapping exists.
+- The published 6,748-image sugarcane dataset is preprocessed into a separate
+  11-class specialist training set because its taxonomy is not part of the
+  current PlantVillage production taxonomy.
+
+Kaggle/GitHub mirrors that duplicate these sources are intentionally not
+imported; the canonical source is preferred to reduce duplicate leakage and
+provenance ambiguity.
 """
 from __future__ import annotations
 
@@ -53,8 +64,7 @@ def _split_train_into_train_val(root: Path, val_fraction: float = 0.15, seed: in
 def _split_single_train_three_way(root: Path, val_fraction: float = 0.15, test_fraction: float = 0.15, seed: int = 42) -> tuple[int, int, int]:
     rng = random.Random(seed)
     train_total = val_total = test_total = 0
-    train_root = root / "train"
-    for class_dir in sorted(train_root.iterdir()):
+    for class_dir in sorted((root / "train").iterdir()):
         files = list(class_dir.glob("*.jpg"))
         rng.shuffle(files)
         test_count = max(1, int(len(files) * test_fraction))
@@ -82,7 +92,7 @@ def import_plantvillage(root: Path) -> dict[str, Any]:
     train_n = _save_hf_split(ds["train"], out, "label", "train")
     test_n = _save_hf_split(ds["test"], out, "label", "test")
     train_after, val_n = _split_train_into_train_val(out)
-    return {"dataset": "mohanty/PlantVillage", "config": "color", "source_train": train_n, "source_test": test_n, "materialized_train": train_after, "materialized_val": val_n, "materialized_test": test_n, "materialized": str(out)}
+    return {"dataset": "mohanty/PlantVillage", "config": "color", "source_train": train_n, "source_test": test_n, "materialized_train": train_after, "materialized_val": val_n, "materialized_test": test_n, "materialized": str(out), "role": "production_training"}
 
 
 def import_plantdoc(root: Path) -> dict[str, Any]:
@@ -92,7 +102,7 @@ def import_plantdoc(root: Path) -> dict[str, Any]:
     train_n = _save_hf_split(ds.filter(lambda x: x["split"] == "train"), out, "class_label", "train")
     test_n = _save_hf_split(ds.filter(lambda x: x["split"] == "test"), out, "class_label", "test")
     train_after, val_n = _split_train_into_train_val(out)
-    return {"dataset": "geraldmc/plantdoc-full", "revision": "v0.1.0", "source_train": train_n, "source_test": test_n, "materialized_train": train_after, "materialized_val": val_n, "materialized_test": test_n, "materialized": str(out)}
+    return {"dataset": "geraldmc/plantdoc-full", "revision": "v0.1.0", "source_train": train_n, "source_test": test_n, "materialized_train": train_after, "materialized_val": val_n, "materialized_test": test_n, "materialized": str(out), "role": "field_evaluation_only"}
 
 
 def _norm(value: str) -> str:
@@ -145,31 +155,18 @@ def import_farmer_expert_field(root: Path) -> dict[str, Any]:
         matched += int(label is not None); unmatched += int(label is None)
         dest.mkdir(parents=True, exist_ok=True)
         image.save(dest / f"{i:07d}{IMAGE_EXT}", quality=95)
-    manifest = {"dataset": "DigiGreen/Crop_Disease_Images", "purpose": "field_evaluation_and_ood", "source_annotations": len(ds), "known_class_field_images": matched, "unmatched_ood_images": unmatched, "training_contamination": False, "license": "CC-BY-4.0", "source_url": "https://huggingface.co/datasets/DigiGreen/Crop_Disease_Images", "materialized": str(out)}
+    manifest = {"dataset": "DigiGreen/Crop_Disease_Images", "purpose": "field_evaluation_and_ood", "source_annotations": len(ds), "known_class_field_images": matched, "unmatched_ood_images": unmatched, "training_contamination": False, "license": "CC-BY-4.0", "source_url": "https://huggingface.co/datasets/DigiGreen/Crop_Disease_Images", "materialized": str(out), "role": "field_and_ood_evaluation_only"}
     (out / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     return manifest
 
 
 def import_sugarcane_specialist(root: Path) -> dict[str, Any]:
-    """Materialize 6,748 11-class sugarcane images for a specialist model."""
     out = root / "sugarcane_specialist"
     if out.exists(): shutil.rmtree(out)
     ds = load_dataset("Project-AgML/sugarcane_leaf_disease_classification", split="train")
     source_n = _save_hf_split(ds, out, "label", "train")
     train_n, val_n, test_n = _split_single_train_three_way(out, seed=42)
-    manifest = {
-        "dataset": "Project-AgML/sugarcane_leaf_disease_classification",
-        "purpose": "sugarcane_specialist_training",
-        "source_images": source_n,
-        "classes": 11,
-        "materialized_train": train_n,
-        "materialized_val": val_n,
-        "materialized_test": test_n,
-        "license": "CC-BY-4.0",
-        "source_url": "https://huggingface.co/datasets/Project-AgML/sugarcane_leaf_disease_classification",
-        "taxonomy_policy": "separate specialist; not merged into PlantVillage production taxonomy",
-        "materialized": str(out),
-    }
+    manifest = {"dataset": "Project-AgML/sugarcane_leaf_disease_classification", "purpose": "sugarcane_specialist_training", "source_images": source_n, "classes": 11, "materialized_train": train_n, "materialized_val": val_n, "materialized_test": test_n, "license": "CC-BY-4.0", "source_url": "https://huggingface.co/datasets/Project-AgML/sugarcane_leaf_disease_classification", "taxonomy_policy": "separate specialist; not merged into PlantVillage production taxonomy", "materialized": str(out), "role": "specialist_training"}
     (out / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     return manifest
 
@@ -185,7 +182,7 @@ def main() -> None:
     if not any((args.plantvillage, args.plantdoc, args.farmer_field, args.sugarcane_specialist)):
         args.plantvillage = args.plantdoc = args.farmer_field = args.sugarcane_specialist = True
     root = Path(args.output); root.mkdir(parents=True, exist_ok=True)
-    manifest: dict[str, Any] = {"schema_version": 4, "datasets": []}
+    manifest: dict[str, Any] = {"schema_version": 5, "datasets": []}
     if args.plantvillage: manifest["datasets"].append(import_plantvillage(root))
     if args.plantdoc: manifest["datasets"].append(import_plantdoc(root))
     if args.farmer_field: manifest["datasets"].append(import_farmer_expert_field(root))
