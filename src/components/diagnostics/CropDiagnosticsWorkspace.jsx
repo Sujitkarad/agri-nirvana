@@ -1,5 +1,27 @@
 import React, { useState, useEffect } from "react";
-import { Sparkles, History, Cpu, FileText, ShoppingCart, UserCheck, Landmark, MessageSquare, Mic, Send, RotateCw, AlertTriangle, XCircle, RefreshCw } from "lucide-react";
+import {
+  Sparkles,
+  History,
+  Cpu,
+  FileText,
+  ShoppingCart,
+  UserCheck,
+  Landmark,
+  MessageSquare,
+  Mic,
+  Send,
+  RotateCw,
+  AlertTriangle,
+  XCircle,
+  RefreshCw,
+  Video,
+  Play,
+  Pause,
+  Volume2,
+  VolumeX,
+  Download,
+  Maximize2
+} from "lucide-react";
 
 import {
   fetchModelStatus,
@@ -69,6 +91,41 @@ export default function CropDiagnosticsWorkspace({
   const [isDosageModalOpen, setIsDosageModalOpen] = useState(false);
   const [isDroneModalOpen, setIsDroneModalOpen] = useState(false);
   const [isAgronomistModalOpen, setIsAgronomistModalOpen] = useState(false);
+  const [isFieldVideoModalOpen, setIsFieldVideoModalOpen] = useState(false);
+
+  // In-Field Tablet Diagnostic Video State
+  const [isFieldVideoPlaying, setIsFieldVideoPlaying] = useState(true);
+  const [isFieldVideoMuted, setIsFieldVideoMuted] = useState(true);
+  const fieldVideoRef = React.useRef(null);
+
+  const toggleFieldVideoPlay = () => {
+    if (fieldVideoRef.current) {
+      if (fieldVideoRef.current.paused) {
+        fieldVideoRef.current.play();
+        setIsFieldVideoPlaying(true);
+      } else {
+        fieldVideoRef.current.pause();
+        setIsFieldVideoPlaying(false);
+      }
+    }
+  };
+
+  const toggleFieldVideoMute = () => {
+    if (fieldVideoRef.current) {
+      fieldVideoRef.current.muted = !fieldVideoRef.current.muted;
+      setIsFieldVideoMuted(fieldVideoRef.current.muted);
+    }
+  };
+
+  const handleDownloadFieldVideo = () => {
+    const a = document.createElement("a");
+    a.href = "/videos/farmer_cornfield_tablet_diagnostic.mp4";
+    a.download = "farmer_cornfield_tablet_diagnostic.mp4";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    showToast("Downloading in-field tablet scouting video (HD)...");
+  };
 
   useEffect(() => {
     initFarmerSessionApi("farmer_default");
@@ -399,6 +456,14 @@ export default function CropDiagnosticsWorkspace({
                         <span className="flex items-center gap-2"><UserCheck size={15} /> Dispatch KVK Agronomist</span>
                         <span>→</span>
                       </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsFieldVideoModalOpen(true)}
+                        className="w-full flex items-center justify-between p-3 rounded-2xl bg-teal-500/10 border border-teal-500/30 text-teal-300 hover:bg-teal-500/20 transition text-xs font-bold"
+                      >
+                        <span className="flex items-center gap-2"><Video size={15} /> In-Field Tablet Scouting Demo</span>
+                        <span>→</span>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -438,6 +503,17 @@ export default function CropDiagnosticsWorkspace({
                   }`}
                 >
                   <MessageSquare size={14} /> Natural Language / Voice Symptoms
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setInputMode("field_study")}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
+                    inputMode === "field_study"
+                      ? "bg-emerald-600 text-white shadow-sm"
+                      : isDark ? "text-slate-400 hover:text-white" : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  <Video size={14} /> In-Field Tablet Scouting (Live Demo)
                 </button>
               </div>
 
@@ -485,6 +561,13 @@ export default function CropDiagnosticsWorkspace({
                     >
                       🌱 Soybean Sample
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => handleLoadPresetSample("Corn", "/images/farmer_cornfield_tablet.jpg", "In-Field Cornfield Tablet Scouting")}
+                      className="px-2.5 py-1 rounded-lg bg-yellow-500/10 border border-yellow-500/30 text-yellow-300 hover:bg-yellow-500/20 transition font-bold flex items-center gap-1"
+                    >
+                      🌽 In-Field Corn Tablet (New)
+                    </button>
                   </div>
 
                   <div className="flex justify-end pt-2">
@@ -503,7 +586,7 @@ export default function CropDiagnosticsWorkspace({
                     </button>
                   </div>
                 </>
-              ) : (
+              ) : inputMode === "symptoms" ? (
                 <div className="space-y-4">
                   <div className="p-4 rounded-2xl bg-emerald-950/30 border border-emerald-900/40 text-xs text-slate-300">
                     <p className="font-bold text-emerald-300 mb-1">
@@ -560,6 +643,114 @@ export default function CropDiagnosticsWorkspace({
                       </button>
                     </div>
                   </form>
+                </div>
+              ) : (
+                /* IN-FIELD TABLET SCOUTING & LIVE RECONNAISSANCE SCREEN */
+                <div className="space-y-5 animate-fade-in">
+                  <div className="p-4 rounded-2xl bg-emerald-950/40 border border-emerald-500/40 flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
+                        <span className="text-xs font-black text-emerald-300 uppercase tracking-wider">
+                          In-Field Mobile Tablet Diagnostic Study
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-300 mt-1">
+                        Live field telemetry recording: agronomist in a maize / corn crop inspecting foliar canopy and cross-checking digital pathology indicators on an in-field tablet.
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="rounded-full bg-amber-500/20 text-amber-300 px-3 py-1 text-[11px] font-mono font-bold border border-amber-500/30">
+                        Golden Hour Lighting • High Contrast
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Video Player Box with Telemetry HUD */}
+                  <div className="relative w-full aspect-video rounded-3xl overflow-hidden border border-emerald-500/40 bg-black shadow-2xl group">
+                    <video
+                      ref={fieldVideoRef}
+                      src="/videos/farmer_cornfield_tablet_diagnostic.mp4"
+                      autoPlay
+                      loop
+                      muted={isFieldVideoMuted}
+                      playsInline
+                      className="w-full h-full object-cover"
+                    />
+
+                    {/* HUD Overlay */}
+                    <div className="absolute inset-0 pointer-events-none p-4 flex flex-col justify-between font-mono select-none">
+                      <div className="flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-2 bg-black/70 backdrop-blur-md px-3 py-1 rounded-full border border-emerald-500/30 text-emerald-300">
+                          <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                          <span>FIELD TABLET CAM • 720P HD</span>
+                        </div>
+                        <div className="bg-black/70 backdrop-blur-md px-3 py-1 rounded-full border border-emerald-500/30 text-emerald-300 text-[11px]">
+                          <span>CROP: MAIZE (CORN) • STAGE: SILKING (R1)</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between text-[11px] text-slate-300">
+                        <div className="bg-black/70 backdrop-blur-md px-3 py-1 rounded-xl border border-emerald-500/30">
+                          <span>TRANSECT: 'W' PATTERN (10 FOLIAR SAMPLING POINTS)</span>
+                        </div>
+                        <div className="bg-black/70 backdrop-blur-md px-3 py-1 rounded-xl border border-emerald-500/30 text-amber-300">
+                          <span>SCOUTING STATUS: ACTIVE</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Controls Toolbar */}
+                    <div className="absolute bottom-3 right-3 flex items-center gap-2 z-20">
+                      <button
+                        type="button"
+                        onClick={toggleFieldVideoPlay}
+                        className="p-2 rounded-xl bg-black/80 hover:bg-black text-white border border-emerald-500/40 backdrop-blur-md transition hover:scale-105"
+                        title={isFieldVideoPlaying ? "Pause Video" : "Play Video"}
+                      >
+                        {isFieldVideoPlaying ? <Pause size={14} /> : <Play size={14} />}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={toggleFieldVideoMute}
+                        className="p-2 rounded-xl bg-black/80 hover:bg-black text-white border border-emerald-500/40 backdrop-blur-md transition hover:scale-105"
+                        title={isFieldVideoMuted ? "Unmute Audio" : "Mute Audio"}
+                      >
+                        {isFieldVideoMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleDownloadFieldVideo}
+                        className="p-2 rounded-xl bg-emerald-600/90 hover:bg-emerald-500 text-white border border-emerald-400/40 backdrop-blur-md transition hover:scale-105"
+                        title="Download In-Field Video (MP4)"
+                      >
+                        <Download size={14} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Actions Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleLoadPresetSample("Corn", "/images/farmer_cornfield_tablet.jpg", "In-Field Cornfield Tablet Scouting");
+                        setInputMode("vision");
+                      }}
+                      className="flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 px-6 py-3.5 text-xs font-black text-slate-950 shadow-lg glow-emerald hover:brightness-110 transition active:scale-[0.98]"
+                    >
+                      <Sparkles size={16} />
+                      <span>Load In-Field Corn Sample into AI Vision Model</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleDownloadFieldVideo}
+                      className="flex items-center justify-center gap-2 rounded-2xl border border-emerald-500/40 bg-emerald-950/40 hover:bg-emerald-900/50 px-6 py-3.5 text-xs font-bold text-emerald-300 transition"
+                    >
+                      <Download size={16} />
+                      <span>Download Full In-Field Video (MP4)</span>
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -632,6 +823,51 @@ export default function CropDiagnosticsWorkspace({
         } : { crop: selectedCrop, diseaseName: "Early Blight", severity: "Moderate" }}
         isDark={isDark}
       />
+
+      {/* IN-FIELD TABLET SCOUTING VIDEO MODAL */}
+      {isFieldVideoModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
+          <div className={`relative w-full max-w-3xl overflow-hidden rounded-3xl border shadow-2xl transition-all ${
+            isDark ? "border-emerald-800/60 bg-[#061e15] text-white" : "border-slate-200 bg-white text-slate-900"
+          }`}>
+            <div className={`flex items-center justify-between p-4 px-6 border-b ${isDark ? "border-emerald-900/50" : "border-slate-200"}`}>
+              <div className="flex items-center gap-2">
+                <Video size={20} className="text-emerald-400" />
+                <h3 className="text-base font-black">
+                  In-Field Mobile Tablet Diagnostic Demonstration
+                </h3>
+              </div>
+              <button
+                onClick={() => setIsFieldVideoModalOpen(false)}
+                className="rounded-full p-2 hover:bg-emerald-900/40 text-slate-400 hover:text-white transition"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="relative w-full aspect-video rounded-2xl overflow-hidden border border-emerald-500/40 bg-black">
+                <video
+                  src="/videos/farmer_cornfield_tablet_diagnostic.mp4"
+                  autoPlay
+                  loop
+                  controls
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-slate-400">Corn canopy scouting using Agri Nirvana Mobile Assistant.</span>
+                <button
+                  type="button"
+                  onClick={handleDownloadFieldVideo}
+                  className="flex items-center gap-1.5 rounded-xl bg-emerald-500 px-4 py-2 font-black text-slate-950 hover:bg-emerald-400 transition"
+                >
+                  <Download size={14} /> Download MP4
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
