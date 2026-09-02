@@ -586,264 +586,72 @@ export default function App() {
         }}
       />
 
-      {/* ═══════════════════════════════════════════════════
-          LANDING PAGE — PREMIUM HERO
-          ═══════════════════════════════════════════════════ */}
+      {/* 3. HERO SECTION (Only displayed on Home / Landing Page) */}
       {(activeNav === "workspace" || activeNav === "home") && (
-        <>
-          {/* ── HERO SECTION ── */}
-          <section className={`relative overflow-hidden border-b transition-all duration-500 ${
-            isDark
-              ? "border-emerald-900/30 bg-[#030d07]"
-              : "border-slate-200/50 bg-[#f0faf4]"
-          }`} style={{minHeight: "calc(100vh - 64px)"}}>
+        <section className={`relative overflow-hidden border-b py-12 px-4 sm:px-6 transition-all duration-300 ${
+          isDark
+            ? "border-emerald-500/20 bg-gradient-to-b from-[#062419] via-[#041911] to-[#030705]"
+            : "border-slate-200/70 bg-gradient-to-b from-emerald-50/90 via-teal-50/40 to-slate-50"
+        }`}>
 
-            {/* Layered background mesh */}
-            <div className="absolute inset-0 pointer-events-none">
-              {/* Primary orb */}
-              <div className={`absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full blur-[100px] hero-orb-drift ${isDark ? "opacity-25 bg-emerald-600" : "opacity-30 bg-emerald-200"}`} />
-              {/* Secondary orb */}
-              <div className={`absolute -bottom-32 -right-32 w-[500px] h-[500px] rounded-full blur-[80px] hero-orb-drift-slow ${isDark ? "opacity-20 bg-teal-500" : "opacity-25 bg-teal-200"}`} />
-              {/* Accent orb */}
-              <div className={`absolute top-1/3 left-1/2 w-72 h-72 rounded-full blur-[60px] ${isDark ? "opacity-10 bg-cyan-400" : "opacity-20 bg-cyan-100"}`} style={{animation: "orbDrift 20s ease-in-out infinite 5s"}} />
-              {/* Fine dot grid */}
-              <div className="absolute inset-0" style={{
-                backgroundImage: isDark
-                  ? "radial-gradient(rgba(16,185,129,0.12) 1px, transparent 1px)"
-                  : "radial-gradient(rgba(4,120,87,0.08) 1px, transparent 1px)",
-                backgroundSize: "32px 32px"
-              }} />
-              {/* Diagonal line accents */}
-              <div className="absolute inset-0 opacity-[0.03]" style={{
-                backgroundImage: isDark
-                  ? "repeating-linear-gradient(45deg, #10b981 0, #10b981 1px, transparent 0, transparent 50%)"
-                  : "repeating-linear-gradient(45deg, #047857 0, #047857 1px, transparent 0, transparent 50%)",
-                backgroundSize: "48px 48px"
-              }} />
-            </div>
+          {/* Subtle background dots */}
+          <div className={`absolute inset-0 opacity-[0.035] pointer-events-none ${isDark ? "bg-[radial-gradient(#10b981_1px,transparent_1px)]" : "bg-[radial-gradient(#047857_1px,transparent_1px)]"}`}
+            style={{backgroundSize: "24px 24px"}} />
 
-            {/* Main hero grid */}
-            <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center"
-              style={{minHeight: "calc(100vh - 64px)", paddingTop: "4rem", paddingBottom: "5rem"}}>
+          {/* Single soft glow orb */}
+          <div className={`absolute -top-24 -left-24 w-80 h-80 rounded-full blur-3xl pointer-events-none opacity-15 ${isDark ? "bg-emerald-500" : "bg-emerald-300"}`} />
 
-              {/* ── LEFT COL: COPY ── */}
-              <div className="space-y-7 z-10">
+          <div className="relative mx-auto max-w-7xl grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+            {/* LEFT: Text */}
+            <div className="lg:col-span-7 text-center lg:text-left space-y-5">
+              <h1 className={`text-4xl font-black tracking-tight sm:text-5xl lg:text-6xl ${
+                isDark ? "ai-gradient-text" : "ai-gradient-text-light"
+              }`}>
+                Build. Think. Discover.
+              </h1>
 
-                {/* Category badge */}
-                <div className="hero-fade-1 flex justify-center lg:justify-start">
-                  <span className={`inline-flex items-center gap-2.5 rounded-full px-5 py-2 text-[11px] font-bold tracking-[0.1em] uppercase border ${
-                    isDark
-                      ? "border-emerald-500/30 bg-emerald-950/60 text-emerald-300 shadow-[0_0_20px_-8px_rgba(34,197,94,0.4)]"
-                      : "border-emerald-500/30 bg-white/80 text-emerald-700 shadow-sm"
-                  }`}>
-                    <span className="relative flex h-2.5 w-2.5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
-                    </span>
-                    AI-Powered AgTech · India 2026
-                  </span>
-                </div>
+              <p className={`max-w-xl text-sm sm:text-base leading-relaxed ${
+                isDark ? "text-emerald-100/70" : "text-slate-600"
+              }`}>
+                {t.heroSub}
+              </p>
 
-                {/* Main headline */}
-                <div className="hero-fade-2 space-y-2">
-                  <h1 className={`text-5xl font-black tracking-tight sm:text-6xl lg:text-6xl xl:text-7xl leading-[1.0] ${
-                    isDark ? "text-white" : "text-slate-900"
-                  }`}>
-                    Grow Smarter.<br />
-                    <span className="shimmer-text">Harvest More.</span>
-                  </h1>
-                  <p className={`text-lg font-semibold mt-1 ${isDark ? "text-emerald-400/80" : "text-emerald-700"}`}>
-                    Agri Nirvana — Kisan AI Dr. Agri
-                  </p>
-                </div>
-
-                {/* Subheadline */}
-                <p className={`hero-fade-3 max-w-md text-sm sm:text-base leading-relaxed ${
-                  isDark ? "text-slate-400" : "text-slate-600"
-                }`}>
-                  {t.heroSub}
-                </p>
-
-                {/* Feature chips — 2×2 grid */}
-                <div className="hero-fade-4 grid grid-cols-2 gap-2.5 max-w-sm">
-                  {[
-                    ["🌾", "38 Disease Classes", "AI Leaf Diagnostics"],
-                    ["🛰️", "25km GIS Radar", "Outbreak Detection"],
-                    ["🚁", "Drone Fleet", "Autonomous Survey"],
-                    ["🌤️", "Live Weather", "Farm Intelligence"],
-                  ].map(([icon, title, sub]) => (
-                    <div key={title} className={`flex items-start gap-2.5 rounded-2xl px-3.5 py-3 ${
-                      isDark ? "feature-card-dark" : "feature-card-light"
-                    }`}>
-                      <span className="text-xl mt-0.5 shrink-0">{icon}</span>
-                      <div>
-                        <div className={`text-xs font-black leading-tight ${isDark ? "text-white" : "text-slate-900"}`}>{title}</div>
-                        <div className={`text-[10px] font-medium mt-0.5 ${isDark ? "text-slate-400" : "text-slate-500"}`}>{sub}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* CTAs */}
-                <div className="hero-fade-5 flex flex-wrap items-center gap-3 pt-1">
-                  <button
-                    onClick={() => setActiveNav("diag")}
-                    className="group relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-400 px-8 py-4 text-sm font-black text-slate-950 shadow-lg hover:shadow-[0_8px_30px_-6px_rgba(34,197,94,0.6)] hover:scale-[1.03] active:scale-[0.97] transition-all flex items-center gap-2.5"
-                  >
-                    <span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    <Camera size={18} /> Run AI Leaf Diagnostics
-                  </button>
-                  <button
-                    onClick={() => setActiveNav("map")}
-                    className={`rounded-2xl px-7 py-4 text-sm font-bold flex items-center gap-2.5 transition-all hover:scale-[1.02] active:scale-[0.98] ${
-                      isDark
-                        ? "border border-emerald-500/30 bg-emerald-950/50 text-emerald-300 hover:border-emerald-400/60 hover:bg-emerald-900/50"
-                        : "border border-emerald-500/40 bg-white text-emerald-700 hover:bg-emerald-50 shadow-sm"
-                    }`}
-                  >
-                    <Radar size={18} /> View GIS Radar
-                  </button>
-                </div>
-
-                {/* Social proof */}
-                <div className={`hero-fade-5 flex items-center gap-3 text-xs ${isDark ? "text-slate-500" : "text-slate-400"}`}>
-                  <div className="flex -space-x-2">
-                    {["#10b981","#06b6d4","#f59e0b","#f97316"].map((c,i) => (
-                      <div key={i} className="w-7 h-7 rounded-full border-2 flex items-center justify-center text-[9px] font-black text-white" style={{borderColor: isDark ? "#030d07" : "#f0faf4", background: c}}>
-                        {["K","A","R","T"][i]}
-                      </div>
-                    ))}
-                  </div>
-                  <span><strong className={isDark ? "text-slate-300" : "text-slate-600"}>12,000+</strong> farmers across Maharashtra, UP & MP</span>
-                </div>
-              </div>
-
-              {/* ── RIGHT COL: 3D MODEL + LIVE STATS ── */}
-              <div className="z-10 flex flex-col gap-4">
-
-                {/* 3D Crop Panel */}
-                <div className={`relative rounded-3xl overflow-hidden hero-float ${
-                  isDark ? "hero-glass-panel" : "hero-glass-panel-light"
-                }`} style={{minHeight: "380px"}}>
-
-                  {/* Scanline overlay for sci-fi feel */}
-                  {isDark && (
-                    <div className="absolute inset-0 z-10 pointer-events-none overflow-hidden rounded-3xl">
-                      <div className="absolute inset-x-0 h-16 bg-gradient-to-b from-emerald-500/5 to-transparent" style={{animation: "scanline 5s linear infinite"}} />
-                    </div>
-                  )}
-
-                  <Hero3DCropModel theme={theme} />
-
-                  {/* Top HUD */}
-                  <div className="absolute top-3 inset-x-3 flex items-center justify-between z-20">
-                    <div className="flex items-center gap-1.5 rounded-xl bg-black/70 backdrop-blur-md px-3 py-1.5 border border-emerald-500/30">
-                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                      <span className="text-[10px] font-mono font-bold text-emerald-300">AI Vision · LIVE</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 rounded-xl bg-black/70 backdrop-blur-md px-3 py-1.5 border border-teal-500/30">
-                      <span className="text-[10px] font-mono font-bold text-teal-300">MobileNetV2 · v4.0</span>
-                    </div>
-                  </div>
-
-                  {/* Bottom confidence bar */}
-                  <div className="absolute bottom-3 inset-x-3 z-20 rounded-xl bg-black/70 backdrop-blur-md border border-emerald-500/20 px-4 py-2.5">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-[9px] font-mono font-bold text-emerald-400 uppercase tracking-widest">Model Confidence</span>
-                      <span className="text-[10px] font-black text-white">98.7%</span>
-                    </div>
-                    <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
-                      <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400" style={{width: "98.7%", boxShadow: "0 0 8px rgba(16,185,129,0.6)"}} />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Live Stat Cards Row */}
-                <div className="grid grid-cols-3 gap-2.5">
-                  {[
-                    {label: "Diseases Detected", value: "38", unit: "classes", color: "emerald"},
-                    {label: "GIS Coverage", value: "25", unit: "km radius", color: "teal"},
-                    {label: "Accuracy", value: "94", unit: "% avg", color: "cyan"},
-                  ].map(({label, value, unit, color}) => (
-                    <div key={label} className={`rounded-2xl p-3 text-center ${isDark ? "feature-card-dark" : "feature-card-light"}`}>
-                      <div className={`text-2xl font-black tabular-nums ${
-                        color === "emerald" ? (isDark ? "text-emerald-400" : "text-emerald-600") :
-                        color === "teal" ? (isDark ? "text-teal-400" : "text-teal-600") :
-                        (isDark ? "text-cyan-400" : "text-cyan-600")
-                      }`}>{value}</div>
-                      <div className={`text-[9px] font-bold uppercase tracking-wider mt-0.5 ${isDark ? "text-slate-500" : "text-slate-400"}`}>{unit}</div>
-                      <div className={`text-[10px] font-medium mt-0.5 ${isDark ? "text-slate-400" : "text-slate-600"}`}>{label}</div>
-                    </div>
-                  ))}
-                </div>
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 pt-1">
+                <button
+                  onClick={() => setActiveNav("diag")}
+                  className="rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 px-6 py-3 text-xs font-black text-slate-950 shadow-lg glow-emerald hover:brightness-110 flex items-center gap-2 transition hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  <Camera size={16} /> Run AI Leaf Diagnostics
+                </button>
+                <button
+                  onClick={() => setActiveNav("weather")}
+                  className={`rounded-2xl border px-6 py-3 text-xs font-bold flex items-center gap-2 transition active:scale-[0.98] hover:scale-[1.02] ${
+                    isDark ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20" : "border-emerald-500/40 bg-white text-emerald-700 hover:bg-emerald-50 shadow-sm"
+                  }`}
+                >
+                  <CloudSun size={16} /> View Farm Weather
+                </button>
               </div>
             </div>
 
-            {/* ── SCROLL HINT ── */}
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-1.5 opacity-40 hover:opacity-70 transition-opacity">
-              <span className={`text-[9px] font-mono uppercase tracking-[0.2em] ${isDark ? "text-emerald-400" : "text-slate-500"}`}>Scroll to explore</span>
-              <div className={`w-5 h-8 rounded-full border-2 flex items-start justify-center pt-1.5 ${isDark ? "border-emerald-500/40" : "border-slate-400/30"}`}>
-                <div className={`w-1 h-2 rounded-full animate-bounce ${isDark ? "bg-emerald-400" : "bg-slate-400"}`} />
+            {/* RIGHT: 3D Model */}
+            <div className="lg:col-span-5 flex items-center justify-center">
+              <div className={`relative w-full rounded-3xl border transition-all ${
+                isDark ? "border-emerald-500/30 bg-[#072017]/80 shadow-2xl glow-emerald" : "border-slate-200 bg-white/90 shadow-xl"
+              }`} style={{minHeight: "380px", maxWidth: "460px"}}>
+                <Hero3DCropModel theme={theme} />
+                <div className="absolute top-3 right-3 flex items-center gap-1.5 rounded-xl bg-black/70 backdrop-blur px-3 py-1.5 border border-emerald-500/30">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-[10px] font-mono font-bold text-emerald-300">AI Vision · LIVE</span>
+                </div>
               </div>
             </div>
-          </section>
-
-          {/* ── FEATURE HIGHLIGHTS STRIP ── */}
-          <section className={`border-b ${isDark ? "border-emerald-900/30 bg-[#04120b]" : "border-slate-100 bg-white"}`}>
-            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10 py-16">
-              <div className="text-center mb-10">
-                <p className={`text-xs font-bold uppercase tracking-widest mb-2 ${isDark ? "text-emerald-500" : "text-emerald-600"}`}>Platform Capabilities</p>
-                <h2 className={`text-3xl font-black ${isDark ? "text-white" : "text-slate-900"}`}>
-                  Everything a modern farmer needs
-                </h2>
-                <p className={`mt-2 text-sm max-w-xl mx-auto ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                  From AI disease diagnostics to live GIS outbreak maps — all in one offline-capable platform.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {[
-                  {
-                    icon: "🔬", title: "AI Leaf Diagnostics", desc: "Upload or photograph a leaf — MobileNetV2 identifies disease, severity, and treatment plan in seconds.",
-                    action: "diag", cta: "Open Diagnostics", color: "emerald"
-                  },
-                  {
-                    icon: "🛰️", title: "GIS Outbreak Radar", desc: "Live 25km cluster radar showing active outbreak hotspots reported by the farming community around you.",
-                    action: "map", cta: "View Radar", color: "teal"
-                  },
-                  {
-                    icon: "🚁", title: "Drone Field Survey", desc: "Autonomous drone mission planning, NDVI multispectral analysis, and real-time field reconnaissance.",
-                    action: "intel", cta: "Drone Control", color: "cyan"
-                  },
-                  {
-                    icon: "🌤️", title: "Farm Weather Intel", desc: "Hyper-local 7-day farm forecasts with disease pressure index, irrigation advisories, and spray windows.",
-                    action: "weather", cta: "View Forecast", color: "blue"
-                  },
-                ].map(({icon, title, desc, action, cta, color}) => (
-                  <button
-                    key={title}
-                    onClick={() => setActiveNav(action)}
-                    className={`group text-left rounded-3xl p-6 ${isDark ? "feature-card-dark" : "feature-card-light"}`}
-                  >
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl mb-4 ${
-                      isDark ? "bg-emerald-950/60 border border-emerald-800/40" : "bg-emerald-50 border border-emerald-100"
-                    }`}>{icon}</div>
-                    <h3 className={`font-black text-base mb-2 ${isDark ? "text-white" : "text-slate-900"}`}>{title}</h3>
-                    <p className={`text-xs leading-relaxed mb-4 ${isDark ? "text-slate-400" : "text-slate-500"}`}>{desc}</p>
-                    <span className={`inline-flex items-center gap-1.5 text-xs font-bold ${
-                      isDark ? "text-emerald-400 group-hover:text-emerald-300" : "text-emerald-700 group-hover:text-emerald-600"
-                    } transition-colors`}>
-                      {cta} <span className="group-hover:translate-x-1 transition-transform">→</span>
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </section>
-        </>
+          </div>
+        </section>
       )}
 
       {/* Main Content Area */}
+
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
         {/* Mobile Navigation Bar */}
         <div className="flex xl:hidden overflow-x-auto gap-2 mb-6 pb-2 no-scrollbar">
