@@ -1,0 +1,131 @@
+"""Evaluate a trained classifier on field and unknown/OOD datasets.
+
+This evaluator intentionally fails when the requested evaluation datasets are
+missing. It never substitutes benchmark data or invents metrics.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+from pathlib import Path
+from typing import Any
+
+import numpy as np
+import torch
+from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
+from torchvision import datasets, models, transforms
+
+
+VALID_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".bmp"}
+
+
+def _count_images(root: Path) -> int:
+    return sum(1 for p in root.rglob("*") if p.is_file() and p.suffix.lower() in VALID_EXTENSIONS)
+
+
+def _load_model(checkpoint_path: Path, device: torch.device):
+    ckpt = torch.load(checkpoint_path, map_location=device, weights_only=False)
+    if ckpt.get("architecture") != "efficientnet_v2_s":
+        raise ValueError("Evaluation requires an EfficientNetV2-S checkpoint")
+    class_to_idx = ckpt["class_to_idx"]
+    model = models.efficientnet_v2_s(weights=None)
+    model.classifier[1] = torch.nn.Linear(model.classifier[1].in_features, len(class_to_idx))
+    model.load_state_dict(ckpt["model_state_dict"])
+    model.to(device).eval()
+    return model, class_to_idx, int(ckpt.get("image_size", 384))
+
+
+def _predict(model, root: Path, image_size: int, device: torch.device):
+    if not root.is_dir() or _count_images(root) == 0:
+        raise ValueError(f"Evaluation dataset is missing or empty: {root}")
+    tfm = transforms.Compose([
+        transforms.Resize(int(image_size * 1.14)),
+        transforms.CenterCrop(image_size),
+        transforms.ToTensor(),
+        transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+    ])
+    ds = datasets.ImageFolder(root, transform=tfm)
+    loader = torch.utils.data.DataLoader(ds, batch_size=32, shuffle=False, num_workers=2)
+    y_true, y_pred, max_prob = [], [], []
+    with torch.no_grad():
+        for images, labels in loader:
+            logits = model(images.to(device))
+            probs = torch.softmax(logits, dim=1)
+            y_true.extend(labels.numpy().tolist())
+            y_pred.extend(probs.argmax(1).cpu().numpy().tolist())
+            max_prob.extend(probs.max(1).values.cpu().numpy().tolist())
+    return np.asarray(y_true), np.asarray(y_pred), np.asarray(max_prob), ds.classes
+
+
+def evaluate_field(model, class_to_idx, image_size, root, device):
+    y_true, y_pred, max_prob, classes = _predict(model, root, image_size, device)
+    known = set(class_to_idx)
+    overlap = sorted(set(classes) & known)
+    if len(overlap) == 0:
+        raise ValueError("Field dataset has no class overlap with the production taxonomy")
+    # ImageFolder labels are local to the field dataset; map only matching names.
+    keep = np.asarray([classes[int(i)] in known for i in y_true])
+    if not keep.any():
+        raise ValueError("Field dataset contains no evaluable known classes")
+    remap = np.asarray([class_to_idx[classes[int(i)]] if classes[int(i)] in known else -1 for i in y_true])
+    y_true_known = remap[keep]
+    y_pred_known = y_pred[keep]
+    return {
+        "samples": int(keep.sum()),
+        "coverage": round(float(keep.mean()), 4),
+        "top1_accuracy": round(float(accuracy_score(y_true_known, y_pred_known)), 4),
+        "macro_f1": round(float(f1_score(y_true_known, y_pred_known, average="macro", zero_division=0)), 4),
+        "mean_max_probability": round(float(max_prob[keep].mean()), 4),
+        "classes_evaluated": overlap,
+    }
+
+
+def evaluate_ood(model, image_size, root, device):
+    if not root.is_dir() or _count_images(root) == 0:
+        raise ValueError(f"OOD dataset is missing or empty: {root}")
+    tfm = transforms.Compose([
+        transforms.Resize(int(image_size * 1.14)),
+        transforms.CenterCrop(image_size),
+        transforms.ToTensor(),
+        transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+    ])
+    paths = [p for p in root.rglob("*") if p.is_file() and p.suffix.lower() in VALID_EXTENSIONS]
+    from PIL import Image
+    scores = []
+    with torch.no_grad():
+        for path in paths:
+            image = tfm(Image.open(path).convert("RGB")).unsqueeze(0).to(device)
+            probs = torch.softmax(model(image), dim=1)
+            scores.append(float(probs.max().item()))
+    scores = np.asarray(scores)
+    # OOD evaluation reports the score distribution; AUROC requires matched
+    # known samples and is therefore not fabricated from OOD-only images.
+    return {
+        "samples": int(len(scores)),
+        "mean_max_probability": round(float(scores.mean()), 4),
+        "p95_max_probability": round(float(np.percentile(scores, 95)), 4),
+        "p99_max_probability": round(float(np.percentile(scores, 99)), 4),
+    }
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--checkpoint", required=True)
+    parser.add_argument("--field-data", required=True)
+    parser.add_argument("--ood-data", required=True)
+    parser.add_argument("--output", required=True)
+    args = parser.parse_args()
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model, class_to_idx, image_size = _load_model(Path(args.checkpoint), device)
+    result: dict[str, Any] = {
+        "checkpoint": str(args.checkpoint),
+        "field": evaluate_field(model, class_to_idx, image_size, Path(args.field_data), device),
+        "ood": evaluate_ood(model, image_size, Path(args.ood_data), device),
+    }
+    Path(args.output).write_text(json.dumps(result, indent=2), encoding="utf-8")
+    print(json.dumps(result, indent=2))
+
+
+if __name__ == "__main__":
+    main()
