@@ -28,8 +28,16 @@ import {
   BarChart3,
   CheckCircle2,
   RotateCw,
-  Info
+  Info,
+  Video,
+  Play,
+  Pause,
+  Volume2,
+  VolumeX,
+  Radio
 } from "lucide-react";
+
+import DroneMissionGeneratorModal from "../DroneMissionGeneratorModal";
 
 // Preset Real-World Agricultural Scenarios
 const PRESET_FIELDS = [
@@ -123,13 +131,48 @@ export default function PrecisionFieldIntelligenceWorkspace({
 }) {
   const [selectedPreset, setSelectedPreset] = useState(PRESET_FIELDS[0]);
   const [fieldParams, setFieldParams] = useState({ ...PRESET_FIELDS[0] });
-  const [active3DLayer, setActive3DLayer] = useState("ndvi"); // "ndvi" | "ndre" | "elevation" | "hydrology" | "drone_flight"
+  const [active3DLayer, setActive3DLayer] = useState("drone_video"); // "ndvi" | "ndre" | "elevation" | "hydrology" | "drone_flight" | "drone_video"
   const [reportFormat, setReportFormat] = useState("markdown"); // "markdown" | "telemetry" | "waypoints"
   const [copiedReport, setCopiedReport] = useState(false);
   const [isSimulating, setIsSimulating] = useState(false);
   const [provenanceTag, setProvenanceTag] = useState("🟠 SIMULATED REFERENCE EXECUTION");
 
+  // Drone Optical Video State & Telemetry Controls
+  const [isVideoPlaying, setIsVideoPlaying] = useState(true);
+  const [isVideoMuted, setIsVideoMuted] = useState(true);
+  const [showDroneHud, setShowDroneHud] = useState(true);
+  const [isDroneModalOpen, setIsDroneModalOpen] = useState(false);
+  const videoRef = useRef(null);
   const canvas3DRef = useRef(null);
+
+  const togglePlayVideo = () => {
+    if (videoRef.current) {
+      if (videoRef.current.paused) {
+        videoRef.current.play();
+        setIsVideoPlaying(true);
+      } else {
+        videoRef.current.pause();
+        setIsVideoPlaying(false);
+      }
+    }
+  };
+
+  const toggleMuteVideo = () => {
+    if (videoRef.current) {
+      videoRef.current.muted = !videoRef.current.muted;
+      setIsVideoMuted(videoRef.current.muted);
+    }
+  };
+
+  const handleDownloadDroneVideo = () => {
+    const a = document.createElement("a");
+    a.href = "/videos/drone-survey-recon.mp4";
+    a.download = `drone_recon_${fieldParams.crop.toLowerCase().replace(/\s+/g, "_")}.mp4`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    showToast("Downloading autonomous drone reconnaissance video (1080p)...");
+  };
 
   // Synchronize when preset changes
   const handleSelectPreset = (preset) => {
@@ -644,6 +687,7 @@ WP12 ← WP11 ← WP10 ◄─┘
           {/* 3D Visualizer Layer Switches */}
           <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-2xl border border-emerald-900/50 bg-emerald-950/40 backdrop-blur-md">
             {[
+              { id: "drone_video", label: "Live Drone Recon (HD)", icon: Video },
               { id: "ndvi", label: "NDVI Health", icon: Layers },
               { id: "ndre", label: "NDRE Chlorophyll", icon: Sparkles },
               { id: "elevation", label: "3D DEM Contours", icon: TrendingUp },
@@ -666,24 +710,118 @@ WP12 ← WP11 ← WP10 ◄─┘
           </div>
         </div>
 
-        {/* 3D ASCII / MESH CONCEPTUAL FIELD CANVAS */}
-        <div className="relative h-96 w-full rounded-2xl border border-emerald-500/30 bg-[#020b07] overflow-hidden flex flex-col items-center justify-center p-6 select-none">
-          <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#10b981_1px,transparent_1px)] [background-size:20px_20px]" />
+        {/* 3D ASCII / MESH / DRONE VIDEO FIELD CANVAS */}
+        {active3DLayer === "drone_video" ? (
+          <div className="relative h-[420px] sm:h-[480px] w-full rounded-2xl border border-emerald-500/40 bg-black overflow-hidden shadow-2xl flex items-center justify-center group">
+            <video
+              ref={videoRef}
+              src="/videos/drone-survey-recon.mp4"
+              autoPlay
+              loop
+              muted={isVideoMuted}
+              playsInline
+              className="w-full h-full object-cover"
+            />
 
-          {/* Compass Rose */}
-          <div className="absolute top-4 right-4 flex flex-col items-center text-[10px] font-mono font-bold text-emerald-400/80 bg-emerald-950/60 p-2 rounded-xl border border-emerald-500/20">
-            <span>▲ N</span>
-            <span className="text-[8px] text-slate-500">164° Aspect</span>
-          </div>
-
-          {/* Interactive Layer Visual */}
-          <div className="relative z-10 w-full max-w-2xl text-center space-y-4">
-            {active3DLayer === "ndvi" && (
-              <div className="space-y-3">
-                <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-mono font-bold text-emerald-300 border border-emerald-500/30">
-                  <Layers size={14} /> NDVI Calibrated Multi-Spectral Grid
+            {/* Drone Telemetry HUD Overlay */}
+            {showDroneHud && (
+              <div className="absolute inset-0 pointer-events-none p-4 flex flex-col justify-between font-mono select-none">
+                {/* Top HUD bar */}
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2 bg-black/75 backdrop-blur-md px-3 py-1 rounded-full border border-red-500/40 text-red-400 font-bold">
+                    <span className="h-2 w-2 rounded-full bg-red-500 animate-ping" />
+                    <span>REC ● 1080P 60FPS</span>
+                  </div>
+                  <div className="flex items-center gap-2 sm:gap-3 bg-black/75 backdrop-blur-md px-3 py-1 rounded-full border border-emerald-500/40 text-emerald-300 text-[10px] sm:text-[11px]">
+                    <span>ALT: 45.2m AGL</span>
+                    <span>•</span>
+                    <span>SPD: 6.8 m/s</span>
+                    <span>•</span>
+                    <span>GSD: {calculatedGSD} cm/px</span>
+                    <span>•</span>
+                    <span className="text-amber-300">BAT: 84%</span>
+                  </div>
                 </div>
-                <pre className="font-mono text-sm sm:text-base leading-relaxed text-emerald-300 bg-slate-950/80 p-4 rounded-2xl border border-emerald-500/30 shadow-inner overflow-x-auto">
+
+                {/* Laser LiDAR Center Crosshair */}
+                <div className="flex flex-col items-center justify-center">
+                  <div className="relative h-24 w-24 border border-dashed border-emerald-400/50 rounded-lg flex items-center justify-center">
+                    <div className="h-3 w-3 border-t-2 border-l-2 border-emerald-300 absolute -top-1 -left-1" />
+                    <div className="h-3 w-3 border-t-2 border-r-2 border-emerald-300 absolute -top-1 -right-1" />
+                    <div className="h-3 w-3 border-b-2 border-l-2 border-emerald-300 absolute -bottom-1 -left-1" />
+                    <div className="h-3 w-3 border-b-2 border-r-2 border-emerald-300 absolute -bottom-1 -right-1" />
+                    <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />
+                  </div>
+                  <div className="mt-2 bg-black/80 backdrop-blur-md px-3 py-0.5 rounded text-[10px] text-emerald-300 border border-emerald-500/40">
+                    TARGET: {fieldParams.crop} • Zone Gamma [{fieldParams.pathogen}]
+                  </div>
+                </div>
+
+                {/* Bottom HUD bar */}
+                <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-300">
+                  <div className="bg-black/75 backdrop-blur-md px-3 py-1 rounded-lg border border-emerald-500/30">
+                    <span>GPS: {fieldParams.centerLat.toFixed(4)}°N, {fieldParams.centerLng.toFixed(4)}°E (RTK FIXED ±1.2cm)</span>
+                  </div>
+                  <div className="bg-black/75 backdrop-blur-md px-3 py-1 rounded-lg border border-emerald-500/30 text-emerald-400">
+                    <span>OPTICAL LIDAR ACTIVE • 420m CORRIDOR</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Video Controls Toolbar */}
+            <div className="absolute bottom-3 right-3 flex items-center gap-1.5 z-20">
+              <button
+                onClick={togglePlayVideo}
+                className="p-2 rounded-xl bg-black/80 hover:bg-black text-white border border-emerald-500/40 backdrop-blur-md transition hover:scale-105"
+                title={isVideoPlaying ? "Pause Video" : "Play Video"}
+              >
+                {isVideoPlaying ? <Pause size={14} /> : <Play size={14} />}
+              </button>
+              <button
+                onClick={toggleMuteVideo}
+                className="p-2 rounded-xl bg-black/80 hover:bg-black text-white border border-emerald-500/40 backdrop-blur-md transition hover:scale-105"
+                title={isVideoMuted ? "Unmute Audio" : "Mute Audio"}
+              >
+                {isVideoMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
+              </button>
+              <button
+                onClick={() => setShowDroneHud(!showDroneHud)}
+                className={`px-2.5 py-1.5 rounded-xl text-[11px] font-mono font-bold border backdrop-blur-md transition ${
+                  showDroneHud
+                    ? "bg-emerald-500/30 text-emerald-300 border-emerald-500/50"
+                    : "bg-black/75 text-slate-400 border-slate-700 hover:text-white"
+                }`}
+              >
+                HUD: {showDroneHud ? "ON" : "OFF"}
+              </button>
+              <button
+                onClick={handleDownloadDroneVideo}
+                className="p-2 rounded-xl bg-emerald-600/90 hover:bg-emerald-500 text-white border border-emerald-400/40 backdrop-blur-md transition hover:scale-105"
+                title="Download Recon Video (MP4)"
+              >
+                <Download size={14} />
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="relative h-96 w-full rounded-2xl border border-emerald-500/30 bg-[#020b07] overflow-hidden flex flex-col items-center justify-center p-6 select-none">
+            <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#10b981_1px,transparent_1px)] [background-size:20px_20px]" />
+
+            {/* Compass Rose */}
+            <div className="absolute top-4 right-4 flex flex-col items-center text-[10px] font-mono font-bold text-emerald-400/80 bg-emerald-950/60 p-2 rounded-xl border border-emerald-500/20">
+              <span>▲ N</span>
+              <span className="text-[8px] text-slate-500">164° Aspect</span>
+            </div>
+
+            {/* Interactive Layer Visual */}
+            <div className="relative z-10 w-full max-w-2xl text-center space-y-4">
+              {active3DLayer === "ndvi" && (
+                <div className="space-y-3">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-mono font-bold text-emerald-300 border border-emerald-500/30">
+                    <Layers size={14} /> NDVI Calibrated Multi-Spectral Grid
+                  </div>
+                  <pre className="font-mono text-sm sm:text-base leading-relaxed text-emerald-300 bg-slate-950/80 p-4 rounded-2xl border border-emerald-500/30 shadow-inner overflow-x-auto">
 {`                  NORTH (Elevation: ${fieldParams.elevationMax}m)
         ┌───────────────────────────────────────────────┐
         │ 🟢 🟢 🟢 🟢 🟢 🟢 🟢 🟢 🟢 🟢 🟢 🟢 🟢 🟢 🟢 │ (Alpha: >0.78)
@@ -693,94 +831,94 @@ WP12 ← WP11 ← WP10 ◄─┘
         │ 🟡 🟡 🔴 🔴 🔴 🔴 🔴 🔴 🔴 🔴 🔴 🔴 🔴 🔴 🔴 │ (Gamma: <0.48)
         └───────────────────────────────────────────────┘ 1.79 ha (Critical)
                   SOUTH (Elevation: ${fieldParams.elevationMin}m)`}
-                </pre>
-                <div className="flex justify-center gap-4 text-xs font-bold">
-                  <span className="text-emerald-400">🟢 Zone Alpha: No Spray</span>
-                  <span className="text-amber-400">🟡 Zone Beta: 50% Prophylactic</span>
-                  <span className="text-rose-400">🔴 Zone Gamma: 100% Curative</span>
+                  </pre>
+                  <div className="flex justify-center gap-4 text-xs font-bold">
+                    <span className="text-emerald-400">🟢 Zone Alpha: No Spray</span>
+                    <span className="text-amber-400">🟡 Zone Beta: 50% Prophylactic</span>
+                    <span className="text-rose-400">🔴 Zone Gamma: 100% Curative</span>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {active3DLayer === "ndre" && (
-              <div className="space-y-3">
-                <div className="inline-flex items-center gap-2 rounded-full bg-teal-500/20 px-3 py-1 text-xs font-mono font-bold text-teal-300 border border-teal-500/30">
-                  <Sparkles size={14} /> Sentinel-2 Red-Edge (B8A vs B5) Chlorophyll Sensitivity
+              {active3DLayer === "ndre" && (
+                <div className="space-y-3">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-teal-500/20 px-3 py-1 text-xs font-mono font-bold text-teal-300 border border-teal-500/30">
+                    <Sparkles size={14} /> Sentinel-2 Red-Edge (B8A vs B5) Chlorophyll Sensitivity
+                  </div>
+                  <div className="p-5 rounded-2xl bg-slate-950/80 border border-teal-500/30 text-left text-xs space-y-2">
+                    <div className="flex justify-between font-mono">
+                      <span className="text-slate-400">Narrow NIR (Band 8A - 865nm):</span>
+                      <span className="font-bold text-teal-300">0.482 Reflectance</span>
+                    </div>
+                    <div className="flex justify-between font-mono">
+                      <span className="text-slate-400">Red Edge (Band 5 - 705nm):</span>
+                      <span className="font-bold text-amber-300">0.201 Reflectance</span>
+                    </div>
+                    <div className="flex justify-between font-mono border-t border-slate-800 pt-2">
+                      <span className="text-white font-bold">Computed Mean NDRE:</span>
+                      <span className="font-bold text-teal-400 text-sm">{fieldParams.meanNdre.toFixed(3)}</span>
+                    </div>
+                    <p className="text-[11px] text-slate-400 italic pt-1">
+                      NDRE overcomes NDVI saturation in dense foliage, verifying robust nitrogen uptake in North sector while confirming true cellular chlorosis in South-East depression.
+                    </p>
+                  </div>
                 </div>
-                <div className="p-5 rounded-2xl bg-slate-950/80 border border-teal-500/30 text-left text-xs space-y-2">
-                  <div className="flex justify-between font-mono">
-                    <span className="text-slate-400">Narrow NIR (Band 8A - 865nm):</span>
-                    <span className="font-bold text-teal-300">0.482 Reflectance</span>
+              )}
+
+              {active3DLayer === "elevation" && (
+                <div className="space-y-3">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-cyan-500/20 px-3 py-1 text-xs font-mono font-bold text-cyan-300 border border-cyan-500/30">
+                    <TrendingUp size={14} /> 30m Digital Elevation Model (Hydro-Conditioned)
                   </div>
-                  <div className="flex justify-between font-mono">
-                    <span className="text-slate-400">Red Edge (Band 5 - 705nm):</span>
-                    <span className="font-bold text-amber-300">0.201 Reflectance</span>
+                  <div className="grid grid-cols-3 gap-3 text-center">
+                    <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800">
+                      <span className="text-[10px] text-slate-400 block">Peak Ridge</span>
+                      <span className="text-lg font-black font-mono text-cyan-400">{fieldParams.elevationMax} m</span>
+                    </div>
+                    <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800">
+                      <span className="text-[10px] text-slate-400 block">Mean Slope</span>
+                      <span className="text-lg font-black font-mono text-teal-400">2.1°</span>
+                    </div>
+                    <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800">
+                      <span className="text-[10px] text-slate-400 block">Lowest Sink</span>
+                      <span className="text-lg font-black font-mono text-amber-400">{fieldParams.elevationMin} m</span>
+                    </div>
                   </div>
-                  <div className="flex justify-between font-mono border-t border-slate-800 pt-2">
-                    <span className="text-white font-bold">Computed Mean NDRE:</span>
-                    <span className="font-bold text-teal-400 text-sm">{fieldParams.meanNdre.toFixed(3)}</span>
+                  <p className="text-xs text-slate-400">Relief differential of {fieldParams.reliefM}m over 420m diagonal causes natural surface gravity flow towards the SE depression basin.</p>
+                </div>
+              )}
+
+              {active3DLayer === "hydrology" && (
+                <div className="space-y-3">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-blue-500/20 px-3 py-1 text-xs font-mono font-bold text-blue-300 border border-blue-500/30">
+                    <Droplets size={14} /> D8 Surface Flow Accumulation & Wetness Index (TWI)
                   </div>
-                  <p className="text-[11px] text-slate-400 italic pt-1">
-                    NDRE overcomes NDVI saturation in dense foliage, verifying robust nitrogen uptake in North sector while confirming true cellular chlorosis in South-East depression.
+                  <div className="p-4 rounded-2xl bg-slate-950/80 border border-blue-500/30 text-left text-xs space-y-2 font-mono">
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Topographic Wetness Index:</span>
+                      <span className="text-blue-400 font-bold">11.8 (High Saturation)</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Soil Moisture (Top 5cm):</span>
+                      <span className="text-blue-400 font-bold">38.4% Volumetric</span>
+                    </div>
+                    <div className="flex justify-between border-t border-slate-800 pt-1">
+                      <span className="text-slate-400">Drainage Correlation Confidence:</span>
+                      <span className="text-emerald-400 font-bold">91.2% (VERY HIGH)</span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-amber-300/90 font-medium">
+                    ⚠️ Root hypoxia caused by standing water in the SE corner is the primary trigger for low NDVI. Drainage relief trenching required prior to chemical spray.
                   </p>
                 </div>
-              </div>
-            )}
+              )}
 
-            {active3DLayer === "elevation" && (
-              <div className="space-y-3">
-                <div className="inline-flex items-center gap-2 rounded-full bg-cyan-500/20 px-3 py-1 text-xs font-mono font-bold text-cyan-300 border border-cyan-500/30">
-                  <TrendingUp size={14} /> 30m Digital Elevation Model (Hydro-Conditioned)
-                </div>
-                <div className="grid grid-cols-3 gap-3 text-center">
-                  <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800">
-                    <span className="text-[10px] text-slate-400 block">Peak Ridge</span>
-                    <span className="text-lg font-black font-mono text-cyan-400">{fieldParams.elevationMax} m</span>
+              {active3DLayer === "drone_flight" && (
+                <div className="space-y-3">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-mono font-bold text-emerald-300 border border-emerald-500/30">
+                    <Plane size={14} /> Autonomous Survey Grid Corridor (12 Waypoints)
                   </div>
-                  <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800">
-                    <span className="text-[10px] text-slate-400 block">Mean Slope</span>
-                    <span className="text-lg font-black font-mono text-teal-400">2.1°</span>
-                  </div>
-                  <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800">
-                    <span className="text-[10px] text-slate-400 block">Lowest Sink</span>
-                    <span className="text-lg font-black font-mono text-amber-400">{fieldParams.elevationMin} m</span>
-                  </div>
-                </div>
-                <p className="text-xs text-slate-400">Relief differential of {fieldParams.reliefM}m over 420m diagonal causes natural surface gravity flow towards the SE depression basin.</p>
-              </div>
-            )}
-
-            {active3DLayer === "hydrology" && (
-              <div className="space-y-3">
-                <div className="inline-flex items-center gap-2 rounded-full bg-blue-500/20 px-3 py-1 text-xs font-mono font-bold text-blue-300 border border-blue-500/30">
-                  <Droplets size={14} /> D8 Surface Flow Accumulation & Wetness Index (TWI)
-                </div>
-                <div className="p-4 rounded-2xl bg-slate-950/80 border border-blue-500/30 text-left text-xs space-y-2 font-mono">
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Topographic Wetness Index:</span>
-                    <span className="text-blue-400 font-bold">11.8 (High Saturation)</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Soil Moisture (Top 5cm):</span>
-                    <span className="text-blue-400 font-bold">38.4% Volumetric</span>
-                  </div>
-                  <div className="flex justify-between border-t border-slate-800 pt-1">
-                    <span className="text-slate-400">Drainage Correlation Confidence:</span>
-                    <span className="text-emerald-400 font-bold">91.2% (VERY HIGH)</span>
-                  </div>
-                </div>
-                <p className="text-xs text-amber-300/90 font-medium">
-                  ⚠️ Root hypoxia caused by standing water in the SE corner is the primary trigger for low NDVI. Drainage relief trenching required prior to chemical spray.
-                </p>
-              </div>
-            )}
-
-            {active3DLayer === "drone_flight" && (
-              <div className="space-y-3">
-                <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-mono font-bold text-emerald-300 border border-emerald-500/30">
-                  <Plane size={14} /> Autonomous Survey Grid Corridor (12 Waypoints)
-                </div>
-                <pre className="font-mono text-xs text-emerald-300 bg-slate-950/90 p-4 rounded-2xl border border-emerald-500/30 overflow-x-auto text-left">
+                  <pre className="font-mono text-xs text-emerald-300 bg-slate-950/90 p-4 rounded-2xl border border-emerald-500/30 overflow-x-auto text-left">
 {`  WP01 [Takeoff @ 45m AGL] ──► WP02 (Heading 090°) ──► WP03
     ▲                                                   │
     │                                                   ▼
@@ -791,23 +929,215 @@ WP12 ← WP11 ← WP10 ◄─┘
     ▲                                                   │
     │                                                   ▼
   WP12 [RTL Land @ 0m] ◄────── WP11 ◄──────────────── WP10`}
-                </pre>
-                <div className="flex justify-center gap-3">
-                  <button
-                    onClick={handleExportMavlink}
-                    className="flex items-center gap-1.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 px-3 py-1.5 text-xs font-bold text-emerald-300 hover:bg-emerald-500/30 transition"
-                  >
-                    <Download size={13} /> Export MavLink .waypoint
-                  </button>
-                  <button
-                    onClick={handleExportKML}
-                    className="flex items-center gap-1.5 rounded-xl bg-teal-500/20 border border-teal-500/40 px-3 py-1.5 text-xs font-bold text-teal-300 hover:bg-teal-500/30 transition"
-                  >
-                    <Download size={13} /> Export KML (DJI Terra)
-                  </button>
+                  </pre>
+                  <div className="flex justify-center gap-3">
+                    <button
+                      onClick={handleExportMavlink}
+                      className="flex items-center gap-1.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 px-3 py-1.5 text-xs font-bold text-emerald-300 hover:bg-emerald-500/30 transition"
+                    >
+                      <Download size={13} /> Export MavLink .waypoint
+                    </button>
+                    <button
+                      onClick={handleExportKML}
+                      className="flex items-center gap-1.5 rounded-xl bg-teal-500/20 border border-teal-500/40 px-3 py-1.5 text-xs font-bold text-teal-300 hover:bg-teal-500/30 transition"
+                    >
+                      <Download size={13} /> Export KML (DJI Terra)
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 3.5 AUTONOMOUS DRONE RECONNAISSANCE & FLIGHT MISSION CONTROL */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Card 1: Live Drone Optical Camera & Telemetry Stream */}
+        <div
+          className={`lg:col-span-7 rounded-3xl p-6 sm:p-8 border transition-all ${
+            isDark ? "border-emerald-500/30 bg-[#04160f] shadow-2xl" : "border-slate-200 bg-white shadow-xl"
+          }`}
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+            <div className="flex items-center gap-2">
+              <Video className="text-emerald-400" size={22} />
+              <h3 className={`text-lg sm:text-xl font-black ${isDark ? "text-white" : "text-slate-900"}`}>
+                Autonomous UAV Optical Reconnaissance Feed
+              </h3>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="flex items-center gap-1.5 rounded-full bg-red-500/20 px-2.5 py-0.5 text-[10px] font-mono font-black text-red-400 border border-red-500/40">
+                <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-ping" />
+                LIVE STREAM
+              </span>
+              <span className="text-[10px] font-mono text-emerald-400/80 bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                1080P • 60 FPS
+              </span>
+            </div>
+          </div>
+
+          <p className="text-xs text-slate-400 mb-4">
+            Real-time aerial multi-spectral and optical crop canopy surveillance with active green LiDAR terrain tracking over {fieldParams.name}.
+          </p>
+
+          {/* Embedded Drone Recon Video Player */}
+          <div className="relative w-full aspect-video rounded-2xl overflow-hidden border border-emerald-500/40 bg-black shadow-2xl group">
+            <video
+              ref={videoRef}
+              src="/videos/drone-survey-recon.mp4"
+              autoPlay
+              loop
+              muted={isVideoMuted}
+              playsInline
+              className="w-full h-full object-cover"
+            />
+
+            {/* Video HUD Overlay */}
+            {showDroneHud && (
+              <div className="absolute inset-0 pointer-events-none p-3.5 flex flex-col justify-between font-mono select-none">
+                {/* Top overlay */}
+                <div className="flex items-center justify-between text-[11px]">
+                  <div className="flex items-center gap-2 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-full border border-emerald-500/30 text-emerald-300">
+                    <Radio size={12} className="text-emerald-400 animate-pulse" />
+                    <span>UAV-01 • AG-AGRAS T40</span>
+                  </div>
+                  <div className="flex items-center gap-2 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-full border border-emerald-500/30 text-emerald-300 text-[10px]">
+                    <span>ALT: 45.2m AGL</span>
+                    <span>•</span>
+                    <span>SPD: 6.8 m/s</span>
+                    <span>•</span>
+                    <span className="text-amber-300">BAT: 84%</span>
+                  </div>
+                </div>
+
+                {/* Laser LiDAR Center Crosshair */}
+                <div className="flex flex-col items-center justify-center">
+                  <div className="relative h-20 w-20 border border-dashed border-emerald-400/50 rounded-lg flex items-center justify-center">
+                    <div className="h-2 w-2 border-t border-l border-emerald-300 absolute -top-0.5 -left-0.5" />
+                    <div className="h-2 w-2 border-t border-r border-emerald-300 absolute -top-0.5 -right-0.5" />
+                    <div className="h-2 w-2 border-b border-l border-emerald-300 absolute -bottom-0.5 -left-0.5" />
+                    <div className="h-2 w-2 border-b border-r border-emerald-300 absolute -bottom-0.5 -right-0.5" />
+                    <div className="h-1 w-1 rounded-full bg-emerald-400 animate-ping" />
+                  </div>
+                  <div className="mt-1 bg-black/70 backdrop-blur-md px-2.5 py-0.5 rounded text-[9px] text-emerald-300 border border-emerald-500/30">
+                    SCAN BEAM: {fieldParams.crop} • Zone Gamma Focus
+                  </div>
+                </div>
+
+                {/* Bottom overlay */}
+                <div className="flex items-center justify-between text-[10px] text-slate-300">
+                  <div className="bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-lg border border-emerald-500/30">
+                    <span>GPS: {fieldParams.centerLat.toFixed(4)}°N, {fieldParams.centerLng.toFixed(4)}°E (RTK Fix)</span>
+                  </div>
+                  <div className="bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-lg border border-emerald-500/30 text-emerald-400">
+                    <span>LiDAR PROFILER: ONLINE</span>
+                  </div>
                 </div>
               </div>
             )}
+
+            {/* Video Controls Toolbar */}
+            <div className="absolute bottom-3 right-3 flex items-center gap-1.5 z-20">
+              <button
+                onClick={togglePlayVideo}
+                className="p-1.5 rounded-lg bg-black/70 hover:bg-black/90 text-white border border-emerald-500/40 backdrop-blur-md transition hover:scale-105"
+                title={isVideoPlaying ? "Pause Video" : "Play Video"}
+              >
+                {isVideoPlaying ? <Pause size={13} /> : <Play size={13} />}
+              </button>
+              <button
+                onClick={toggleMuteVideo}
+                className="p-1.5 rounded-lg bg-black/70 hover:bg-black/90 text-white border border-emerald-500/40 backdrop-blur-md transition hover:scale-105"
+                title={isVideoMuted ? "Unmute Audio" : "Mute Audio"}
+              >
+                {isVideoMuted ? <VolumeX size={13} /> : <Volume2 size={13} />}
+              </button>
+              <button
+                onClick={() => setShowDroneHud(!showDroneHud)}
+                className={`px-2 py-1 rounded-lg text-[10px] font-mono font-bold border backdrop-blur-md transition ${
+                  showDroneHud
+                    ? "bg-emerald-500/30 text-emerald-300 border-emerald-500/50"
+                    : "bg-black/70 text-slate-400 border-slate-700 hover:text-white"
+                }`}
+              >
+                HUD: {showDroneHud ? "ON" : "OFF"}
+              </button>
+              <button
+                onClick={handleDownloadDroneVideo}
+                className="p-1.5 rounded-lg bg-emerald-600/80 hover:bg-emerald-500 text-white border border-emerald-400/40 backdrop-blur-md transition hover:scale-105"
+                title="Download Video File (MP4)"
+              >
+                <Download size={13} />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Card 2: Autonomous Spot-Spray Mission Dispatch */}
+        <div
+          className={`lg:col-span-5 rounded-3xl p-6 sm:p-8 border transition-all flex flex-col justify-between ${
+            isDark ? "border-emerald-500/30 bg-[#04160f] shadow-2xl" : "border-slate-200 bg-white shadow-xl"
+          }`}
+        >
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <Plane className="text-emerald-400" size={22} />
+              <h3 className={`text-lg sm:text-xl font-black ${isDark ? "text-white" : "text-slate-900"}`}>
+                Autonomous Mission Dispatch
+              </h3>
+            </div>
+            <p className="text-xs text-slate-400 mb-5">
+              Direct telemetry integration with ArduPilot, PX4, and DJI Agras flight controllers for precision spot-spraying.
+            </p>
+
+            {/* Flight Avionics Telemetry Grid */}
+            <div className="grid grid-cols-2 gap-3 mb-5 text-left font-mono">
+              <div className="p-3 rounded-2xl bg-slate-950/60 border border-emerald-900/40">
+                <span className="text-[10px] text-slate-400 uppercase block">Flight Corridor</span>
+                <span className="text-sm font-bold text-emerald-300">420m (12 WP)</span>
+              </div>
+              <div className="p-3 rounded-2xl bg-slate-950/60 border border-emerald-900/40">
+                <span className="text-[10px] text-slate-400 uppercase block">Swath Width</span>
+                <span className="text-sm font-bold text-teal-300">6.5m Centrifugal</span>
+              </div>
+              <div className="p-3 rounded-2xl bg-slate-950/60 border border-emerald-900/40">
+                <span className="text-[10px] text-slate-400 uppercase block">Target Area</span>
+                <span className="text-sm font-bold text-amber-300">{gammaHa} ha (Zone Γ)</span>
+              </div>
+              <div className="p-3 rounded-2xl bg-slate-950/60 border border-emerald-900/40">
+                <span className="text-[10px] text-slate-400 uppercase block">Chemical Savings</span>
+                <span className="text-sm font-bold text-emerald-400">68% Reduction</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Actions & Export Buttons */}
+          <div className="space-y-2.5 pt-2">
+            <button
+              onClick={() => setIsDroneModalOpen(true)}
+              className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 px-5 py-3 text-xs font-black text-slate-950 shadow-lg glow-emerald hover:brightness-110 transition hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <Plane size={15} />
+              <span>Generate Autonomous Flight Plan (MavLink / KML)</span>
+            </button>
+
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={handleExportMavlink}
+                className="flex items-center justify-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-950/50 hover:bg-emerald-900/50 px-3 py-2 text-xs font-bold text-emerald-300 transition"
+              >
+                <Download size={13} />
+                <span>Export .waypoint</span>
+              </button>
+              <button
+                onClick={handleExportKML}
+                className="flex items-center justify-center gap-1.5 rounded-xl border border-teal-500/40 bg-teal-950/50 hover:bg-teal-900/50 px-3 py-2 text-xs font-bold text-teal-300 transition"
+              >
+                <Download size={13} />
+                <span>Export DJI KML</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -939,6 +1269,18 @@ WP12 ← WP11 ← WP10 ◄─┘
           <pre className="whitespace-pre-wrap leading-relaxed">{fullTechnicalMarkdownReport}</pre>
         </div>
       </div>
+
+      {/* 6. MODAL: AUTONOMOUS DRONE SPOT-SPRAYING MISSION GENERATOR */}
+      <DroneMissionGeneratorModal
+        isOpen={isDroneModalOpen}
+        onClose={() => setIsDroneModalOpen(false)}
+        disease={{
+          crop: fieldParams.crop,
+          condition: fieldParams.pathogen,
+          diagnosis: fieldParams.pathogen
+        }}
+        isDark={isDark}
+      />
     </div>
   );
 }
