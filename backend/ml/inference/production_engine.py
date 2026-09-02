@@ -152,9 +152,26 @@ class ProductionInferenceEngine:
         bio = biological[0] if biological else {}
         chem = chemical[0] if chemical else {}
         treatment_plan = {
-            "organic": {"name": bio.get("agent"), "dosage": bio.get("dosage"), "applicationSchedule": bio.get("application_timing")},
-            "chemical": {"name": chem.get("active_ingredient"), "dosage": chem.get("dosage"), "dose_15L_tank": chem.get("dose_ml_per_15L"), "frac_code": chem.get("frac_code"), "rotation_partner": info.get("structured_chemical", {}).get("rotation_partner"), "safetyIntervalDays": info.get("structured_chemical", {}).get("phi_days")},
-            "preventive": {"cultural": cultural[0] if cultural else None, "irrigation": "Avoid prolonged foliar wetness where agronomically appropriate."},
+            "organic": {
+                "reference": bio.get("reference"),
+                "dosage": None,
+                "applicationSchedule": bio.get("application_timing"),
+                "verificationRequired": True,
+            },
+            "chemical": {
+                "reference": chem.get("reference"),
+                "name": chem.get("active_ingredient"),
+                "dosage": None,
+                "dose_15L_tank": None,
+                "frac_code": None,
+                "rotation_partner": None,
+                "safetyIntervalDays": None,
+                "verificationRequired": True,
+            },
+            "preventive": {
+                "cultural": cultural[0] if cultural else None,
+                "irrigation": "Avoid prolonged foliar wetness where agronomically appropriate.",
+            },
         }
         return {
             "status": "success",
@@ -171,7 +188,7 @@ class ProductionInferenceEngine:
             "severityPercentage": round(float(severity.get("severity_percentage", 0))),
             "symptoms": advisory.get("symptoms_observed", []),
             "symptoms_observed": advisory.get("symptoms_observed", []),
-            "evidence_features": advisory.get("symptoms_observed", []),
+            "evidence_features": advisory.get("evidence_features", []),
             "differential_diagnoses": alternatives,
             "ipm": ipm,
             "farmer_summary": advisory.get("farmer_summary", ""),
@@ -179,8 +196,14 @@ class ProductionInferenceEngine:
             "immediate_precautions": advisory.get("immediate_precautions", []),
             "structured_chemical": info.get("structured_chemical", {}),
             "regional_terms": info.get("regional_terms", {}),
-            "verification_note": info.get("verification_note", "Confirm the exact product, label dose and current registration status with a local KVK/agriculture extension officer before application."),
-            "provenance": {"source": "local_efficientnet_v2_l", "confidence_is_calibrated": self._is_calibrated, "treatment_allowed": not healthy, "crop_probability_mass": round(mass, 4)},
+            "verification_note": advisory.get("verification_note", "Verify all treatment information with a local KVK/agriculture extension officer and the current product label."),
+            "provenance": {
+                "source": "local_efficientnet_v2_l",
+                "confidence_is_calibrated": self._is_calibrated,
+                "treatment_allowed": False,
+                "treatment_reference_only": True,
+                "crop_probability_mass": round(mass, 4),
+            },
             "treatmentPlan": treatment_plan,
             "modelName": self.model_name,
             "modelVersion": self.model_version,
