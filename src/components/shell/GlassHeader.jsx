@@ -12,8 +12,6 @@ import {
   Calculator,
   TrendingUp,
   ShoppingCart,
-  Zap,
-  Search,
   Compass,
   Home,
   CloudSun
@@ -111,37 +109,6 @@ export default function GlassHeader({
 
         {/* Right Controls */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          <button
-            type="button"
-            onClick={() => onOpenCommandPalette?.()}
-            title="Open Command Spotlight (⌘K / Ctrl+K)"
-            aria-label="Open command palette"
-            className={`hidden lg:flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-xs font-bold transition-all active:scale-[0.98] ${
-              isDark
-                ? "border-emerald-500/20 bg-[#071a10] text-slate-300 hover:border-emerald-400"
-                : "border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200 shadow-xs"
-            }`}
-          >
-            <Search size={13} className="text-emerald-400" />
-            <span className="text-[11px] hidden xl:inline">Command</span>
-            <kbd className="rounded bg-emerald-500/20 text-emerald-400 px-1 text-[9px] font-mono border border-emerald-500/30">
-              ⌘K
-            </kbd>
-          </button>
-
-          <button
-            type="button"
-            onClick={onOpenPricing}
-            className={`flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-xs font-extrabold transition-all active:scale-[0.98] ${
-              isDark
-                ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20"
-                : "border-slate-300 bg-white text-slate-700 shadow-sm hover:bg-slate-50"
-            }`}
-          >
-            <Zap size={13} className="text-amber-400 animate-pulse shrink-0" />
-            <span className="hidden sm:inline">Pro Tier</span>
-          </button>
-
           {/* 4-Way Natural & Realistic Theme Selector */}
           <div className="relative">
             <button
