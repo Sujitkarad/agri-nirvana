@@ -31,7 +31,15 @@ Agri Nirvana trains its disease classifier with transfer learning from ImageNet-
 
 ## Compute requirement
 
-EfficientNetV2-L at 448x448 is intentionally a high-capacity training configuration. The repository workflow currently defaults to `ubuntu-latest`; standard GitHub-hosted runners are CPU machines, while GPU-backed larger runners are a separate GitHub feature. citeturn0search1turn0search4 For practical full training, use a CUDA-capable larger or self-hosted runner and route the workflow to it with the appropriate runner label. Self-hosted runners can be targeted with labels such as `self-hosted`, `linux`, `x64`, and `gpu`. citeturn0search2turn0search6
+EfficientNetV2-L at 448x448 is intentionally a high-capacity training configuration. The workflow requires CUDA and must be routed to a CUDA-capable GitHub larger runner or self-hosted GPU runner. Standard `ubuntu-latest` is not a GPU runner, so selecting it will fail fast rather than silently running an impractical CPU training job.
+
+## Dataset policy
+
+- PlantVillage is the primary training/benchmark dataset.
+- PlantDoc is retained as a separate field-condition evaluation dataset.
+- DigiGreen expert-reviewed crop-disease images are materialized into known-class field evaluation and unmatched OOD evaluation sets.
+- Field/OOD images are never silently added to training.
+- Ambiguous expert labels are retained as OOD rather than force-labelled.
 
 ## Quality gates
 
@@ -39,8 +47,9 @@ The training workflow requires:
 
 - Macro-F1 >= 0.70
 - ECE <= 0.15
-- real field evaluation data
-- real OOD evaluation data
+- non-empty field evaluation data
+- non-empty OOD evaluation data
 - exact-duplicate leakage audit
+- calibrated field/OOD evaluation
 
-PlantVillage/PlantDoc results must not be presented as Maharashtra field accuracy. A production checkpoint must pass the repository quality gates and representative field/OOD evaluation. Never bypass missing field/OOD data with synthetic or fabricated images.
+PlantVillage/PlantDoc/DigiGreen results must not be presented as Maharashtra field accuracy. A production checkpoint must pass the repository quality gates and representative field/OOD evaluation. Never bypass missing or ambiguous evaluation data with synthetic or fabricated images.
