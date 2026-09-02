@@ -1,10 +1,16 @@
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1").replace(/\/$/, "");
 
-export async function sendAgriAIChat({ messages, crop = "Unknown", language = "en", model }) {
+export async function sendAgriAIChat({
+  messages,
+  crop = "Unknown",
+  language = "en",
+  model,
+  diagnosis = null,
+}) {
   const response = await fetch(`${API_BASE}/ai/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ messages, crop, language, model }),
+    body: JSON.stringify({ messages, crop, language, model, diagnosis }),
   });
 
   const payload = await response.json().catch(() => ({}));
