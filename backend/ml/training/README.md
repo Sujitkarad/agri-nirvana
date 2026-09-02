@@ -1,6 +1,6 @@
 # Agri Nirvana model training
 
-This directory contains the real PyTorch training pipeline for the crop-disease classifier.
+This directory contains the real PyTorch training pipeline for the production crop-disease classifier.
 
 ## 1. Prepare the dataset
 
@@ -24,49 +24,47 @@ plant_disease/
 
 The same class names must exist in every split. Keep images from the same plant/field in one split. A random image-level split can leak near-duplicate images and make results look much better than real farm performance.
 
-If you only have an ImageFolder root (`class_name/*.jpg`), you can use `--split` to create a stratified 70/15/15 split. For a production claim, replace that test set with a genuinely field-separated test set.
+## 2. Train the production model
 
-## 2. Train
+The production path is **EfficientNetV2-L**. Training is intentionally GPU-oriented because the L variant is large.
 
 From the repository root:
 
 ```bash
-python -m backend.ml.training.train_pipeline \
+python -m backend.ml.training.train_pipeline_large \
   --data backend/ml/datasets/plant_disease \
-  --output backend/ml/models/weights/agri_nirvana_efficientnet_b0.pt \
-  --epochs 15 \
-  --batch-size 32
+  --output backend/ml/models/weights/agri_nirvana_efficientnet_v2_l.pt \
+  --epochs 100 \
+  --batch-size 8 \
+  --image-size 448
 ```
 
-If CUDA is available, the script automatically uses GPU and mixed precision.
-
-For an unsplit ImageFolder dataset:
-
-```bash
-python -m backend.ml.training.train_pipeline \
-  --data backend/ml/datasets/plant_disease \
-  --split
-```
+The pipeline uses CUDA automatically when available and enables mixed precision on CUDA. The production checkpoint is accepted by the inference engine only when it contains the expected EfficientNetV2-L architecture and metadata.
 
 ## 3. What the pipeline does
 
-- EfficientNet-B0 transfer learning from ImageNet
+- EfficientNetV2-L transfer learning from ImageNet
+- 448px training/evaluation input
 - Realistic crop-image augmentation
-- Class-balanced sampling
+- Class-balanced cross-entropy
 - Label smoothing
 - AdamW + cosine learning-rate schedule
+- Warmup and staged backbone unfreezing
 - Gradient clipping
 - Mixed precision on CUDA
-- Validation-loss early stopping
-- Held-out test evaluation
-- Accuracy, macro precision, macro recall, macro F1 and confusion matrix
-- Checkpoint with class mapping and preprocessing metadata
+- Validation Macro-F1 checkpoint selection
+- Validation-only temperature calibration
+- Held-out test evaluation after calibration
+- Accuracy, macro precision, macro recall, macro F1 and ECE
+- Checkpoint with class mapping and preprocessing/calibration metadata
 
-## 4. Important accuracy rule
+## 4. Accuracy and safety rules
 
-Do not put a claimed `94%` or similar accuracy into the product unless it was measured on a leakage-free, representative test set. The previous training file returned hard-coded placeholder metrics; this pipeline calculates metrics from the actual test predictions.
+Do not put a claimed accuracy into the product unless it was measured on a leakage-free, representative test set. Metrics must come from actual held-out predictions.
 
-For Agri Nirvana's real target, maintain a second **Indian field test set** containing images from farms, phones, different lighting, backgrounds and disease stages. Do not use that set during training or model selection.
+For Agri Nirvana's real target, maintain a separate **Indian field test set** containing images from farms, phones, different lighting, backgrounds and disease stages. Do not use that set during training or model selection.
+
+The production inference engine abstains when crop evidence, calibrated confidence, top-2 margin, entropy, image quality, plant validation or severity evidence is insufficient. An uncertain result must not produce disease-specific treatment instructions.
 
 ## 5. Deploying the trained model
 
