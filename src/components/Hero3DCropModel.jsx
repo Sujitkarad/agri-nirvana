@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 
+// WebGL Capability Detector
 function detectWebGL() {
   try {
     const canvas = document.createElement("canvas");
@@ -26,13 +27,7 @@ export default function Hero3DCropModel({ theme = "light" }) {
     let isMounted = true;
     let THREE;
     let scene, camera, renderer, animationFrameId;
-    let mainRig, plantGroup, cellularCoreGroup, spectralFieldGroup, auraRingsGroup, particleCloud;
-    let laserBeamPlane, groundHoloGrid, sunLight, pointGlow;
-    let isDragging = false;
-    let previousMousePosition = { x: 0, y: 0 };
-    let targetRotationX = 0.05;
-    let targetRotationY = 0;
-    let autoRotate = true;
+    let plantGroup, scanRingGroup, particleSystem, gridMesh;
 
     import("three").then((threeModule) => {
       if (!isMounted) return;
@@ -40,453 +35,253 @@ export default function Hero3DCropModel({ theme = "light" }) {
       const container = mountRef.current;
       if (!container) return;
 
-      const width = container.clientWidth || 440;
-      const height = container.clientHeight || 480;
+      const width = container.clientWidth || 360;
+      const height = container.clientHeight || 360;
 
-      // ── SCENE, CAMERA & RENDERER ──
       scene = new THREE.Scene();
-      camera = new THREE.PerspectiveCamera(36, width / height, 0.1, 1000);
-      camera.position.set(0, 0.5, 7.8);
+      camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+      camera.position.set(0, 0.6, 7.2);
 
-      renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: "high-performance" });
+      renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
       renderer.setSize(width, height);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = isDark ? 1.4 : 1.7;
 
       container.innerHTML = "";
       container.appendChild(renderer.domElement);
 
-      // ── 5D MULTI-SPECTRAL DYNAMIC LIGHTING RIG ──
+      // ── Lights ──────────────────────────────────────────────────────────
       const ambientLight = new THREE.AmbientLight(
-        isDark ? 0x064e3b : 0xf0fdf4,
-        isDark ? 1.6 : 2.2
+        isDark ? 0x064e3b : 0xdcfce7,
+        isDark ? 1.8 : 2.2
       );
       scene.add(ambientLight);
 
-      sunLight = new THREE.DirectionalLight(0x34d399, isDark ? 3.4 : 2.8);
-      sunLight.position.set(4, 9, 5);
-      scene.add(sunLight);
+      const dirLight = new THREE.DirectionalLight(
+        isDark ? 0xf59e0b : 0x10b981,
+        isDark ? 2.5 : 2.0
+      );
+      dirLight.position.set(5, 8, 5);
+      scene.add(dirLight);
 
-      const spectralFill = new THREE.DirectionalLight(0x06b6d4, isDark ? 2.2 : 1.4);
-      spectralFill.position.set(-5, 2, -4);
-      scene.add(spectralFill);
+      const backLight = new THREE.DirectionalLight(0x38bdf8, 1.4);
+      backLight.position.set(-5, -2, -4);
+      scene.add(backLight);
 
-      const goldEarLight = new THREE.PointLight(0xf59e0b, 3.2, 7);
-      goldEarLight.position.set(0, 2.4, 1.2);
-      scene.add(goldEarLight);
+      const scanLight = new THREE.PointLight(0x22d3ee, 2.2, 8);
+      scanLight.position.set(0, 1, 2);
+      scene.add(scanLight);
 
-      pointGlow = new THREE.PointLight(0x10b981, 4.0, 5);
-      pointGlow.position.set(0, -2.1, 0);
-      scene.add(pointGlow);
-
-      // ── ROOT RIG ──
-      mainRig = new THREE.Group();
-      scene.add(mainRig);
-
+      // ── Crop Plant Group (Wheat / Grain Stalk) ─────────────────────────
       plantGroup = new THREE.Group();
-      cellularCoreGroup = new THREE.Group();
-      spectralFieldGroup = new THREE.Group();
-      auraRingsGroup = new THREE.Group();
 
-      mainRig.add(plantGroup);
-      mainRig.add(cellularCoreGroup);
-      mainRig.add(spectralFieldGroup);
-      mainRig.add(auraRingsGroup);
-
-      // ── 1. LAYER A: PHYSICAL PLANT STEM & VASCULAR BUNDLES ──
-      const stemPoints = [
-        new THREE.Vector3(0, -2.1, 0),
-        new THREE.Vector3(0.04, -1.2, 0.02),
-        new THREE.Vector3(-0.03, -0.2, 0.01),
-        new THREE.Vector3(0.02, 0.9, -0.01),
-        new THREE.Vector3(0, 2.2, 0),
-      ];
-      const stemCurve = new THREE.CatmullRomCurve3(stemPoints);
-      const stemGeo = new THREE.TubeGeometry(stemCurve, 36, 0.058, 14, false);
       const stemMat = new THREE.MeshStandardMaterial({
-        color: isDark ? 0x059669 : 0x15803d,
-        roughness: 0.28,
-        metalness: 0.12,
-        emissive: isDark ? 0x064e3b : 0x059669,
-        emissiveIntensity: isDark ? 0.35 : 0.15,
+        color: isDark ? 0x10b981 : 0x16a34a,
+        roughness: 0.4,
+        metalness: 0.1,
+        flatShading: true
       });
+      const stemGeo = new THREE.CylinderGeometry(0.06, 0.09, 3.2, 8);
       const stemMesh = new THREE.Mesh(stemGeo, stemMat);
+      stemMesh.position.y = -0.5;
       plantGroup.add(stemMesh);
 
-      // Node rings (vascular nodes)
-      [-1.4, -0.6, 0.2, 1.0, 1.8].forEach((h) => {
-        const knotGeo = new THREE.TorusGeometry(0.066, 0.018, 8, 20);
-        const knotMesh = new THREE.Mesh(knotGeo, stemMat);
-        knotMesh.rotation.x = Math.PI / 2;
-        knotMesh.position.y = h;
-        plantGroup.add(knotMesh);
-      });
-
-      // ── 2. LAYER A: HIGH-PRECISION BIO-ORGANIC ARCHED LEAVES ──
-      function createParametricLeaf(length, maxWidth, arch, twist) {
-        const segU = 20;
-        const segV = 8;
-        const pos = [];
-        const uvs = [];
-        const indices = [];
-
-        for (let i = 0; i <= segU; i++) {
-          const t = i / segU;
-          const spineX = Math.sin(t * Math.PI * 0.55) * length * 0.72;
-          const spineY = (t - Math.pow(t, 2.2) * arch) * length;
-          const spineZ = Math.sin(t * Math.PI) * twist * 0.18;
-          const wFactor = Math.sin(t * Math.PI) * (1 - t * 0.28);
-          const currentW = maxWidth * wFactor;
-
-          for (let j = 0; j <= segV; j++) {
-            const v = j / segV - 0.5;
-            const ribDip = Math.abs(v) * 0.09 * currentW;
-            pos.push(spineX, spineY - ribDip, spineZ + v * currentW);
-            uvs.push(t, j / segV);
-          }
-        }
-
-        for (let i = 0; i < segU; i++) {
-          for (let j = 0; j < segV; j++) {
-            const a = i * (segV + 1) + j;
-            const b = (i + 1) * (segV + 1) + j;
-            const c = (i + 1) * (segV + 1) + (j + 1);
-            const d = i * (segV + 1) + (j + 1);
-            indices.push(a, b, d);
-            indices.push(b, c, d);
-          }
-        }
-
-        const geo = new THREE.BufferGeometry();
-        geo.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
-        geo.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
-        geo.setIndex(indices);
-        geo.computeVertexNormals();
-        return geo;
-      }
-
-      const leafMatHealthy = new THREE.MeshStandardMaterial({
-        color: isDark ? 0x10b981 : 0x16a34a,
-        roughness: 0.22,
-        metalness: 0.06,
-        side: THREE.DoubleSide,
-      });
-
-      const leafMatGlow = new THREE.MeshStandardMaterial({
+      const leafMat = new THREE.MeshStandardMaterial({
         color: isDark ? 0x34d399 : 0x22c55e,
-        roughness: 0.18,
-        metalness: 0.1,
-        emissive: isDark ? 0x059669 : 0x10b981,
-        emissiveIntensity: isDark ? 0.35 : 0.12,
-        side: THREE.DoubleSide,
+        roughness: 0.3,
+        flatShading: true
       });
-
-      const leafConfigs = [
-        { y: -1.3, angle: 0, len: 1.6, w: 0.38, arch: 1.15, twist: 0.2 },
-        { y: -0.9, angle: Math.PI * 0.65, len: 1.8, w: 0.42, arch: 1.25, twist: -0.28 },
-        { y: -0.4, angle: Math.PI * 1.35, len: 1.7, w: 0.40, arch: 1.20, twist: 0.22 },
-        { y: 0.1, angle: Math.PI * 0.2, len: 1.85, w: 0.44, arch: 1.30, twist: -0.18 },
-        { y: 0.6, angle: Math.PI * 0.9, len: 1.5, w: 0.35, arch: 1.10, twist: 0.25 },
-        { y: 1.1, angle: Math.PI * 1.6, len: 1.3, w: 0.30, arch: 0.95, twist: -0.15 },
-      ];
-
-      leafConfigs.forEach((cfg, idx) => {
-        const lGeo = createParametricLeaf(cfg.len, cfg.w, cfg.arch, cfg.twist);
-        const lMesh = new THREE.Mesh(lGeo, idx % 2 === 0 ? leafMatHealthy : leafMatGlow);
-        lMesh.position.set(0, cfg.y, 0);
-        lMesh.rotation.y = cfg.angle;
-        plantGroup.add(lMesh);
-      });
-
-      // ── 3. LAYER A: GOLDEN WHEAT/GRAIN HEAD WITH AWN BRISTLES ──
-      const earGroup = new THREE.Group();
-      earGroup.position.set(0, 1.85, 0);
+      for (let i = 0; i < 4; i++) {
+        const leafGeo = new THREE.ConeGeometry(0.35, 1.4, 5);
+        const leafMesh = new THREE.Mesh(leafGeo, leafMat);
+        leafMesh.scale.set(1, 1, 0.15);
+        leafMesh.position.set(
+          Math.sin((i * Math.PI) / 2) * 0.3,
+          -1.0 + i * 0.4,
+          Math.cos((i * Math.PI) / 2) * 0.3
+        );
+        leafMesh.rotation.z = (Math.PI / 4) * (i % 2 === 0 ? 1 : -1);
+        leafMesh.rotation.y = (i * Math.PI) / 2;
+        plantGroup.add(leafMesh);
+      }
 
       const grainMat = new THREE.MeshStandardMaterial({
-        color: 0xf59e0b,
-        roughness: 0.15,
-        metalness: 0.3,
+        color: isDark ? 0xf59e0b : 0xeab308,
+        roughness: 0.2,
+        metalness: 0.2,
+        flatShading: true
       });
-
-      const ripeGlowMat = new THREE.MeshStandardMaterial({
-        color: 0xfbbf24,
-        roughness: 0.1,
-        metalness: 0.45,
-        emissive: 0xf59e0b,
-        emissiveIntensity: 0.4,
-      });
-
-      const awnMat = new THREE.LineBasicMaterial({
-        color: isDark ? 0xfcd34d : 0xb45309,
-        transparent: true,
-        opacity: isDark ? 0.7 : 0.45,
-      });
-
-      const spikeletCount = 28;
-      for (let i = 0; i < spikeletCount; i++) {
-        const t = i / spikeletCount;
-        const angle = i * 2.39996;
-        const radius = (1 - t * 0.38) * 0.17;
-        const y = t * 1.6;
-
-        const grainScale = 0.082 * (1 - t * 0.2);
-        const grainGeo = new THREE.SphereGeometry(grainScale, 10, 8);
-        grainGeo.scale(1.0, 1.7, 0.8);
-        const grain = new THREE.Mesh(grainGeo, i < 7 ? ripeGlowMat : grainMat);
-
-        const gx = Math.cos(angle) * radius;
-        const gz = Math.sin(angle) * radius;
-        grain.position.set(gx, y, gz);
-        grain.rotation.y = angle;
-        grain.rotation.z = Math.cos(angle) * 0.38;
-        grain.rotation.x = Math.sin(angle) * 0.38;
-        earGroup.add(grain);
-
-        const awnCurve = new THREE.LineCurve3(
-          new THREE.Vector3(gx, y + 0.05, gz),
-          new THREE.Vector3(gx * 2.7, y + 0.4 + t * 0.22, gz * 2.7)
+      const grainCount = 18;
+      for (let g = 0; g < grainCount; g++) {
+        const grainGeo = new THREE.ConeGeometry(0.12, 0.4, 5);
+        const grainMesh = new THREE.Mesh(grainGeo, grainMat);
+        const angle = g * 0.7;
+        const radius = 0.18;
+        const yPos = 0.4 + g * 0.08;
+        grainMesh.position.set(
+          Math.cos(angle) * radius,
+          yPos,
+          Math.sin(angle) * radius
         );
-        const awnGeo = new THREE.BufferGeometry().setFromPoints(awnCurve.getPoints(4));
-        const awnLine = new THREE.Line(awnGeo, awnMat);
-        earGroup.add(awnLine);
+        grainMesh.rotation.z = Math.cos(angle) * 0.5;
+        grainMesh.rotation.x = Math.sin(angle) * 0.5;
+        plantGroup.add(grainMesh);
       }
-      plantGroup.add(earGroup);
 
-      // ── 4. LAYER B: 5D CELLULAR & CHLOROPHYLL LATTICE (X-Ray Mode) ──
-      // Internal DNA-like cellular helical nodes inside the plant stem
-      const helixPoints1 = [];
-      const helixPoints2 = [];
-      for (let i = -2.0; i <= 2.1; i += 0.08) {
-        const a = i * 4.5;
-        helixPoints1.push(new THREE.Vector3(Math.cos(a) * 0.09, i, Math.sin(a) * 0.09));
-        helixPoints2.push(new THREE.Vector3(Math.cos(a + Math.PI) * 0.09, i, Math.sin(a + Math.PI) * 0.09));
+      scene.add(plantGroup);
+
+      // ── Holographic AI-Scan Grid (floor) ───────────────────────────────
+      const gridSize = 4.2;
+      const gridDivisions = 14;
+      gridMesh = new THREE.GridHelper(
+        gridSize,
+        gridDivisions,
+        isDark ? 0x22d3ee : 0x0ea5e9,
+        isDark ? 0x0e7490 : 0x67e8f9
+      );
+      gridMesh.position.y = -2.15;
+      gridMesh.material.transparent = true;
+      gridMesh.material.opacity = 0.45;
+      scene.add(gridMesh);
+
+      // Ground aura ring pedestal
+      const ringGeo = new THREE.RingGeometry(0.8, 1.0, 32);
+      const ringMat = new THREE.MeshBasicMaterial({
+        color: isDark ? 0x10b981 : 0x059669,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.4
+      });
+      const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+      ringMesh.rotation.x = Math.PI / 2;
+      ringMesh.position.y = -2.1;
+      plantGroup.add(ringMesh);
+
+      // ── Vertical AI-Diagnostic Scan Rings ──────────────────────────────
+      scanRingGroup = new THREE.Group();
+      const scanRingCount = 3;
+      const scanRingMeshes = [];
+      for (let s = 0; s < scanRingCount; s++) {
+        const sRingGeo = new THREE.TorusGeometry(1.35, 0.012, 8, 48);
+        const sRingMat = new THREE.MeshBasicMaterial({
+          color: 0x22d3ee,
+          transparent: true,
+          opacity: 0.55
+        });
+        const sRingMesh = new THREE.Mesh(sRingGeo, sRingMat);
+        sRingMesh.rotation.x = Math.PI / 2;
+        sRingMesh.position.y = -2.0;
+        scanRingGroup.add(sRingMesh);
+        scanRingMeshes.push(sRingMesh);
       }
-      const helixMat = new THREE.LineBasicMaterial({
-        color: 0x38bdf8,
+      scene.add(scanRingGroup);
+
+      // ── Orbiting Telemetry Data-Particle Layer ─────────────────────────
+      const particleCount = 90;
+      const positions = new Float32Array(particleCount * 3);
+      const particleData = [];
+      for (let p = 0; p < particleCount; p++) {
+        const radius = 1.6 + Math.random() * 1.4;
+        const theta = Math.random() * Math.PI * 2;
+        const yOff = (Math.random() - 0.5) * 3.2;
+        positions[p * 3] = Math.cos(theta) * radius;
+        positions[p * 3 + 1] = yOff;
+        positions[p * 3 + 2] = Math.sin(theta) * radius;
+        particleData.push({ radius, theta, yOff, speed: 0.15 + Math.random() * 0.35 });
+      }
+      const particleGeo = new THREE.BufferGeometry();
+      particleGeo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+      const particleMat = new THREE.PointsMaterial({
+        color: isDark ? 0x67e8f9 : 0x0ea5e9,
+        size: 0.045,
         transparent: true,
         opacity: 0.85,
-        linewidth: 2,
+        sizeAttenuation: true
       });
-      const hLine1 = new THREE.Line(new THREE.BufferGeometry().setFromPoints(helixPoints1), helixMat);
-      const hLine2 = new THREE.Line(new THREE.BufferGeometry().setFromPoints(helixPoints2), helixMat);
-      cellularCoreGroup.add(hLine1);
-      cellularCoreGroup.add(hLine2);
+      particleSystem = new THREE.Points(particleGeo, particleMat);
+      scene.add(particleSystem);
 
-      // Cellular Chloroplast Orbs floating inside nodes
-      for (let i = -1.8; i <= 2.0; i += 0.4) {
-        const orbGeo = new THREE.IcosahedronGeometry(0.065, 1);
-        const orbMat = new THREE.MeshBasicMaterial({
-          color: 0x06b6d4,
-          wireframe: true,
-          transparent: true,
-          opacity: 0.75,
-        });
-        const orbMesh = new THREE.Mesh(orbGeo, orbMat);
-        orbMesh.position.y = i;
-        cellularCoreGroup.add(orbMesh);
-      }
-
-      // ── 5. LAYER C: 5D SPECTRAL ENERGY FIELD (NDVI / Thermal Aura) ──
-      const auraShellGeo = new THREE.CylinderGeometry(0.7, 1.4, 4.2, 24, 8, true);
-      const auraShellMat = new THREE.MeshBasicMaterial({
-        color: isDark ? 0x10b981 : 0x0284c7,
-        wireframe: true,
-        transparent: true,
-        opacity: 0.18,
-        side: THREE.DoubleSide,
-      });
-      const auraShell = new THREE.Mesh(auraShellGeo, auraShellMat);
-      auraShell.position.y = 0.1;
-      spectralFieldGroup.add(auraShell);
-
-      // ── 6. 5D LASER DIAGNOSTIC SCANNER BEAM ──
-      const beamGeo = new THREE.RingGeometry(0.2, 1.9, 48);
-      const beamMat = new THREE.MeshBasicMaterial({
-        color: 0x22d3ee,
-        side: THREE.DoubleSide,
-        transparent: true,
-        opacity: 0.45,
-      });
-      laserBeamPlane = new THREE.Mesh(beamGeo, beamMat);
-      laserBeamPlane.rotation.x = Math.PI / 2;
-      laserBeamPlane.position.y = 0;
-      mainRig.add(laserBeamPlane);
-
-      // ── 7. HOLOGRAPHIC BIO-BASE PLATFORM WITH HUD GRID ──
-      auraRingsGroup.position.set(0, -2.15, 0);
-
-      const baseDiscGeo = new THREE.CylinderGeometry(1.45, 1.6, 0.08, 64);
-      const baseDiscMat = new THREE.MeshStandardMaterial({
-        color: isDark ? 0x032114 : 0xe2e8f0,
-        roughness: 0.2,
-        metalness: 0.8,
-        emissive: isDark ? 0x064e3b : 0x059669,
-        emissiveIntensity: isDark ? 0.4 : 0.1,
-      });
-      const baseDisc = new THREE.Mesh(baseDiscGeo, baseDiscMat);
-      auraRingsGroup.add(baseDisc);
-
-      // Radar / telemetry rings
-      function createRing(r1, r2, col, op) {
-        const rGeo = new THREE.RingGeometry(r1, r2, 64);
-        const rMat = new THREE.MeshBasicMaterial({
-          color: col,
-          side: THREE.DoubleSide,
-          transparent: true,
-          opacity: op,
-        });
-        const rm = new THREE.Mesh(rGeo, rMat);
-        rm.rotation.x = Math.PI / 2;
-        rm.position.y = 0.045;
-        return rm;
-      }
-      const ring1 = createRing(1.2, 1.32, 0x10b981, 0.6);
-      const ring2 = createRing(1.7, 1.82, 0x06b6d4, 0.35);
-      const ring3 = createRing(2.3, 2.38, 0x34d399, 0.2);
-      auraRingsGroup.add(ring1);
-      auraRingsGroup.add(ring2);
-      auraRingsGroup.add(ring3);
-
-      // ── 8. QUANTUM SPORE / BIO-PARTICLE CLOUD ──
-      const pCount = 90;
-      const pPositions = new Float32Array(pCount * 3);
-      const pVelocities = [];
-
-      for (let i = 0; i < pCount; i++) {
-        const r = 0.7 + Math.random() * 2.3;
+      // Amber "signal ping" particles
+      const pingCount = 14;
+      const pingPositions = new Float32Array(pingCount * 3);
+      const pingData = [];
+      for (let p = 0; p < pingCount; p++) {
+        const radius = 2.0 + Math.random() * 0.6;
         const theta = Math.random() * Math.PI * 2;
-        const y = -1.8 + Math.random() * 5.0;
-        pPositions[i * 3] = Math.cos(theta) * r;
-        pPositions[i * 3 + 1] = y;
-        pPositions[i * 3 + 2] = Math.sin(theta) * r;
-        pVelocities.push({
-          angle: theta,
-          speed: 0.12 + Math.random() * 0.2,
-          radius: r,
-          yOffset: y,
-          bobSpeed: 0.8 + Math.random() * 1.6,
-        });
+        const yOff = (Math.random() - 0.5) * 2.2;
+        pingPositions[p * 3] = Math.cos(theta) * radius;
+        pingPositions[p * 3 + 1] = yOff;
+        pingPositions[p * 3 + 2] = Math.sin(theta) * radius;
+        pingData.push({ radius, theta, yOff, speed: 0.25 + Math.random() * 0.3 });
       }
-
-      const pGeo = new THREE.BufferGeometry();
-      pGeo.setAttribute("position", new THREE.BufferAttribute(pPositions, 3));
-      const pMat = new THREE.PointsMaterial({
-        color: isDark ? 0x6ee7b7 : 0x059669,
-        size: 0.058,
+      const pingGeo = new THREE.BufferGeometry();
+      pingGeo.setAttribute("position", new THREE.BufferAttribute(pingPositions, 3));
+      const pingMat = new THREE.PointsMaterial({
+        color: 0xf59e0b,
+        size: 0.07,
         transparent: true,
-        opacity: isDark ? 0.85 : 0.6,
+        opacity: 0.9,
+        sizeAttenuation: true
       });
-      particleCloud = new THREE.Points(pGeo, pMat);
-      mainRig.add(particleCloud);
+      const pingSystem = new THREE.Points(pingGeo, pingMat);
+      scene.add(pingSystem);
 
-      // ── INTERACTIVE MOUSE / TOUCH POINTER CONTROLS ──
-      const dom = renderer.domElement;
-
-      const onPointerDown = (e) => {
-        isDragging = true;
-        autoRotate = false;
-        previousMousePosition = {
-          x: e.clientX || (e.touches && e.touches[0].clientX) || 0,
-          y: e.clientY || (e.touches && e.touches[0].clientY) || 0,
-        };
-      };
-
-      const onPointerMove = (e) => {
-        const clientX = e.clientX || (e.touches && e.touches[0].clientX) || 0;
-        const clientY = e.clientY || (e.touches && e.touches[0].clientY) || 0;
-
-        if (isDragging) {
-          const deltaX = clientX - previousMousePosition.x;
-          const deltaY = clientY - previousMousePosition.y;
-
-          targetRotationY += deltaX * 0.01;
-          targetRotationX = Math.max(-0.4, Math.min(0.45, targetRotationX + deltaY * 0.008));
-          previousMousePosition = { x: clientX, y: clientY };
-        } else {
-          const rect = dom.getBoundingClientRect();
-          const normX = ((clientX - rect.left) / rect.width - 0.5) * 2;
-          const normY = ((clientY - rect.top) / rect.height - 0.5) * 2;
-          targetRotationX = -normY * 0.18;
-          targetRotationY = normX * 0.3;
-        }
-      };
-
-      const onPointerUp = () => {
-        isDragging = false;
-        setTimeout(() => { autoRotate = true; }, 2500);
-      };
-
-      dom.addEventListener("mousedown", onPointerDown);
-      window.addEventListener("mousemove", onPointerMove);
-      window.addEventListener("mouseup", onPointerUp);
-
-      dom.addEventListener("touchstart", onPointerDown, { passive: true });
-      window.addEventListener("touchmove", onPointerMove, { passive: true });
-      window.addEventListener("touchend", onPointerUp);
-
-      // ── 5D TEMPORAL TICK & DYNAMIC LAYER DISPATCH ──
-      const clock = new THREE.Clock();
+      // ── Render Loop ─────────────────────────────────────────────────────
+      let clock = new THREE.Clock();
       const animate = () => {
         animationFrameId = requestAnimationFrame(animate);
-        const elapsed = clock.getElapsedTime();
+        const elapsedTime = clock.getElapsedTime();
 
-        // Auto-rotation & smooth drag damping
-        if (autoRotate) {
-          targetRotationY += 0.0065;
+        if (plantGroup) {
+          plantGroup.rotation.y = elapsedTime * 0.6;
+          plantGroup.position.y = Math.sin(elapsedTime * 1.5) * 0.12;
         }
-        mainRig.rotation.y += (targetRotationY - mainRig.rotation.y) * 0.06;
-        mainRig.rotation.x += (targetRotationX - mainRig.rotation.x) * 0.06;
 
-        // Dynamic 5D Composite: all visual layers active
-        plantGroup.visible = true;
-        cellularCoreGroup.visible = true;
-        spectralFieldGroup.visible = true;
-
-        // 5D Scanning Laser Beam Sweep
-        laserBeamPlane.visible = true;
-        const scanY = Math.sin(elapsed * 2.2) * 1.8;
-        laserBeamPlane.position.y = scanY;
-        laserBeamPlane.material.opacity = 0.25 + Math.abs(Math.cos(elapsed * 4.0)) * 0.35;
-
-        // Plant gentle bio-breathing float
-        plantGroup.position.y = Math.sin(elapsed * 1.5) * 0.07;
-        cellularCoreGroup.position.y = plantGroup.position.y;
-
-        // Animate aura rings & telemetry
-        ring1.scale.setScalar(1 + Math.sin(elapsed * 2.5) * 0.04);
-        ring2.rotation.z = elapsed * 0.3;
-        ring3.rotation.z = -elapsed * 0.2;
-
-        // Cellular helix spin
-        hLine1.rotation.y = elapsed * 0.8;
-        hLine2.rotation.y = elapsed * 0.8;
-
-        // Spectral shell breathing
-        auraShell.rotation.y = -elapsed * 0.4;
-        auraShell.scale.set(
-          1 + Math.sin(elapsed * 1.8) * 0.05,
-          1,
-          1 + Math.sin(elapsed * 1.8) * 0.05
-        );
-
-        // Pulse ground glow
-        pointGlow.intensity = (isDark ? 3.8 : 2.2) + Math.sin(elapsed * 2.5) * 0.9;
-
-        // Animate Spore Particles
-        const pArr = pGeo.attributes.position.array;
-        for (let i = 0; i < pCount; i++) {
-          const v = pVelocities[i];
-          v.angle += v.speed * 0.007;
-          pArr[i * 3] = Math.cos(v.angle) * v.radius;
-          pArr[i * 3 + 2] = Math.sin(v.angle) * v.radius;
-          pArr[i * 3 + 1] = v.yOffset + Math.sin(elapsed * v.bobSpeed) * 0.18;
+        if (gridMesh) {
+          gridMesh.rotation.y = elapsedTime * 0.05;
         }
-        pGeo.attributes.position.needsUpdate = true;
+
+        if (scanRingGroup) {
+          scanRingMeshes.forEach((ring, i) => {
+            const cycle = (elapsedTime * 0.5 + i * 0.6) % 2.6;
+            ring.position.y = -2.0 + cycle * 1.9;
+            const fade = 1 - Math.min(cycle / 2.6, 1);
+            ring.material.opacity = 0.6 * fade;
+            const scale = 1 + cycle * 0.08;
+            ring.scale.set(scale, scale, scale);
+          });
+        }
+
+        if (particleSystem) {
+          const posAttr = particleSystem.geometry.attributes.position;
+          for (let p = 0; p < particleData.length; p++) {
+            const d = particleData[p];
+            d.theta += d.speed * 0.01;
+            posAttr.array[p * 3] = Math.cos(d.theta) * d.radius;
+            posAttr.array[p * 3 + 2] = Math.sin(d.theta) * d.radius;
+          }
+          posAttr.needsUpdate = true;
+          particleSystem.rotation.y = -elapsedTime * 0.03;
+        }
+
+        if (pingSystem) {
+          const posAttr = pingSystem.geometry.attributes.position;
+          for (let p = 0; p < pingData.length; p++) {
+            const d = pingData[p];
+            d.theta += d.speed * 0.012;
+            posAttr.array[p * 3] = Math.cos(d.theta) * d.radius;
+            posAttr.array[p * 3 + 2] = Math.sin(d.theta) * d.radius;
+            posAttr.array[p * 3 + 1] = d.yOff + Math.sin(elapsedTime * 2 + p) * 0.15;
+          }
+          posAttr.needsUpdate = true;
+        }
+
+        if (scanLight) {
+          scanLight.position.x = Math.sin(elapsedTime * 0.8) * 2;
+          scanLight.position.z = Math.cos(elapsedTime * 0.8) * 2;
+        }
 
         renderer.render(scene, camera);
       };
-
       animate();
     }).catch(() => {
       setWebglSupported(false);
@@ -497,43 +292,35 @@ export default function Hero3DCropModel({ theme = "light" }) {
       if (animationFrameId) cancelAnimationFrame(animationFrameId);
       if (renderer) {
         renderer.dispose();
-        if (renderer.domElement?.parentElement) {
+        if (renderer.domElement && renderer.domElement.parentElement) {
           renderer.domElement.parentElement.removeChild(renderer.domElement);
         }
       }
     };
   }, [theme]);
 
+  // 2D Static / CSS Animated Fallback for low-end devices without WebGL
   if (!webglSupported) {
     return (
-      <div className={`relative flex h-full w-full items-center justify-center p-8 ${isDark ? "bg-[#040f08]" : "bg-emerald-50"}`}>
-        <div className="relative flex flex-col items-center gap-4">
-          <div className={`h-32 w-32 rounded-full border-2 flex items-center justify-center animate-pulse ${isDark ? "border-emerald-500/40 bg-emerald-900/30 shadow-[0_0_40px_#10b981]" : "border-emerald-300 bg-emerald-100"}`}>
-            <span className="text-5xl">🌾</span>
+      <div className="relative flex h-72 w-72 items-center justify-center rounded-3xl border border-cyan-500/30 bg-emerald-950/20 p-6 text-center shadow-xl backdrop-blur-md">
+        <div className="relative flex flex-col items-center">
+          <div className="h-28 w-28 rounded-full bg-emerald-500/20 border border-cyan-400/40 flex items-center justify-center animate-pulse shadow-[0_0_30px_#22d3ee]">
+            <span className="text-4xl">🌾</span>
           </div>
-          <div className={`text-xs font-mono font-bold ${isDark ? "text-emerald-400" : "text-emerald-700"}`}>Agri Nirvana · 5D Precision Crop AI</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="relative w-full h-full flex items-center justify-center select-none">
-      {/* Radial soft backdrop glow */}
+    <div className="relative flex h-full w-full items-center justify-center">
+      {/* Glow Halo behind 5D Model */}
       <div
-        className={`absolute inset-0 pointer-events-none transition-colors duration-500 ${
-          isDark
-            ? "bg-[radial-gradient(circle_at_50%_55%,rgba(16,185,129,0.22),transparent_72%)]"
-            : "bg-[radial-gradient(circle_at_50%_55%,rgba(74,222,128,0.25),transparent_72%)]"
+        className={`absolute h-64 w-64 rounded-full blur-3xl transition-colors duration-500 ${
+          isDark ? "bg-cyan-500/20" : "bg-emerald-400/25"
         }`}
       />
-
-      {/* Pure 3D Canvas Mount Point */}
-      <div
-        ref={mountRef}
-        className="w-full h-full cursor-grab active:cursor-grabbing"
-        style={{ minHeight: "470px" }}
-      />
+      <div ref={mountRef} className="relative h-full w-full cursor-grab active:cursor-grabbing" />
     </div>
   );
 }
