@@ -70,6 +70,11 @@ jobs:
           if total == 0:
               raise SystemExit('Dataset is empty')
           PY
+      - name: Audit dataset leakage and support
+        run: |
+          python -m backend.ml.training.audit_dataset \
+            --data backend/ml/datasets/plant_disease \
+            --min-per-class 5
       - name: Train EfficientNetV2-S
         run: |
           python -m backend.ml.training.train_pipeline \
@@ -82,7 +87,7 @@ jobs:
             --freeze-epochs 5 \
             --patience 12 \
             --workers 2
-      - name: Verify trained checkpoint
+      - name: Verify trained checkpoint and quality
         run: |
           test -s backend/ml/models/weights/agri_nirvana_efficientnet_v2_s.pt
           test -s backend/ml/models/weights/agri_nirvana_efficientnet_v2_s.json
@@ -92,10 +97,19 @@ jobs:
           p='backend/ml/models/weights/agri_nirvana_efficientnet_v2_s.json'
           d=json.load(open(p, encoding='utf-8'))
           assert d.get('architecture') == 'efficientnet_v2_s', d.get('architecture')
+          assert int(d.get('image_size', 0)) == 384, d.get('image_size')
+          metrics=d.get('metrics', {})
+          macro_f1=float(metrics.get('macro_f1', 0.0))
+          ece=float(metrics.get('expected_calibration_error', 1.0))
+          assert macro_f1 >= 0.70, f'Macro-F1 quality gate failed: {macro_f1:.4f} < 0.70'
+          assert ece <= 0.15, f'Calibration quality gate failed: ECE {ece:.4f} > 0.15'
           print('Architecture:', d.get('architecture'))
           print('Image size:', d.get('image_size'))
+          print('Classes:', d.get('num_classes'))
           print('Best epoch:', d.get('best_epoch'))
-          print(json.dumps(d.get('metrics', {}), indent=2))
+          print('Macro-F1:', macro_f1)
+          print('ECE:', ece)
+          print(json.dumps(metrics, indent=2))
           print(json.dumps(d.get('calibration', {}), indent=2))
           PY
       - name: Upload trained model artifact
