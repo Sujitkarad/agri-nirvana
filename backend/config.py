@@ -5,20 +5,20 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Agri Nirvana - Crop AI Health Diagnostic API"
-    VERSION: str = "4.0.0"
+    VERSION: str = "4.2.0"
     API_V1_STR: str = "/api/v1"
 
     AI_MODEL_PROVIDER: str = "real"
     AI_CONFIDENCE_THRESHOLD: float = Field(default=0.45, ge=0.35, le=0.95)
     AI_MIN_TOP2_MARGIN: float = Field(default=0.02, ge=0.0, le=0.50)
     AI_MAX_NORMALIZED_ENTROPY: float = Field(default=0.90, ge=0.0, le=1.0)
-    # Production checkpoint. The runtime checks this path first and only then
-    # falls back to the Hugging Face baseline when explicitly unavailable.
-    LOCAL_TRAINED_MODEL_PATH: str = "backend/ml/models/weights/agri_nirvana_efficientnet_v2_s.pt"
-    HF_MODEL_ID: str = "linkanjarad/mobilenet_v2_1.0_224-plant-disease-identification"
+    AI_MIN_CROP_PROBABILITY_MASS: float = Field(default=0.45, ge=0.0, le=1.0)
+    AI_REQUIRE_LOCAL_CHECKPOINT: bool = True
 
-    AI_CHAT_MODEL: str = "openai/gpt-oss-120b:fastest"
-    AI_CHAT_ALLOWED_MODELS: str = "openai/gpt-oss-120b:fastest,deepseek-ai/DeepSeek-V3-0324:fastest,Qwen/Qwen2.5-7B-Instruct-1M:fastest"
+    LOCAL_TRAINED_MODEL_PATH: str = "backend/ml/models/weights/agri_nirvana_efficientnet_v2_l.pt"
+
+    AI_CHAT_MODEL: str = "gpt-5.6-luna"
+    AI_CHAT_ALLOWED_MODELS: str = "gpt-5.6-luna,gpt-5.6-terra,gpt-5.6-sol"
 
     MAX_IMAGE_SIZE_MB: int = Field(default=10, ge=1, le=25)
     ALLOWED_EXTENSIONS: set[str] = {"jpg", "jpeg", "png", "webp"}
@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     GEMINI_RATE_LIMIT_PER_MINUTE: int = 15
     GEMINI_MODEL: str = "gemini-1.5-flash"
 
-    JWT_SECRET: str = "agri-nirvana-jwt-production-secret-2026"
+    JWT_SECRET: str = ""
     JWT_ALGORITHM: str = "HS256"
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7
 

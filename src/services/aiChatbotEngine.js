@@ -1,14 +1,12 @@
-/**
- * AI Chatbot Engine for Agri Nirvana
- * Simulates advanced LLM architectures (DeepSeek-R1, Mistral-7B, LLaMA-3.3, Kisan-AI Dr.)
- * with conversational memory, chain-of-thought reasoning, and precision agronomic intelligence.
- */
-
-import { KAGGLE_VEGETABLE_PRICES, MANDI_PRICES_FEED, CROPS_CONFIG } from "../data/agriData";
 import { sendAgriAIChat } from "../lib/aiChat";
 
-// Conversational context storage
 let conversationHistory = [];
+
+const DEFAULT_FOLLOW_UPS = [
+  "Explain this in simple language",
+  "What information do you need from my field?",
+  "What should I check next?"
+];
 
 export function clearConversationHistory() {
   conversationHistory = [];
@@ -18,100 +16,45 @@ export function getConversationHistory() {
   return [...conversationHistory];
 }
 
-/**
- * Generates an intelligent, multi-turn AI response with chain-of-thought reasoning,
- * structured markdown formatting, data tables, and dynamic follow-up prompt chips.
- */
 export async function generateAIChatResponse({
   userPrompt = "",
   attachments = [],
-  selectedModel = "Mistral-7B",
-  userLang = "en"
+  selectedModel,
+  userLang = "en",
+  crop = "Unknown",
+  diagnosis = null
 }) {
-  const promptTrimmed = userPrompt.trim();
-  const promptLower = promptTrimmed.toLowerCase();
-
-  // Record user message in history
-  conversationHistory.push({
-    role: "user",
-    content: promptTrimmed,
-    attachments: attachments.map(a => a.name),
-    timestamp: new Date().toISOString()
-  });
-
-  // Keep last 10 messages in memory
-  if (conversationHistory.length > 10) {
-    conversationHistory = conversationHistory.slice(-10);
+  const prompt = String(userPrompt || "").trim();
+  if (!prompt && attachments.length === 0) {
+    throw new Error("Please enter a question or attach a crop image.");
   }
 
-  // Model-specific latency simulation
-  const latencyMap = {
-    "DeepSeek-R1": "112ms · 78 tokens/s",
-    "Mistral-7B": "34ms · 125 tokens/s",
-    "Llama-3.2": "42ms · 110 tokens/s",
-    "Zephyr-7B": "48ms · 95 tokens/s",
-    "Kisan-Dr": "38ms · 120 tokens/s"
-  };
-  const latency = latencyMap[selectedModel] || "45ms · 105 tokens/s";
+  const userContent = prompt || "I attached a crop image. Help me understand what I should do next.";
+  const attachmentContext = attachments.length
+    ? `\nAttached files: ${attachments.map((file) => file.name || "image").join(", ")}. Use the Crop Diagnosis feature for actual image diagnosis.`
+    : "";
 
-  // If no image attachment, attempt calling real backend API if reachable
-  if (attachments.length === 0 && promptTrimmed) {
-    try {
-      const chatMessages = conversationHistory
-        .filter((msg) => msg.role === "user" || msg.role === "assistant")
-        .map((msg) => ({
-          role: msg.role,
-          content: msg.content
-        }));
+  const nextHistory = [
+    ...conversationHistory,
+    { role: "user", content: `${userContent}${attachmentContext}` }
+  ].slice(-12);
 
-      const liveResponse = await Promise.race([
-        sendAgriAIChat({
-          messages: chatMessages,
-          crop: "General Agronomy",
-          language: userLang
-        }),
-        new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 4000))
-      ]);
-
-      if (liveResponse && liveResponse.success && liveResponse.message) {
-        conversationHistory.push({
-          role: "assistant",
-          content: liveResponse.message,
-          model: liveResponse.model || selectedModel,
-          timestamp: new Date().toISOString()
-        });
-
-        return {
-          text: liveResponse.message,
-          source: liveResponse.provider || `${selectedModel} Live Neural Engine`,
-          reasoning: `Server-side neural inference executed via ${liveResponse.model || selectedModel}.`,
-          latency,
-          tableData: null,
-          suggestedFollowUps: [
-            "Calculate fertilizer dosage for my field",
-            "Show organic bio-pesticide alternatives",
-            "What are today's APMC mandi prices?"
-          ]
-        };
-      }
-    } catch (_) {
-      // Graceful fallback to offline precision agronomic synthesis
-    }
-  }
-
-  // Simulate network thinking delay
-  await new Promise((resolve) => setTimeout(resolve, 600 + Math.random() * 500));
-
-  // Determine intent & generate response
-  const responseData = synthesizeAgronomicAIResponse(promptLower, promptTrimmed, attachments, selectedModel, userLang);
-
-  // Record assistant message in history
-  conversationHistory.push({
-    role: "assistant",
-    content: responseData.text,
+  const response = await sendAgriAIChat({
+    messages: nextHistory,
+    crop,
+    language: userLang,
     model: selectedModel,
-    timestamp: new Date().toISOString()
+    diagnosis
   });
+
+  if (!response?.success || !response.message) {
+    throw new Error("The AI assistant did not return a valid response.");
+  }
+
+  conversationHistory = [
+    ...nextHistory,
+    { role: "assistant", content: response.message }
+  ].slice(-12);
 
   return {
     text: responseData.text,

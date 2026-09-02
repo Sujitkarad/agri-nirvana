@@ -2,16 +2,17 @@
 
 <div align="center">
 
-## Precision Agriculture • AI Crop Care • Market Intelligence • GIS
+## AI Crop Diagnostics • Precision Agriculture • Market Intelligence
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-emerald.svg)](LICENSE)
-[![React](https://img.shields.io/badge/React-18.3-blue.svg?logo=react)](https://react.dev/)
-[![Vite](https://img.shields.io/badge/Vite-8.2-purple.svg?logo=vite)](https://vitejs.dev/)
+[![React](https://img.shields.io/badge/React-18-blue.svg?logo=react)](https://react.dev/)
+[![Vite](https://img.shields.io/badge/Vite-purple.svg?logo=vite)](https://vitejs.dev/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-backend-009688.svg?logo=fastapi)](https://fastapi.tiangolo.com/)
+[![PyTorch](https://img.shields.io/badge/PyTorch-ML-ee4c2c.svg?logo=pytorch)](https://pytorch.org/)
 [![Three.js](https://img.shields.io/badge/Three.js-WebGL-black.svg?logo=three.js)](https://threejs.org/)
-[![Hugging Face](https://img.shields.io/badge/Hugging%20Face-AI%20Inference-yellow.svg?logo=huggingface)](https://huggingface.co/)
 [![Vercel](https://img.shields.io/badge/Vercel-Live%20Demo-brightgreen.svg?logo=vercel)](https://agri-nirvana.vercel.app)
 
-**Agri Nirvana** is a precision-agriculture platform that combines AI-assisted crop diagnostics, 3D/WebGL visualization, field-health analytics, market intelligence, and farmer-focused financial tools in a single experience.
+**Agri Nirvana** is an agriculture-focused platform that combines crop-image diagnostics, confidence-aware AI inference, farmer-facing agronomic guidance, field intelligence, market workflows, and agricultural calculators in one application.
 
 [🚀 Live Demo](https://agri-nirvana.vercel.app) · [📦 Repository](https://github.com/Sujitkarad/agri-nirvana) · [🐛 Issues](https://github.com/Sujitkarad/agri-nirvana/issues)
 
@@ -19,43 +20,23 @@
 
 ---
 
-## 📸 Platform Showcase
+## 🎯 Product Vision
 
-<div align="center">
-
-| AI Crop Diagnostics | 3D Field Intelligence |
-|---|---|
-| ![AI Leaf Diagnostics](https://raw.githubusercontent.com/Sujitkarad/agri-nirvana/main/public/screenshots/ai-leaf-diagnostics-3d.png) | ![NDVI Terrain](https://raw.githubusercontent.com/Sujitkarad/agri-nirvana/main/public/screenshots/satellite-ndvi-3d-drone.png) |
-
-| Predictive Yield Analytics | Market Linkage |
-|---|---|
-| ![Yield Analytics](https://raw.githubusercontent.com/Sujitkarad/agri-nirvana/main/public/screenshots/yield-analytics-dashboard.png) | ![e-NAM Linkage](https://raw.githubusercontent.com/Sujitkarad/agri-nirvana/main/public/screenshots/enam-mandi-linkage.png) |
-
-</div>
-
----
-
-## 🎯 Why Agri Nirvana?
-
-Farmers often need to move between separate tools for crop diagnosis, field monitoring, market prices, and financial planning. Agri Nirvana is designed around a single workflow:
+Agri Nirvana is built around a simple workflow:
 
 **Observe → Diagnose → Understand → Decide → Act**
 
-The platform brings those stages together through a visual, farmer-oriented interface.
+The current engineering direction prioritizes **trustworthy AI diagnostics over simulated telemetry**. Production diagnosis is designed to abstain when the image, crop evidence, model confidence, or uncertainty signals are insufficient instead of presenting an unreliable prediction as a fact.
 
-> **Important:** Agri Nirvana is an educational/prototype platform. AI predictions, market information, credit scoring, insurance simulations, and recommendations should not be treated as professional agricultural, financial, insurance, or medical advice. Where a feature uses simulated or pre-processed data, the UI/documentation should be interpreted accordingly.
+> **Important:** Agri Nirvana is an engineering/prototype platform and is not a certified agricultural, financial, insurance, or medical decision system. Predictive results and recommendations require appropriate real-world validation before operational use.
 
 ---
 
-## ✨ Core Capabilities
+## ✨ Current Capabilities
 
 ### 🤖 AI Crop Diagnostics
 
-- AI-assisted leaf/crop disease classification workflow.
-- Hugging Face inference integration.
-- 3D disease-leaf visualization with highlighted lesion zones.
-- AI assistant interface for farmer-facing explanations and recommendations.
-- Model layer designed to support multiple instruction/vision workflows.
+The diagnostic pipeline is the core AI feature.
 
 ### 🌦️ Real-Time Farm Weather Intelligence
 
@@ -77,129 +58,243 @@ The platform brings those stages together through a visual, farmer-oriented inte
 - Precision multi-spectral field index simulation (NDVI/NDRE vegetation stress).
 - Interactive 3D terrain and flight path controls for field scouting.
 
-### 📡 GIS Outbreak Radar
+The application includes a farmer-facing conversational assistant connected to the backend AI layer.
 
-- 25 km-radius outbreak radar visualization.
-- Spatial disease-cluster presentation.
-- Community outbreak reporting interaction.
+The assistant is designed to:
 
-### 📈 Yield Intelligence
+- explain crop-diagnostic results in simpler language;
+- answer agriculture-related questions;
+- use supplied diagnostic context when available;
+- avoid inventing disease diagnoses when no authoritative diagnostic result exists;
+- keep privileged provider credentials on the server side.
 
-- Historical yield visualization.
-- AI/projected yield trajectory presentation.
-- Harvest-date and revenue calculation interfaces.
-- Designed to make agricultural analytics understandable to non-technical users.
+### 🌱 Field & Agronomy Tools
 
-### 🏪 Market Linkage
+The frontend includes several agriculture-oriented workflows, including:
 
-- APMC/e-NAM-oriented mandi price presentation.
-- Best-price discovery workflow.
-- Harvest listing concept for connecting producers with buyers.
+- field intelligence;
+- crop and disease information;
+- NPK/fertilizer calculation interfaces;
+- outbreak/risk visualization concepts;
+- yield analytics;
+- farmer-oriented agronomy workflows.
 
-### 💳 Farmer Finance Concepts
+Some existing field-intelligence and visualization experiences remain demonstration-oriented and must not be interpreted as certified measurements unless backed by validated data sources.
 
-- Kisan Credit Score visualization.
-- Parametric drought-insurance simulation.
-- Claim/payout calculation interface.
+### 🏪 Market Intelligence
 
-### 🌱 Sustainability
+The platform contains market/mandi-oriented workflows for:
 
-- Water-conservation tracking.
-- Carbon/ESG impact visualization.
-- Printable impact certificate experience.
+- APMC/e-NAM-style price presentation;
+- crop price comparison;
+- harvest listing concepts;
+- buyer/market-linkage workflows.
 
----
+Where data is simulated, historical, pre-processed, or demonstration-only, it must be labelled accordingly and should not be presented as a guaranteed live market feed.
 
-## 🏗️ Architecture
+### 💳 Farmer Finance & Sustainability Concepts
 
-```text
-┌──────────────────────────────────────────────────────────────┐
-│                       AGRI NIRVANA                           │
-│              Precision Agriculture Platform                  │
-└───────────────────────────────┬──────────────────────────────┘
-                                │
-        ┌───────────────────────┼───────────────────────┐
-        │                       │                       │
-        ▼                       ▼                       ▼
-┌───────────────┐       ┌────────────────┐      ┌──────────────────┐
-│ 3D / WebGL    │       │ AI / Inference │      │ Data & Analytics │
-│ Three.js      │       │ HF Models      │      │ GIS / Market     │
-└───────┬───────┘       └───────┬────────┘      └────────┬─────────┘
-        │                       │                        │
-        ├─ Crop Model           ├─ Disease workflow     ├─ NDVI views
-        ├─ Disease Leaf         ├─ AI Assistant         ├─ Outbreak radar
-        ├─ NDVI Terrain         └─ Recommendations      ├─ Mandi prices
-        └─ Drone Flyover                                 └─ Yield analytics
-                                │
-                                ▼
-                    ┌─────────────────────┐
-                    │ Farmer-facing UI    │
-                    │ Dashboards / Actions│
-                    └─────────────────────┘
-```
+The application also contains prototype interfaces for:
 
-### AI workflow
+- Kisan credit/eligibility concepts;
+- parametric weather-insurance simulations;
+- sustainability and water/carbon impact visualization.
 
-```text
-Farmer Image
-     ↓
-Pre-processing
-     ↓
-AI / Vision Inference
-     ↓
-Disease / Health Prediction
-     ↓
-Confidence + Explanation
-     ↓
-Farmer-facing Recommendation
-```
-
-### Field-health workflow
-
-```text
-Satellite / Pre-processed Field Data
-                ↓
-          NDVI Processing
-                ↓
-       Field Health Metrics
-                ↓
-       3D Terrain Rendering
-                ↓
-        Farmer Visualization
-```
+These are product concepts, not banking, underwriting, or certified environmental accounting systems.
 
 ---
 
-## 🧠 AI & Data Layer
+## 🧠 AI Architecture
 
-The current implementation references the following technologies/models in the application:
+```text
+                    ┌────────────────────────────┐
+                    │       Agri Nirvana UI      │
+                    │   React + Vite + WebGL     │
+                    └─────────────┬──────────────┘
+                                  │
+                    ┌─────────────▼──────────────┐
+                    │       FastAPI Backend      │
+                    │ Auth / AI / Data Services  │
+                    └─────────────┬──────────────┘
+                                  │
+             ┌────────────────────┼────────────────────┐
+             ▼                    ▼                    ▼
+      Image Validation     Production Vision      AI Assistant
+             │              EfficientNetV2-L            │
+             ▼                    │                    ▼
+      Plant / Quality             ▼              Safety-aware
+          Gates             Calibration +          conversation
+             │             Uncertainty Gates
+             └────────────────────┬───────────────────┘
+                                  ▼
+                         Diagnosis / Abstention
+                                  │
+                    ┌─────────────▼──────────────┐
+                    │ Disease Knowledge +        │
+                    │ Severity + Agronomy Context │
+                    └────────────────────────────┘
+```
 
-- **Hugging Face Inference** for AI model access.
-- **Mistral-7B-Instruct-v0.2** for instruction-style AI interaction.
-- **Llama-3.2-3B-Instruct** for lightweight language interaction.
-- **Zephyr-7B-Beta** for conversational experimentation.
-- **ResNet-50** as part of the documented vision architecture.
-- **Kaggle/APMC-oriented pre-processed datasets** for market-data experimentation.
-- **Sentinel-2/NDVI concepts** for field-health visualization.
+### Production diagnosis flow
 
-### Transparency
+```text
+Crop Image
+    ↓
+Image Quality Validation
+    ↓
+Plant Validation
+    ↓
+Crop Compatibility Check
+    ↓
+EfficientNetV2-L Inference
+    ↓
+Temperature Calibration
+    ↓
+Confidence / Margin / Entropy Gates
+    ↓
+        ┌───────────────┐
+        │ Reliable?     │
+        └───────┬───────┘
+          No    │    Yes
+          ↓     │     ↓
+       Abstain  │  Disease Knowledge
+                │      ↓
+                │  Severity Estimation
+                │      ↓
+                └── Farmer-facing Result
+```
 
-Not every displayed metric represents a continuously live production data feed. Some platform experiences use pre-processed, historical, simulated, or demonstration data so the end-to-end product workflow can be evaluated without requiring a production agricultural data infrastructure.
-
-If you extend this project for production, replace demonstration data with authenticated, versioned sources and publish model evaluation metrics for every predictive feature.
+The important design principle is **fail-safe inference**: missing models, unsupported crops, poor images, weak crop evidence, low confidence, or excessive uncertainty should not become fake diagnoses.
 
 ---
 
-## 🎨 3D Visual Systems
+## 🔬 Model & Data Strategy
 
-Agri Nirvana currently documents four primary 3D/WebGL experiences:
+The repository is being structured for a reproducible training pipeline rather than a single untracked dataset dump.
 
-1. **Hero 3D Crop Model** — rotating/levitating low-poly crop visualization with dynamic lighting.
-2. **3D Disease Leaf Inspector** — interactive organic leaf geometry with highlighted lesion zones.
-3. **3D NDVI Terrain** — field terrain visualization with health-oriented NDVI color mapping and sensor markers.
-4. **Autonomous Drone Flyover** — animated drone scanning sequence over the field terrain.
+### Current production model direction
 
-The implementation is built around Three.js/WebGL concepts to make agricultural data more visual and approachable.
+- Architecture: **EfficientNetV2-L**
+- Production input target: **448 × 448**
+- Transfer learning with staged backbone unfreezing
+- AdamW optimization
+- Learning-rate warmup + cosine decay
+- Class-balanced training
+- Label smoothing
+- Automatic mixed precision when CUDA is available
+- Gradient clipping
+- Early stopping
+- Validation Macro-F1 checkpoint selection
+- Validation-only temperature-scaling calibration
+- Untouched test-set evaluation after calibration
+
+### Dataset architecture
+
+The training/data pipeline separates different data roles instead of assuming every agricultural image belongs in the same production training set:
+
+```text
+Production Training
+└── PlantVillage-aligned disease taxonomy
+
+Field Evaluation
+└── PlantDoc / field-condition images
+
+Indian Field / Expert OOD
+└── DigiGreen and other verified field sources
+
+Specialist Training
+└── Sugarcane specialist dataset
+
+OOD / Unknown
+└── Unsupported crops / diseases / non-plant imagery
+```
+
+Datasets should be evaluated for provenance, licensing, label quality, field realism, duplication, leakage, and taxonomy compatibility before being added to production training.
+
+### Dataset quality rules
+
+The training pipeline is intended to enforce:
+
+- train/validation/test separation;
+- exact duplicate detection using SHA-256;
+- consistent class directories;
+- minimum class coverage;
+- canonical label mapping;
+- separation of field/OOD evaluation from production training where appropriate;
+- reproducible dataset manifests;
+- no automatic production promotion without measured improvement.
+
+Near-duplicate detection and stronger farm/plant/session-level grouping remain important areas for continued dataset hardening.
+
+---
+
+## 🛡️ AI Safety & Reliability
+
+The production inference configuration currently uses explicit uncertainty controls, including:
+
+```text
+Confidence threshold          0.70
+Minimum top-2 margin           0.10
+Maximum normalized entropy     0.90
+Minimum crop probability mass  0.45
+Local production checkpoint    Required
+```
+
+These values are **acceptance gates**, not claims about real-world model accuracy.
+
+A model must be trained and evaluated on documented datasets before accuracy or field-performance claims are made.
+
+### No fabricated metrics
+
+The project does **not** claim a specific diagnostic accuracy until it has been measured against a documented evaluation protocol.
+
+Production evaluation should report, at minimum:
+
+- accuracy;
+- macro precision;
+- macro recall;
+- macro F1;
+- per-class performance;
+- confusion matrix;
+- calibration/ECE;
+- Brier score where appropriate;
+- abstention/coverage statistics;
+- field-condition performance;
+- OOD performance where the evaluation design supports it.
+
+---
+
+## 🏗️ Repository Structure
+
+```text
+agri-nirvana/
+├── src/
+│   ├── components/
+│   ├── data/
+│   ├── lib/
+│   ├── services/
+│   ├── App.jsx
+│   └── index.css
+│
+├── backend/
+│   ├── routes/
+│   ├── services/
+│   ├── db/
+│   ├── ml/
+│   │   ├── config/
+│   │   ├── inference/
+│   │   ├── models/
+│   │   ├── training/
+│   │   └── datasets/
+│   └── tests/
+│
+├── .github/
+│   └── workflows/
+│
+├── public/
+├── package.json
+└── README.md
+```
 
 ---
 
@@ -208,13 +303,16 @@ The implementation is built around Three.js/WebGL concepts to make agricultural 
 | Layer | Technology |
 |---|---|
 | Frontend | React 18 + Vite |
-| Styling/UI | CSS / project UI components |
-| 3D Graphics | Three.js / WebGL |
-| AI | Hugging Face inference + referenced open models |
-| Vision | ResNet-50 architecture reference |
-| Data Visualization | Frontend chart/visualization components |
-| Deployment | Vercel |
-| Version Control | Git + GitHub |
+| Backend | FastAPI + Python |
+| ML | PyTorch + TorchVision |
+| Production vision | EfficientNetV2-L |
+| Image processing | Pillow / TorchVision transforms |
+| 3D/WebGL | Three.js |
+| AI assistant | Backend AI provider integration |
+| Database | MongoDB with SQLite fallback configuration |
+| Deployment | Vercel frontend + backend deployment configuration |
+| CI | GitHub Actions |
+| Version control | Git + GitHub |
 
 ---
 
@@ -222,11 +320,13 @@ The implementation is built around Three.js/WebGL concepts to make agricultural 
 
 ### Prerequisites
 
-- Node.js 18+ (Node.js 20+ recommended)
-- npm, pnpm, or yarn
+- Node.js 20+ recommended
+- Python 3.11 recommended
+- npm
 - Git
+- CUDA-capable GPU recommended for full EfficientNetV2-L training
 
-### Installation
+### Frontend
 
 ```bash
 git clone https://github.com/Sujitkarad/agri-nirvana.git
@@ -235,7 +335,15 @@ npm install
 npm run dev
 ```
 
-Open the local development URL shown by Vite (normally `http://localhost:5173`).
+The Vite development server normally runs on:
+
+```text
+http://localhost:5173
+```
+
+### Backend
+
+Install the backend requirements according to the repository's current requirements files, configure the required environment variables, and start the FastAPI application using the project's backend entrypoint.
 
 ### Production build
 
@@ -244,93 +352,146 @@ npm run build
 npm run preview
 ```
 
-Before running production features that depend on external services, configure the required environment variables from the project's environment configuration.
+---
+
+## 🔐 Environment & Security
+
+Never commit:
+
+- API keys;
+- JWT secrets;
+- database credentials;
+- provider tokens;
+- private URLs;
+- farmer PII.
+
+Production secrets belong in the server environment or an appropriate secret-management system.
+
+The production AI configuration intentionally requires a real local trained checkpoint when `AI_MODEL_PROVIDER=real` rather than silently substituting a fake model.
+
+JWT configuration must use a strong production secret. Client-side code must never contain privileged provider credentials.
 
 ---
 
-## 🔐 Environment & Secrets
+## 🧪 Testing & CI
 
-Never commit API keys, tokens, credentials, or private service URLs to GitHub.
+The repository contains backend tests and GitHub Actions workflows for automated checks.
 
-For local development, use a `.env.local`/`.env` file as appropriate for the project's configuration and add it to `.gitignore`.
+Recommended local checks:
 
-Recommended production practice:
-
-```text
-Browser
-   ↓
-Frontend
-   ↓
-Secure server/API layer
-   ↓
-AI provider / external data source
+```bash
+python -m compileall -q backend
+pytest -q backend/tests
+npm run build
 ```
 
-Do not expose privileged API keys directly in client-side JavaScript.
+CI should validate:
+
+- frontend installation/build;
+- backend dependency installation;
+- Python syntax;
+- backend tests;
+- production inference safety expectations.
+
+Training is a separate workflow from normal application CI and requires an appropriate CUDA-capable runner for practical EfficientNetV2-L training.
+
+**Do not treat a successful frontend build as proof that the ML training pipeline is complete.**
 
 ---
 
-## 📊 Evaluation & Reproducibility
+## 🏋️ Model Training
 
-For future production/academic validation, every predictive module should publish:
+The repository includes a high-capacity transfer-learning pipeline for the production disease classifier.
 
-- Dataset name and version
-- Train/validation/test split
-- Number of classes/samples
-- Pre-processing pipeline
-- Model architecture and version
-- Accuracy
-- Precision
-- Recall
-- F1 score
-- Confusion matrix
-- Inference latency
-- Known failure cases
+The intended training configuration is approximately:
 
-**No fabricated metrics are listed here.** Metrics should be added only after being measured against a documented evaluation dataset.
+```text
+Model:            EfficientNetV2-L
+Input:            448 × 448
+Epochs:           100
+Batch size:       8
+Classifier LR:    7.5e-5
+Backbone LR:      7.5e-6
+Warmup:           8 epochs
+Frozen stage:     8 epochs
+Early stopping:   15 epochs
+```
+
+Exact training parameters should be recorded with each experiment rather than assumed from this README.
+
+A CUDA-capable GPU is strongly recommended. Running the full configuration on a normal CPU runner is not a practical production-training strategy.
+
+Training should produce versioned checkpoints plus metadata, calibration information, metrics, and dataset manifests.
+
+---
+
+## 🌦️ Weather Roadmap
+
+The next major product direction is to replace the current satellite-focused user experience with **Farm Weather Intelligence**.
+
+Planned weather capabilities:
+
+- current local weather;
+- hourly forecast;
+- multi-day forecast;
+- rainfall probability and accumulation;
+- temperature and humidity;
+- wind speed and gusts;
+- agricultural weather signals;
+- irrigation/field-activity guidance;
+- weather-aware agronomic context;
+- clear weather-data provenance.
+
+The weather feature should use real provider data and must never present fabricated temperatures, rainfall, or forecasts as live information.
+
+Weather context should support agricultural decisions but must not be treated as a crop disease diagnosis.
 
 ---
 
 ## 🗺️ Roadmap
 
-- [ ] Production-grade crop disease dataset pipeline
-- [ ] Calibrated confidence scoring for diagnosis
-- [ ] Real agricultural data integrations
-- [ ] Offline/low-connectivity farmer workflow
-- [ ] Marathi/Hindi voice-first assistant improvements
-- [ ] Field-level satellite data ingestion
-- [ ] Model evaluation dashboard
-- [ ] Secure backend for farmer data
-- [ ] Authentication and role-based access
-- [ ] Automated testing and end-to-end QA
+- [x] Production-oriented EfficientNetV2-L inference architecture
+- [x] Image and plant validation gates
+- [x] Confidence, margin, entropy, and crop-evidence gates
+- [x] Model checkpoint validation
+- [x] Dataset audit foundation
+- [x] Transfer-learning training pipeline
+- [x] Field/OOD evaluation structure
+- [x] Backend AI-chat safety architecture
+- [ ] Complete production model training on CUDA hardware
+- [ ] Publish measured validation/test metrics
+- [ ] Expand real Indian field/OOD evaluation
+- [ ] Near-duplicate and farm/session-level leakage detection
+- [ ] Production weather API integration
+- [ ] Farm weather intelligence dashboard
+- [ ] Stronger mobile/low-connectivity workflow
+- [ ] Full end-to-end QA
+- [ ] Production security review
 - [ ] Accessibility audit
-- [ ] Performance optimization for low-end mobile devices
+- [ ] Performance optimization
 
 ---
 
-## ⚠️ Limitations
+## ⚠️ Current Limitations
 
-Agri Nirvana is currently a prototype/engineering demonstration rather than a certified agricultural decision system.
-
-- Disease predictions require real-world validation before operational use.
-- Demonstration/pre-processed datasets may not represent current local field conditions.
-- Market information should be independently verified before financial decisions.
-- Credit-score and insurance modules are simulations, not banking/insurance underwriting systems.
-- Satellite/NDVI visualizations should not be interpreted as certified agronomic measurements without validated data processing.
+- The production EfficientNetV2-L architecture is implemented, but a deployed checkpoint must be trained and evaluated before making accuracy claims.
+- Field performance may differ substantially from laboratory-style datasets.
+- Existing market, field, finance, insurance, and visualization modules can contain demonstration/pre-processed data and should not automatically be interpreted as live official feeds.
+- Agricultural recommendations require local agronomic verification and applicable product-label/regulatory checks.
+- Weather intelligence is planned as the replacement for the current satellite-focused user experience; it should only be described as live after a real provider integration is operational.
 
 ---
 
 ## 🤝 Contributing
 
-Contributions are welcome.
-
 1. Fork the repository.
-2. Create a feature branch.
-3. Make focused changes.
-4. Run the project's checks/build locally.
-5. Open a pull request with a clear description of the change.
+2. Create a focused feature branch.
+3. Make the smallest appropriate change.
+4. Add or update tests.
+5. Run the relevant build/checks locally.
+6. Open a pull request with a clear description.
 
-For substantial architectural changes, open an issue first so the approach can be discussed.
+For ML changes, include dataset provenance, training configuration, evaluation methodology, and reproducible metrics whenever applicable.
 
 ---
 
@@ -352,8 +513,8 @@ Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for details.
 
 <div align="center">
 
-### 🌾 From crop diagnosis to better agricultural decisions.
+### 🌾 AI Crop Diagnostics + Better Agricultural Decisions
 
-**Agri Nirvana — making agricultural intelligence more visual, accessible, and actionable.**
+**Agri Nirvana — building practical, transparent, and farmer-focused agricultural intelligence.**
 
 </div>
