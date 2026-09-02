@@ -7,16 +7,20 @@ workspace under backend/ml/datasets/ and records provenance in
 Sources:
 - PlantVillage: mohanty/PlantVillage, color config (leaf-grouped 80/20 split)
 - PlantDoc: geraldmc/plantdoc-full @ v0.1.0 (field-condition evaluation data)
+- Crop Disease Expert Annotations: DigiGreen/Crop_Disease_Images
 
-PlantVillage is used for training/benchmarking. PlantDoc is kept separate from
-the training set so field-domain performance can be measured without silently
-contaminating the training data.
+PlantVillage is used for training/benchmarking. PlantDoc and the DigiGreen
+smallholder/expert-reviewed images are kept outside the training set. The
+DigiGreen images are split into known-class field evaluation images and
+unmatched images used as OOD, using deterministic label matching against the
+PlantVillage production taxonomy.
 """
 from __future__ import annotations
 
 import argparse
 import json
 import random
+import re
 import shutil
 from pathlib import Path
 from typing import Any
@@ -24,6 +28,7 @@ from typing import Any
 from datasets import load_dataset
 
 IMAGE_EXT = ".jpg"
+VALID_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".bmp"}
 
 
 def _safe_name(value: str) -> str:
@@ -59,7 +64,7 @@ def _split_train_into_train_val(root: Path, val_fraction: float = 0.15, seed: in
 
 
 def import_plantvillage(root: Path) -> dict[str, Any]:
-    out = root / "plantvillage"
+    out = root / "plant_disease"
     if out.exists():
         shutil.rmtree(out)
     ds = load_dataset("mohanty/PlantVillage", "color")
@@ -102,22 +107,108 @@ def import_plantdoc(root: Path) -> dict[str, Any]:
     }
 
 
+def _norm(value: str) -> str:
+    return re.sub(r"[^a-z0-9]+", " ", value.lower()).strip()
+
+
+def _field_class_match(crop: str, diagnosis: str, production_classes: list[str]) -> str | None:
+    """Map expert crop/diagnosis text to a production class conservatively.
+
+    Only a unique, high-overlap match is accepted. Ambiguous/unmatched expert
+    images remain OOD rather than being force-labelled.
+    """
+    text = _norm(f"{crop} {diagnosis}")
+    if not text or diagnosis.strip().lower() == "healthy":
+        diagnosis_text = _norm(crop + " healthy")
+    else:
+        diagnosis_text = text
+
+    best: tuple[float, str] | None = None
+    second = 0.0
+    text_tokens = set(diagnosis_text.split())
+    stop = {"leaf", "leaves", "plant", "disease", "diseases", "symptom", "symptoms", "crop"}
+    text_tokens -= stop
+
+    for cls in production_classes:
+        cls_tokens = set(_norm(cls.replace("___", " ")).split()) - stop
+        if not cls_tokens:
+            continue
+        overlap = len(text_tokens & cls_tokens) / len(cls_tokens)
+        crop_hint = _norm(crop)
+        if crop_hint and crop_hint in _norm(cls):
+            overlap += 0.35
+        score = min(1.0, overlap)
+        if best is None or score > best[0]:
+            second = best[0] if best else 0.0
+            best = (score, cls)
+        elif score > second:
+            second = score
+
+    if best is None or best[0] < 0.75 or best[0] - second < 0.10:
+        return None
+    return best[1]
+
+
+def import_farmer_expert_field(root: Path) -> dict[str, Any]:
+    """Materialize expert-reviewed smallholder photos as field/OOD evaluation."""
+    out = root / "field_ood"
+    if out.exists():
+        shutil.rmtree(out)
+    field_root = out / "field"
+    ood_root = out / "ood" / "expert_unmatched"
+    ds = load_dataset("DigiGreen/Crop_Disease_Images", split="train")
+
+    production = load_dataset("mohanty/PlantVillage", "color", split="train")
+    production_classes = sorted({str(x["label"]) for x in production})
+
+    matched = unmatched = 0
+    for i, row in enumerate(ds):
+        image = row["image"].convert("RGB")
+        crop = str(row.get("crop", ""))
+        diagnosis = str(row.get("diagnosis", ""))
+        label = _field_class_match(crop, diagnosis, production_classes)
+        if label is None:
+            dest = ood_root
+            unmatched += 1
+        else:
+            dest = field_root / _safe_name(label)
+            matched += 1
+        dest.mkdir(parents=True, exist_ok=True)
+        image.save(dest / f"{i:07d}{IMAGE_EXT}", quality=95)
+
+    manifest = {
+        "dataset": "DigiGreen/Crop_Disease_Images",
+        "purpose": "field_evaluation_and_ood",
+        "source_images": len(ds),
+        "known_class_field_images": matched,
+        "unmatched_ood_images": unmatched,
+        "training_contamination": False,
+        "labeling": "expert-reviewed annotations; unmatched/ambiguous labels are retained as OOD",
+        "materialized": str(out),
+    }
+    (out / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    return manifest
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", default="backend/ml/datasets")
     parser.add_argument("--plantvillage", action="store_true")
     parser.add_argument("--plantdoc", action="store_true")
+    parser.add_argument("--farmer-field", action="store_true")
     args = parser.parse_args()
-    if not args.plantvillage and not args.plantdoc:
-        args.plantvillage = args.plantdoc = True
+    if not args.plantvillage and not args.plantdoc and not args.farmer_field:
+        args.plantvillage = args.plantdoc = args.farmer_field = True
 
     root = Path(args.output)
     root.mkdir(parents=True, exist_ok=True)
-    manifest: dict[str, Any] = {"schema_version": 1, "datasets": []}
+    manifest: dict[str, Any] = {"schema_version": 2, "datasets": []}
     if args.plantvillage:
         manifest["datasets"].append(import_plantvillage(root))
     if args.plantdoc:
         manifest["datasets"].append(import_plantdoc(root))
+    if args.farmer_field:
+        manifest["datasets"].append(import_farmer_expert_field(root))
     (root / "dataset_manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     print(json.dumps(manifest, indent=2))
 
