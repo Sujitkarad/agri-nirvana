@@ -5,15 +5,14 @@ workspace under backend/ml/datasets/ and records provenance in
 `dataset_manifest.json`.
 
 Sources:
-- PlantVillage: mohanty/PlantVillage, color config (leaf-grouped 80/20 split)
-- PlantDoc: geraldmc/plantdoc-full @ v0.1.0 (field-condition evaluation data)
+- PlantVillage: mohanty/PlantVillage, color config (training/benchmarking)
+- PlantDoc: geraldmc/plantdoc-full @ v0.1.0 (field-condition evaluation)
 - Crop Disease Expert Annotations: DigiGreen/Crop_Disease_Images
 
-PlantVillage is used for training/benchmarking. PlantDoc and the DigiGreen
-smallholder/expert-reviewed images are kept outside the training set. The
-DigiGreen images are split into known-class field evaluation images and
-unmatched images used as OOD, using deterministic label matching against the
-PlantVillage production taxonomy.
+PlantVillage is used for training/benchmarking. PlantDoc and DigiGreen
+smallholder/expert-reviewed images are kept outside the training set.
+DigiGreen images are split conservatively into known-class field evaluation
+images and unmatched/ambiguous images used as OOD. No image is force-labelled.
 """
 from __future__ import annotations
 
@@ -28,7 +27,6 @@ from typing import Any
 from datasets import load_dataset
 
 IMAGE_EXT = ".jpg"
-VALID_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".bmp"}
 
 
 def _safe_name(value: str) -> str:
@@ -88,12 +86,8 @@ def import_plantdoc(root: Path) -> dict[str, Any]:
     if out.exists():
         shutil.rmtree(out)
     ds = load_dataset("geraldmc/plantdoc-full", revision="v0.1.0", split="train")
-    train_n = _save_hf_split(
-        ds.filter(lambda x: x["split"] == "train"), out, "class_label", "train"
-    )
-    test_n = _save_hf_split(
-        ds.filter(lambda x: x["split"] == "test"), out, "class_label", "test"
-    )
+    train_n = _save_hf_split(ds.filter(lambda x: x["split"] == "train"), out, "class_label", "train")
+    test_n = _save_hf_split(ds.filter(lambda x: x["split"] == "test"), out, "class_label", "test")
     train_after, val_n = _split_train_into_train_val(out)
     return {
         "dataset": "geraldmc/plantdoc-full",
@@ -111,42 +105,69 @@ def _norm(value: str) -> str:
     return re.sub(r"[^a-z0-9]+", " ", value.lower()).strip()
 
 
+def _production_class_names() -> list[str]:
+    """Read PlantVillage's actual ClassLabel names, not integer label IDs."""
+    ds = load_dataset("mohanty/PlantVillage", "color", split="train")
+    feature = ds.features["label"]
+    names = getattr(feature, "names", None)
+    if not names:
+        raise RuntimeError("PlantVillage label feature has no class names")
+    return [str(name) for name in names]
+
+
 def _field_class_match(crop: str, diagnosis: str, production_classes: list[str]) -> str | None:
-    """Map expert crop/diagnosis text to a production class conservatively.
+    """Conservatively map expert text to an existing production class.
 
-    Only a unique, high-overlap match is accepted. Ambiguous/unmatched expert
-    images remain OOD rather than being force-labelled.
+    DigiGreen has 74 crops and 145 diagnosis labels, while the production
+    classifier has a narrower PlantVillage taxonomy. Only a unique, strong
+    crop+disease overlap is accepted. Multi-diagnosis, ambiguous, or unmatched
+    records remain OOD instead of being force-labelled.
     """
-    text = _norm(f"{crop} {diagnosis}")
-    if not text or diagnosis.strip().lower() == "healthy":
-        diagnosis_text = _norm(crop + " healthy")
-    else:
-        diagnosis_text = text
-
-    best: tuple[float, str] | None = None
-    second = 0.0
-    text_tokens = set(diagnosis_text.split())
-    stop = {"leaf", "leaves", "plant", "disease", "diseases", "symptom", "symptoms", "crop"}
-    text_tokens -= stop
-
-    for cls in production_classes:
-        cls_tokens = set(_norm(cls.replace("___", " ")).split()) - stop
-        if not cls_tokens:
-            continue
-        overlap = len(text_tokens & cls_tokens) / len(cls_tokens)
-        crop_hint = _norm(crop)
-        if crop_hint and crop_hint in _norm(cls):
-            overlap += 0.35
-        score = min(1.0, overlap)
-        if best is None or score > best[0]:
-            second = best[0] if best else 0.0
-            best = (score, cls)
-        elif score > second:
-            second = score
-
-    if best is None or best[0] < 0.75 or best[0] - second < 0.10:
+    crop_text = _norm(crop)
+    diagnosis_parts = [_norm(x) for x in diagnosis.split(";") if _norm(x)]
+    if not crop_text or not diagnosis_parts:
         return None
-    return best[1]
+
+    # PlantVillage uses "Crop___Disease" labels. Build a score per production class.
+    candidates: list[tuple[float, str]] = []
+    for cls in production_classes:
+        parts = cls.split("___", 1)
+        if len(parts) != 2:
+            continue
+        cls_crop, cls_disease = map(_norm, parts)
+        crop_score = 1.0 if crop_text == cls_crop else 0.0
+        if crop_score == 0.0:
+            # Conservative synonym handling for common crop names.
+            crop_aliases = {
+                "maize": {"corn"},
+                "chilli": {"pepper", "chili", "hot pepper"},
+                "pepper": {"chilli", "chili", "hot pepper"},
+            }
+            aliases = crop_aliases.get(crop_text, set())
+            crop_score = 0.85 if cls_crop in aliases else 0.0
+        if crop_score == 0.0:
+            continue
+
+        disease_scores = []
+        for diagnosis_text in diagnosis_parts:
+            tokens = set(diagnosis_text.split())
+            cls_tokens = set(cls_disease.split())
+            if not tokens or not cls_tokens:
+                continue
+            overlap = len(tokens & cls_tokens) / max(len(tokens | cls_tokens), 1)
+            exact = 1.0 if diagnosis_text == cls_disease else 0.0
+            disease_scores.append(max(overlap, exact))
+        if disease_scores:
+            candidates.append((0.65 * crop_score + 0.35 * max(disease_scores), cls))
+
+    candidates.sort(reverse=True)
+    if not candidates:
+        return None
+    best_score, best_class = candidates[0]
+    second_score = candidates[1][0] if len(candidates) > 1 else 0.0
+    if best_score < 0.80 or best_score - second_score < 0.10:
+        return None
+    return best_class
 
 
 def import_farmer_expert_field(root: Path) -> dict[str, Any]:
@@ -157,9 +178,7 @@ def import_farmer_expert_field(root: Path) -> dict[str, Any]:
     field_root = out / "field"
     ood_root = out / "ood" / "expert_unmatched"
     ds = load_dataset("DigiGreen/Crop_Disease_Images", split="train")
-
-    production = load_dataset("mohanty/PlantVillage", "color", split="train")
-    production_classes = sorted({str(x["label"]) for x in production})
+    production_classes = _production_class_names()
 
     matched = unmatched = 0
     for i, row in enumerate(ds):
@@ -179,11 +198,13 @@ def import_farmer_expert_field(root: Path) -> dict[str, Any]:
     manifest = {
         "dataset": "DigiGreen/Crop_Disease_Images",
         "purpose": "field_evaluation_and_ood",
-        "source_images": len(ds),
+        "source_annotations": len(ds),
         "known_class_field_images": matched,
         "unmatched_ood_images": unmatched,
         "training_contamination": False,
-        "labeling": "expert-reviewed annotations; unmatched/ambiguous labels are retained as OOD",
+        "labeling": "expert-reviewed annotations; unmatched/ambiguous labels retained as OOD",
+        "license": "CC-BY-4.0",
+        "source_url": "https://huggingface.co/datasets/DigiGreen/Crop_Disease_Images",
         "materialized": str(out),
     }
     (out / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
