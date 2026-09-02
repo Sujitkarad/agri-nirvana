@@ -38,6 +38,9 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7
 
+    WEATHER_CACHE_TTL_SECONDS: int = 600
+    WEATHER_TIMEOUT_SECONDS: float = 8.0
+
     model_config = SettingsConfigDict(
         env_file=".env",
         case_sensitive=True,

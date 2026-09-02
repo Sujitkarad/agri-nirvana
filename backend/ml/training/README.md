@@ -24,6 +24,23 @@ plant_disease/
 
 The same class names must exist in every split. Keep images from the same plant/field in one split. A random image-level split can leak near-duplicate images and make results look much better than real farm performance.
 
+### Quick Import via Kaggle (vipoooool/new-plant-diseases-dataset)
+
+To download and materialize the 38-class Kaggle dataset directly:
+
+```bash
+# Automated download via kagglehub and preparation into train/val/test splits:
+python -m backend.ml.training.import_kaggle_dataset --dest backend/ml/datasets/plant_disease
+```
+
+Or using Python:
+
+```python
+import kagglehub
+path = kagglehub.dataset_download("vipoooool/new-plant-diseases-dataset")
+print("Path to dataset files:", path)
+```
+
 If you only have an ImageFolder root (`class_name/*.jpg`), you can use `--split` to create a stratified 70/15/15 split. For a production claim, replace that test set with a genuinely field-separated test set.
 
 ## 2. Train

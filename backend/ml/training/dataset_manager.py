@@ -8,7 +8,7 @@ import math
 import os
 import random
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
 
@@ -137,3 +137,22 @@ def prepare_benchmark_dataset(
         "num_classes": len(classes),
         "classes": classes
     }
+
+
+def import_kaggle_plant_diseases(
+    dest_root: str = "backend/ml/datasets/plant_disease",
+    mode: str = "link",
+) -> Dict[str, Any]:
+    """Downloads and prepares the 38-class Kaggle plant disease dataset.
+
+    Uses kagglehub to download 'vipoooool/new-plant-diseases-dataset'
+    and materializes train, val, and test splits.
+    """
+    from backend.ml.training.import_kaggle_dataset import (
+        DATASET_HANDLE,
+        download_dataset,
+        materialize_dataset,
+    )
+
+    path = download_dataset(DATASET_HANDLE)
+    return materialize_dataset(path, Path(dest_root), mode=mode)

@@ -460,13 +460,16 @@ WP12 ← WP11 ← WP10 ◄─┘
       <html>
         <head>
           <title>Agri Nirvana Precision Field Intelligence Report</title>
+          <link rel="preconnect" href="https://fonts.googleapis.com">
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+          <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
           <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 30px; color: #0f172a; line-height: 1.6; max-width: 900px; margin: 0 auto; }
+            body { font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 30px; color: #0f172a; line-height: 1.6; max-width: 900px; margin: 0 auto; -webkit-font-smoothing: antialiased; }
             h1, h2, h3 { color: #065f46; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px; }
             table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; }
             th, td { border: 1px solid #cbd5e1; padding: 8px 12px; text-align: left; }
             th { background: #f1f5f9; font-weight: bold; color: #334155; }
-            pre { background: #0f172a; color: #f8fafc; padding: 14px; border-radius: 8px; font-size: 12px; overflow-x: auto; font-family: monospace; }
+            pre { background: #0f172a; color: #f8fafc; padding: 14px; border-radius: 8px; font-size: 12px; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
             .card { border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; margin: 12px 0; background: #f8fafc; }
           </style>
         </head>

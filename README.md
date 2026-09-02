@@ -57,13 +57,25 @@ The platform brings those stages together through a visual, farmer-oriented inte
 - AI assistant interface for farmer-facing explanations and recommendations.
 - Model layer designed to support multiple instruction/vision workflows.
 
-### 🌍 3D Field Intelligence
+### 🌦️ Real-Time Farm Weather Intelligence
 
-- Interactive 3D crop visualization.
-- NDVI-inspired field terrain visualization.
-- Satellite/field-health visualization concepts.
-- Autonomous drone flyover visualization.
-- Interactive 3D controls for exploration.
+- Live agro-meteorological intelligence powered by Open-Meteo with zero API key dependencies.
+- Real-time farm telemetry: Temperature, Feels-like, Relative Humidity, Wind Speed, Direction, Gusts, and Precipitation.
+- Next 24-hour hourly forecast timeline with weather conditions and precipitation chance.
+- 7-Day agricultural outlook including maximum/minimum temperatures, rain sums ($mm$), and FAO-56 Reference Evapotranspiration ($ET_0$).
+- 5 deterministic agricultural rules:
+  - **Best Field Activity Window**: Dynamic *Good / Caution / Poor* spray and operational window based on wind drift thresholds ($> 18\text{ km/h}$) and rain wash-off risk.
+  - **Rain & Moisture Outlook**: Field surface moisture accumulation indicators.
+  - **Irrigation Management**: Data-driven water balance guidance comparing incoming precipitation against $ET_0$.
+  - **Heat & Solar Radiation Stress**: Warnings for heat spikes and excessive solar radiation.
+  - **Disease-Favorable Weather Signal**: Transparent micro-climate risk indicators (humidity $>80\%$ and moderate temperatures favoring fungal development) with explicit symptom-verification disclaimers.
+- Fast backend TTL caching ($10\text{ minutes}$) with coordinate rounding deduplication and direct browser-fallback resilience.
+
+### 🚁 3D Drone & Field Avionics
+
+- Autonomous drone survey flyover and waypoint mission visualization.
+- Precision multi-spectral field index simulation (NDVI/NDRE vegetation stress).
+- Interactive 3D terrain and flight path controls for field scouting.
 
 ### 📡 GIS Outbreak Radar
 

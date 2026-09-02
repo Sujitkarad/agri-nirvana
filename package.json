@@ -21,8 +21,8 @@
     "webgl",
     "resnet50",
     "huggingface",
-    "sentinel-2",
-    "ndvi-satellite",
+    "farm-weather",
+    "agricultural-meteorology",
     "agtech",
     "fintech",
     "kisan-credit"

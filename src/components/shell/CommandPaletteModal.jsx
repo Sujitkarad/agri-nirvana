@@ -5,7 +5,6 @@ import {
   Leaf,
   Layers,
   Radar,
-  LineChart,
   Calculator,
   TrendingUp,
   ShoppingCart,
@@ -16,7 +15,9 @@ import {
   X,
   Command,
   Compass,
-  Sliders
+  Sliders,
+  Home,
+  CloudSun
 } from "lucide-react";
 
 export default function CommandPaletteModal({
@@ -48,19 +49,18 @@ export default function CommandPaletteModal({
   if (!isOpen) return null;
 
   const actions = [
-    { id: "workspace", label: "Open 3D AI Workspace", icon: Bot, category: "Navigation", badge: "AI Core", run: () => { onSelectNav("workspace"); onClose(); } },
-    { id: "intel", label: "Precision Field Intelligence & Drone Avionics", icon: Compass, category: "Satellite & Avionics", badge: "Sentinel-2 + DEM", run: () => { onSelectNav("intel"); onClose(); } },
+    { id: "workspace", label: "Home — 3D AI Overview", icon: Home, category: "Navigation", badge: "Home", run: () => { onSelectNav("workspace"); onClose(); } },
+    { id: "intel", label: "Drone Tech — Autonomous Avionics & Field Surveys", icon: Compass, category: "Drone & Avionics", badge: "Drone", run: () => { onSelectNav("intel"); onClose(); } },
     { id: "diag", label: "Run AI Crop Leaf Diagnostics", icon: Leaf, category: "Diagnostics", badge: "ResNet-50", run: () => { onSelectNav("diag"); onClose(); } },
-    { id: "sat", label: "Open 3D Satellite NDVI & Drone Flyover", icon: Layers, category: "Satellite", badge: "Sentinel-2", run: () => { onSelectNav("sat"); onClose(); } },
+    { id: "weather", label: "Open Farm Weather & Agricultural Forecast", icon: CloudSun, category: "Weather", badge: "Live", run: () => { onSelectNav("weather"); onClose(); } },
     { id: "map", label: "View 25km GIS Outbreak Radar", icon: Radar, category: "Telemetry", badge: "GIS", run: () => { onSelectNav("map"); onClose(); } },
-    { id: "analytics", label: "Predictive Multi-Year Yield Analytics", icon: LineChart, category: "Analytics", badge: "Kaggle", run: () => { onSelectNav("analytics"); onClose(); } },
     { id: "calc", label: "Calculate NPK Fertilizer Bags", icon: Calculator, category: "Tools", badge: "Agronomy", run: () => { onSelectNav("calc"); onClose(); } },
     { id: "mandi", label: "Live APMC Mandi Prices (e-NAM)", icon: TrendingUp, category: "Market", badge: "Live Feed", run: () => { onSelectNav("mandi"); onClose(); } },
     { id: "market", label: "Direct Harvest Produce Marketplace", icon: ShoppingCart, category: "Market", badge: "Trade", run: () => { onSelectNav("market"); onClose(); } },
+    { id: "theme-harvest", label: "Switch to 🌾 Golden Harvest Theme (Warm Wheat Fields)", icon: Sparkles, category: "Appearance", badge: "Primary", run: () => { onChangeTheme("harvest"); onClose(); } },
     { id: "theme-botanical", label: "Switch to 🌿 Botanical Daylight Theme (Sunlit Orchard)", icon: Sun, category: "Appearance", badge: "Daylight", run: () => { onChangeTheme("botanical"); onClose(); } },
     { id: "theme-cyber", label: "Switch to 🌲 Living Canopy Theme (Deep Organic Forest)", icon: Leaf, category: "Appearance", badge: "Canopy", run: () => { onChangeTheme("cyber"); onClose(); } },
-    { id: "theme-monochrome", label: "Switch to 📓 Botanical Noir Theme (Field Journal)", icon: Sliders, category: "Appearance", badge: "Noir", run: () => { onChangeTheme("monochrome"); onClose(); } },
-    { id: "theme-harvest", label: "Switch to 🌾 Golden Harvest Theme (Warm Wheat Fields)", icon: Sparkles, category: "Appearance", badge: "Harvest", run: () => { onChangeTheme("harvest"); onClose(); } }
+    { id: "theme-monochrome", label: "Switch to 📓 Botanical Noir Theme (Field Journal)", icon: Sliders, category: "Appearance", badge: "Noir", run: () => { onChangeTheme("monochrome"); onClose(); } }
   ];
 
   const filtered = actions.filter((a) =>

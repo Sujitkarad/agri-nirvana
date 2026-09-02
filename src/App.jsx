@@ -24,11 +24,7 @@ import {
   Send,
   Search,
   PlusCircle,
-  Clock,
-  Coins,
   Radar,
-  LineChart,
-  Target,
   Maximize2,
   Minimize2,
   ChevronUp,
@@ -39,18 +35,20 @@ import {
   Cpu,
   Radio,
   Activity,
-  Compass
+  Compass,
+  Home,
+  CloudSun
 } from "lucide-react";
 
 import {
   LANGUAGES,
   TRANSLATIONS,
   CROP_DISEASE_DATASETS,
-  SATELLITE_FIELDS,
   CROPS_CONFIG,
   OUTBREAK_CLUSTERS,
   SUBSCRIPTION_PLANS,
   AGRI_PRODUCTS,
+  DIRECT_BUYERS_LIST,
   MANDI_PRICES_FEED,
   KAGGLE_VEGETABLE_PRICES,
   queryHuggingFaceAgriBot,
@@ -60,14 +58,12 @@ import { generateAIChatResponse } from "./services/aiChatbotEngine";
 
 import Hero3DCropModel from "./components/Hero3DCropModel";
 import DiseaseLeaf3DModel from "./components/DiseaseLeaf3DModel";
-import NDVITerrain3DModel from "./components/NDVITerrain3DModel";
+import FarmWeatherDashboard from "./components/weather/FarmWeatherDashboard";
 import DiseaseHeatmapCanvas from "./components/DiseaseHeatmapCanvas";
 import CropDiagnosticsWorkspace from "./components/diagnostics/CropDiagnosticsWorkspace";
-import DashboardDiagnosticCard from "./components/diagnostics/DashboardDiagnosticCard";
 import PrecisionFieldIntelligenceWorkspace from "./components/field-intelligence/PrecisionFieldIntelligenceWorkspace";
 
 // Enterprise Shell Components
-import TelemetryRibbon from "./components/shell/TelemetryRibbon";
 import GlassHeader from "./components/shell/GlassHeader";
 import HolographicAIAvatar from "./components/shell/HolographicAIAvatar";
 import OmniPromptStudio from "./components/shell/OmniPromptStudio";
@@ -124,7 +120,7 @@ function AgriBot3DAvatar({ isThinking, isSpeaking, selectedModel }) {
           <div className="absolute -inset-1 rounded-full border border-emerald-300/50 animate-ping opacity-75" />
         </div>
 
-        {/* Holographic Satellite Particles */}
+        {/* Holographic Atmospheric Particles */}
         <div className="absolute -top-2 -left-2 h-2.5 w-2.5 rounded-full bg-emerald-400 animate-bounce opacity-90 shadow-[0_0_10px_#34d399]" />
         <div className="absolute -bottom-1 -right-2 h-2 w-2 rounded-full bg-cyan-400 animate-ping opacity-90 shadow-[0_0_10px_#22d3ee]" />
         <div className="absolute top-1/2 -right-4 h-2 w-2 rounded-full bg-amber-400 animate-pulse opacity-90 shadow-[0_0_10px_#f59e0b]" />
@@ -144,8 +140,8 @@ function AgriBot3DAvatar({ isThinking, isSpeaking, selectedModel }) {
 }
 
 export default function App() {
-  // Theme & Navigation State
-  const [theme, setTheme] = useState("botanical");
+  // Theme & Navigation State (1st theme: Golden Harvest)
+  const [theme, setTheme] = useState("harvest");
   const isDark = theme === "cyber" || theme === "dark" || theme === "monochrome";
   const [lang, setLang] = useState("en");
   const [langMenuOpen, setLangMenuOpen] = useState(false);
@@ -203,9 +199,6 @@ export default function App() {
   const [isClaimModalOpen, setIsClaimModalOpen] = useState(false);
   const [isAgronomistModalOpen, setIsAgronomistModalOpen] = useState(false);
 
-  // Satellite Telemetry State
-  const [selectedField, setSelectedField] = useState(SATELLITE_FIELDS[0]);
-
   // NPK Calculator State
   const [calcCrop, setCalcCrop] = useState("wheat");
   const [calcAcres, setCalcAcres] = useState(5);
@@ -259,8 +252,11 @@ export default function App() {
       <html>
       <head>
         <title>Kisan AI Crop Diagnostic Certificate - Agri Nirvana</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
         <style>
-          body { font-family: 'Segoe UI', Arial, sans-serif; padding: 24px; color: #1e293b; max-width: 800px; margin: 0 auto; }
+          body { font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 24px; color: #1e293b; max-width: 800px; margin: 0 auto; -webkit-font-smoothing: antialiased; }
           .header { border-bottom: 3px solid #10b981; padding-bottom: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
           .title { font-size: 22px; font-weight: 900; color: #065f46; margin: 0; }
           .badge { background: #d1fae5; color: #065f46; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
@@ -443,9 +439,30 @@ export default function App() {
   };
 
   const handleSimulatePurchase = (product) => {
-    const commission = Math.round(product.priceINR * product.commissionRate);
+    const commission = Math.round(product.priceINR * (product.commissionRate || 0.05));
     setTotalCommissionEarnedINR((prev) => prev + commission);
-    showToast(`Order placed with ${product.dealerName}! Est. platform commission earned: ₹${commission}`);
+
+    // Dispatch WhatsApp Order to 9270547135
+    const targetPhone = "919270547135";
+    const whatsappMessage = `*Agri Nirvana Marketplace — New Order Request*\n\n` +
+      `📦 *Product Name:* ${product.name}\n` +
+      `💰 *Price:* ₹${product.priceINR} ${product.unit ? `(${product.unit})` : ""}\n` +
+      (product.brand ? `🏷️ *Brand:* ${product.brand}\n` : "") +
+      (product.dealerName ? `🏪 *Local Dealer:* ${product.dealerName}\n` : "") +
+      `📍 *Market Area:* Kopargaon, Maharashtra\n\n` +
+      `Hello, I would like to confirm and place an order for this product. Please advise on stock availability and delivery/payment process.`;
+
+    const whatsappUrl = `https://api.whatsapp.com/send?phone=${targetPhone}&text=${encodeURIComponent(whatsappMessage)}`;
+    window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+
+    showToast(`Connecting via WhatsApp to order ${product.name} (₹${product.priceINR}) at 9270547135!`);
+  };
+
+  const handleOpenGoogleMaps = (locationName, customQuery) => {
+    const query = customQuery || `${locationName}, Kopargaon, Maharashtra`;
+    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+    window.open(mapsUrl, "_blank", "noopener,noreferrer");
+    showToast(`Opening Google Maps for ${locationName}...`);
   };
 
   const handleProduceSubmit = (e) => {
@@ -518,9 +535,6 @@ export default function App() {
         : "ai-mesh-bg-botanical text-slate-900"
     } selection:bg-emerald-500 selection:text-white`}>
       
-      {/* 1. TOP TELEMETRY RIBBON */}
-      <TelemetryRibbon isDark={isDark} selectedModel={selectedHfModel} />
-
       {/* Toast Notification Bar */}
       {toastMessage && (
         <div className="fixed top-20 right-5 z-50 flex items-center gap-3 rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white shadow-2xl transition-all animate-bounce glow-emerald">
@@ -536,16 +550,16 @@ export default function App() {
         theme={theme}
         onToggleTheme={(targetTheme) => {
           const newTheme = targetTheme || (
+            theme === "harvest" ? "botanical" :
             theme === "botanical" ? "cyber" :
-            theme === "cyber" ? "monochrome" :
-            theme === "monochrome" ? "harvest" : "botanical"
+            theme === "cyber" ? "monochrome" : "harvest"
           );
           setTheme(newTheme);
           const themeLabels = {
+            harvest: "🌾 Golden Harvest (Sun-Drenched Wheat Fields)",
             botanical: "🌿 Botanical Daylight (Sunlit Orchard & Soil)",
             cyber: "🌲 Living Canopy (Organic Forest & Night Sky)",
-            monochrome: "📓 Botanical Noir (Minimalist Field Study)",
-            harvest: "🌾 Golden Harvest (Sun-Drenched Wheat Fields)"
+            monochrome: "📓 Botanical Noir (Minimalist Field Study)"
           };
           showToast(`Switched to ${themeLabels[newTheme] || newTheme}`);
         }}
@@ -572,8 +586,8 @@ export default function App() {
         }}
       />
 
-      {/* 3. HERO SECTION (Collapsible) */}
-      {heroExpanded ? (
+      {/* 3. HERO SECTION (Only displayed on Home / Landing Page) */}
+      {(activeNav === "workspace" || activeNav === "home") && (
         <section className={`relative overflow-hidden border-b py-8 px-4 sm:px-6 transition-all duration-300 ${
           isDark
             ? "border-emerald-500/20 bg-gradient-to-b from-[#062419] via-[#041911] to-[#030705]"
@@ -581,15 +595,6 @@ export default function App() {
         }`}>
           <div className="relative mx-auto max-w-7xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             <div className="lg:col-span-7 text-center lg:text-left space-y-4">
-              <div className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-bold backdrop-blur-md ${
-                isDark
-                  ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300 glow-emerald"
-                  : "border-emerald-300 bg-white/80 text-emerald-900 shadow-sm"
-              }`}>
-                <Sparkles size={14} className="text-amber-400 animate-pulse" />
-                <span>Next-Gen AgTech Intelligence • Free Open Access</span>
-              </div>
-
               <h1 className={`text-3xl font-black tracking-tight sm:text-4xl lg:text-5xl ${
                 isDark ? "ai-gradient-text" : "ai-gradient-text-light"
               }`}>
@@ -609,10 +614,10 @@ export default function App() {
                   <Camera size={16} /> Run AI Leaf Diagnostics
                 </button>
                 <button
-                  onClick={() => setActiveNav("sat")}
+                  onClick={() => setActiveNav("weather")}
                   className="rounded-2xl border border-emerald-500/40 bg-emerald-500/10 px-6 py-3 text-xs font-bold text-emerald-300 hover:bg-emerald-500/20 flex items-center gap-2 transition active:scale-[0.98]"
                 >
-                  <Layers size={16} /> Open 3D NDVI Terrain
+                  <CloudSun size={16} /> View Farm Weather
                 </button>
               </div>
             </div>
@@ -621,37 +626,11 @@ export default function App() {
               <div className={`relative rounded-3xl p-4 border transition-all ${
                 isDark ? "border-emerald-500/30 bg-[#072017]/80 shadow-2xl glow-emerald" : "border-slate-200 bg-white/90 shadow-xl"
               }`}>
-                <div className="flex items-center justify-between mb-1 px-2">
-                  <span className="text-[11px] font-mono font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
-                    Interactive 3D Crop Model
-                  </span>
-                  <span className="text-[10px] text-slate-400 font-mono">Three.js WebGL</span>
-                </div>
-                
                 <Hero3DCropModel theme={theme} />
-
-                <div className="mt-2 text-center text-[11px] font-mono text-slate-400">
-                  Low-Poly Wheat Stalk • Auto-Rotating Three.js Render
-                </div>
               </div>
             </div>
           </div>
         </section>
-      ) : (
-        <div className={`border-b py-2 px-4 transition-colors ${isDark ? "border-emerald-900/40 bg-[#061912]/60" : "border-slate-200 bg-emerald-50/50"}`}>
-          <div className="mx-auto max-w-7xl flex items-center justify-between text-xs">
-            <span className="font-bold text-emerald-500 flex items-center gap-1.5">
-              <Sparkles size={14} /> 3D Agronomy Dashboard Active
-            </span>
-            <button
-              onClick={() => setHeroExpanded(true)}
-              className="text-xs font-bold text-emerald-600 hover:underline flex items-center gap-1"
-            >
-              <Maximize2 size={13} /> Expand 3D Hero
-            </button>
-          </div>
-        </div>
       )}
 
       {/* Main Content Area */}
@@ -659,21 +638,20 @@ export default function App() {
         {/* Mobile Navigation Bar */}
         <div className="flex xl:hidden overflow-x-auto gap-2 mb-6 pb-2 no-scrollbar">
           {[
-            { id: "workspace", label: "Workspace", icon: Bot, badge: "AI Core" },
-            { id: "intel", label: "3D Field Intel", icon: Compass, badge: "Sentinel-2" },
+            { id: "workspace", label: "Home", icon: Home },
+            { id: "intel", label: "Drone Tech", icon: Compass },
             { id: "diag", label: t.navDiag, icon: Leaf },
-            { id: "sat", label: t.navSat, icon: Layers },
-            { id: "map", label: t.navMap, icon: Radar, badge: "GIS" },
-            { id: "analytics", label: t.navAnalytics, icon: LineChart },
+            { id: "weather", label: "Weather", icon: CloudSun },
+            { id: "map", label: t.navMap, icon: Radar },
             { id: "calc", label: t.navCalc, icon: Calculator },
             { id: "mandi", label: t.navMandi, icon: TrendingUp },
             { id: "market", label: t.navMarket, icon: ShoppingCart },
             { id: "pricing", label: t.navPricing, icon: Zap },
-          ].map(({ id, label, icon: Icon, badge }) => (
+          ].map(({ id, label, icon: Icon }) => (
             <button
               key={id}
               onClick={() => setActiveNav(id)}
-              className={`flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2.5 text-xs font-bold transition ${
+              className={`flex shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold whitespace-nowrap transition ${
                 activeNav === id || (activeNav === "bot" && id === "workspace")
                   ? isDark ? "bg-emerald-500 text-slate-950 shadow-md glow-emerald font-black" : "bg-emerald-600 text-white shadow-md font-black"
                   : isDark
@@ -682,8 +660,7 @@ export default function App() {
               }`}
             >
               <Icon size={14} />
-              {label}
-              {badge && <span className="rounded bg-amber-400/20 text-amber-400 px-1 text-[9px] font-mono">{badge}</span>}
+              <span>{label}</span>
             </button>
           ))}
         </div>
@@ -729,14 +706,6 @@ export default function App() {
               onPlayAudio={(text) => handleSpeechToggle(text)}
               onSelectFollowUp={(followUp) => handleSendBotMessage(followUp)}
             />
-
-            {/* Quick Dashboard Diagnostic Trigger Card */}
-            <div className="mt-8">
-              <DashboardDiagnosticCard
-                onOpenDiagnostics={() => setActiveNav("diag")}
-                isDark={isDark}
-              />
-            </div>
           </div>
         )}
 
@@ -751,140 +720,25 @@ export default function App() {
           </div>
         )}
 
-        {/* SECTION: ENTERPRISE YIELD & AGRONOMY ANALYTICS */}
-        {activeNav === "analytics" && (
-          <div className="space-y-6">
-            <div className={`rounded-3xl p-6 border transition-all ${
-              isDark ? "border-emerald-800/40 bg-[#072017]" : "border-slate-200 bg-white shadow-xl"
-            }`}>
-              <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-                <div>
-                  <h2 className={`text-2xl font-black flex items-center gap-2 ${isDark ? "text-white" : "text-slate-900"}`}>
-                    <LineChart className="text-emerald-500" size={26} />
-                    {t.navAnalytics} (Multi-Year Predictive Crop Yield)
-                  </h2>
-                  <p className="text-xs text-slate-400">AI-predicted harvest yield projections, soil NPK depletion forecasts, and revenue optimization</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-mono font-bold text-emerald-300 border border-emerald-500/40">
-                    Model: Ensembled ResNet + Sentinel-2
-                  </span>
-                </div>
-              </div>
-
-              {/* Analytics Metric Cards Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 my-6">
-                <div className={`rounded-2xl border p-4 text-center transition-all ${
-                  isDark ? "border-emerald-500/30 bg-[#04160f] text-white" : "border-slate-200 bg-emerald-50/50 text-slate-900 shadow-xs"
-                }`}>
-                  <Target size={24} className="mx-auto text-emerald-500 mb-2" />
-                  <p className="text-3xl font-black">{38.4} Q/Acre</p>
-                  <p className={`text-xs font-bold mt-1 ${isDark ? "text-emerald-300" : "text-emerald-700"}`}>Est. Target Harvest Yield</p>
-                </div>
-                <div className={`rounded-2xl border p-4 text-center transition-all ${
-                  isDark ? "border-cyan-500/30 bg-[#04160f] text-white" : "border-slate-200 bg-cyan-50/50 text-slate-900 shadow-xs"
-                }`}>
-                  <TrendingUp size={24} className="mx-auto text-cyan-500 mb-2" />
-                  <p className="text-3xl font-black">+18.5%</p>
-                  <p className={`text-xs font-bold mt-1 ${isDark ? "text-cyan-300" : "text-cyan-700"}`}>Yield Gain vs Regional Avg</p>
-                </div>
-                <div className={`rounded-2xl border p-4 text-center transition-all ${
-                  isDark ? "border-amber-500/30 bg-[#04160f] text-white" : "border-slate-200 bg-amber-50/50 text-slate-900 shadow-xs"
-                }`}>
-                  <Clock size={24} className="mx-auto text-amber-500 mb-2" />
-                  <p className="text-3xl font-black">28 Days</p>
-                  <p className={`text-xs font-bold mt-1 ${isDark ? "text-amber-300" : "text-amber-700"}`}>Est. Days to Optimal Harvest</p>
-                </div>
-                <div className={`rounded-2xl border p-4 text-center transition-all ${
-                  isDark ? "border-emerald-500/30 bg-[#04160f] text-white" : "border-slate-200 bg-emerald-50/50 text-slate-900 shadow-xs"
-                }`}>
-                  <Coins size={24} className="mx-auto text-emerald-500 mb-2" />
-                  <p className="text-3xl font-black">₹1,26,720</p>
-                  <p className={`text-xs font-bold mt-1 ${isDark ? "text-emerald-300" : "text-emerald-700"}`}>Projected Gross Revenue / Acre</p>
-                </div>
-              </div>
-
-              {/* Yield Trend Bar Chart Representation */}
-              <div className={`mt-6 rounded-2xl border p-6 ${isDark ? "border-emerald-900/60 bg-[#04160f]" : "border-slate-200 bg-slate-50"}`}>
-                <h3 className={`text-base font-black mb-4 ${isDark ? "text-white" : "text-slate-900"}`}>
-                  5-Year Historical & AI Projected Yield Trajectory (Quintals / Acre)
-                </h3>
-                <div className="space-y-3">
-                  {[
-                    { year: "2022 Actual", yieldVal: 28, pct: "65%" },
-                    { year: "2023 Actual", yieldVal: 31, pct: "72%" },
-                    { year: "2024 Actual", yieldVal: 33, pct: "78%" },
-                    { year: "2025 Actual", yieldVal: 35, pct: "84%" },
-                    { year: "2026 AI Projected (Agri Nirvana)", yieldVal: 38.4, pct: "95%", highlight: true }
-                  ].map((bar, bIdx) => (
-                    <div key={bIdx} className="space-y-1">
-                      <div className="flex justify-between text-xs font-bold">
-                        <span className={bar.highlight ? "text-emerald-500 font-black" : isDark ? "text-slate-400" : "text-slate-600"}>{bar.year}</span>
-                        <span className={bar.highlight ? "text-emerald-500 font-black" : isDark ? "text-slate-300" : "text-slate-700"}>{bar.yieldVal} Q/Acre</span>
-                      </div>
-                      <div className={`h-3 w-full rounded-full border overflow-hidden ${isDark ? "bg-slate-900 border-slate-800" : "bg-slate-200 border-slate-300"}`}>
-                        <div
-                          className={`h-full rounded-full transition-all duration-1000 ${
-                            bar.highlight ? "bg-gradient-to-r from-emerald-500 to-teal-400 shadow-[0_0_15px_#10b981]" : "bg-slate-500"
-                          }`}
-                          style={{ width: bar.pct }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* SECTION: AI DIAGNOSTICS MODULE (ONE-STOP WORKSPACE) */}
         {activeNav === "diag" && (
           <CropDiagnosticsWorkspace
             lang={lang}
             theme={theme}
             t={t}
-            selectedField={selectedField}
             showToast={showToast}
             setMonthlyScansCount={setMonthlyScansCount}
             handleSimulatePurchase={handleSimulatePurchase}
           />
         )}
 
-        {/* SECTION: SATELLITE TELEMETRY */}
-        {activeNav === "sat" && (
-          <div className="space-y-6">
-            <div className={`rounded-3xl p-6 border transition-all ${
-              isDark ? "border-emerald-800/40 bg-[#072017]" : "border-slate-200 bg-white shadow-xl"
-            }`}>
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h2 className={`text-2xl font-black flex items-center gap-2 ${isDark ? "text-white" : "text-slate-900"}`}>
-                    <Layers className="text-emerald-500" size={26} />
-                    {t.satelliteTitle}
-                  </h2>
-                  <p className={`text-xs mt-1 ${isDark ? "text-emerald-200/60" : "text-slate-500"}`}>{t.satSub}</p>
-                </div>
-                <div className="flex gap-2">
-                  {SATELLITE_FIELDS.map((f) => (
-                    <button
-                      key={f.id}
-                      onClick={() => setSelectedField(f)}
-                      className={`rounded-xl px-3 py-1.5 text-xs font-bold border transition ${
-                        selectedField.id === f.id
-                          ? "border-emerald-500 bg-emerald-500/20 text-emerald-300 font-black"
-                          : isDark ? "border-emerald-900/60 text-slate-400" : "border-slate-300 text-slate-700"
-                      }`}
-                    >
-                      {f.crop}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <NDVITerrain3DModel fieldData={selectedField} theme={theme} />
-            </div>
-          </div>
+        {/* SECTION: FARM WEATHER & AGRO-METEOROLOGY INTELLIGENCE */}
+        {activeNav === "weather" && (
+          <FarmWeatherDashboard
+            theme={theme}
+            isDark={isDark}
+            onNavigateDiagnostics={() => setActiveNav("diag")}
+          />
         )}
 
         {/* SECTION: GIS OUTBREAK RADAR & COMMUNITY LOGGING */}
@@ -1042,7 +896,9 @@ export default function App() {
                     <TrendingUp className="text-emerald-500" size={24} />
                     {t.mandiTitle}
                   </h2>
-                  <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-600"}`}>Direct APMC Mandi Market Prices & Institutional Buyer Match</p>
+                  <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-600"}`}>
+                    Kopargaon APMC (कृषी उत्पन्न बाजार समिती, कोपरगाव, अहिल्यानगर) • e-NAM AGMARKNET Telemetry
+                  </p>
                 </div>
                 <div className={`rounded-2xl border p-3.5 text-xs flex items-center gap-3 ${
                   isDark ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-400" : "border-emerald-300 bg-emerald-50 text-emerald-900 shadow-xs"
@@ -1059,16 +915,22 @@ export default function App() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {MANDI_PRICES_FEED.map((mandi) => (
                   <div key={mandi.id} className={`rounded-2xl border p-4 flex justify-between items-start transition ${
-                    isDark ? "border-emerald-900/60 bg-[#04160f]" : "border-slate-200 bg-white shadow-xs hover:border-emerald-500"
+                    isDark ? "border-emerald-900/60 bg-[#04160f] hover:border-emerald-500/50" : "border-slate-200 bg-white shadow-xs hover:border-emerald-500"
                   }`}>
                     <div>
                       <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">{mandi.crop}</span>
                       <h3 className={`font-black text-base mt-0.5 ${isDark ? "text-white" : "text-slate-900"}`}>{mandi.mandiName}</h3>
                       <p className={`text-xs mt-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}><MapPin size={12} className="inline mr-1" />{mandi.distanceKm} km away • Updated {mandi.lastUpdated}</p>
+                      {mandi.arrival && (
+                        <p className={`text-[11px] font-mono mt-1 ${isDark ? "text-emerald-400/90" : "text-emerald-700 font-semibold"}`}>
+                          Arrival: <span className="font-bold">{mandi.arrival}</span> • Range: ₹{mandi.minPriceINR} – ₹{mandi.maxPriceINR}
+                        </p>
+                      )}
                     </div>
-                    <div className="text-right">
+                    <div className="text-right shrink-0 ml-3">
                       <p className="text-2xl font-black text-emerald-500">₹{mandi.modalPriceINR}</p>
-                      <span className="text-[11px] font-bold text-amber-500">{mandi.trend}</span>
+                      <span className="text-[10px] text-slate-400 font-mono block">{mandi.unit}</span>
+                      <span className={`text-[11px] font-bold ${mandi.trendDirection === 'down' ? 'text-rose-400' : 'text-emerald-400'}`}>{mandi.trend}</span>
                     </div>
                   </div>
                 ))}
@@ -1090,10 +952,15 @@ export default function App() {
                         isDark ? "border-emerald-900 bg-[#04160f] text-white" : "border-slate-300 bg-white text-slate-800"
                       }`}
                     >
+                      <option value="Onion">Onion (लाल कांदा / Nashik Red)</option>
+                      <option value="Soybean">Soybean (पिवळा सोयाबीन / JS-335)</option>
+                      <option value="Sugarcane">Sugarcane (ऊस / Co 86032)</option>
+                      <option value="Wheat">Wheat (शरबती / लोकवन)</option>
+                      <option value="Maize">Maize (पिवळी मका)</option>
+                      <option value="Pomegranate">Pomegranate (भगवा डाळिंब)</option>
+                      <option value="Cotton">Cotton (कापूस)</option>
+                      <option value="Chickpea">Chickpea / Gram (हरभरा)</option>
                       <option value="Tomato">Tomato (Desi / Hybrid)</option>
-                      <option value="Potato">Potato (Jyoti)</option>
-                      <option value="Wheat">Wheat (Sharbati)</option>
-                      <option value="Cotton">Cotton (Long Staple)</option>
                     </select>
                   </div>
                   <div>
@@ -1129,7 +996,7 @@ export default function App() {
           </div>
         )}
 
-        {/* SECTION: AGRI-INPUT MARKETPLACE */}
+        {/* SECTION: AGRI-INPUT & PRODUCE MARKETPLACE (KOPARGAON) */}
         {activeNav === "market" && (
           <div className="space-y-6">
             <div className={`rounded-3xl p-6 border transition-all ${
@@ -1139,12 +1006,14 @@ export default function App() {
                 <div>
                   <h2 className={`text-xl font-black flex items-center gap-2 ${isDark ? "text-white" : "text-slate-900"}`}>
                     <ShoppingCart className="text-emerald-500" size={24} />
-                    Agri-Input Marketplace (Certified Partners)
+                    Kopargaon Agri-Input & Farm Marketplace
                   </h2>
-                  <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-600"}`}>Order directly from certified agri-dealers near your farm parcel</p>
+                  <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-600"}`}>
+                    Certified Krushi Seva Kendras, IFFCO centers & crop protection hubs in Kopargaon Taluka (अहिल्यानगर)
+                  </p>
                 </div>
                 <div className="flex gap-2 overflow-x-auto">
-                  {["all", "bio-control", "fungicide", "bactericide", "fertilizer"].map((cat) => (
+                  {["all", "bio-control", "fungicide", "fertilizer", "bactericide", "insecticide"].map((cat) => (
                     <button key={cat} onClick={() => setSelectedProductCategory(cat)} className={`rounded-xl px-3 py-1.5 text-xs font-bold border uppercase transition ${
                       selectedProductCategory === cat
                         ? "border-emerald-500 bg-emerald-500/20 text-emerald-300 font-black"
@@ -1156,26 +1025,112 @@ export default function App() {
                 </div>
               </div>
 
+              {/* Products Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredProducts.map((prod) => (
                   <div key={prod.id} className={`rounded-2xl border p-4 flex flex-col justify-between transition ${
-                    isDark ? "border-emerald-900/60 bg-[#04160f]" : "border-slate-200 bg-white shadow-xs hover:border-emerald-500"
+                    isDark ? "border-emerald-900/60 bg-[#04160f] hover:border-emerald-500/50" : "border-slate-200 bg-white shadow-xs hover:border-emerald-500"
                   }`}>
                     <div>
-                      <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">{prod.category}</span>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">{prod.category}</span>
+                        <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full ${isDark ? "bg-emerald-950/80 text-emerald-300 border border-emerald-800/40" : "bg-emerald-50 text-emerald-700"}`}>
+                          ⭐ {prod.rating}
+                        </span>
+                      </div>
                       <h3 className={`font-black text-base mt-1 ${isDark ? "text-white" : "text-slate-900"}`}>{prod.name}</h3>
                       <p className={`text-xs mt-0.5 ${isDark ? "text-slate-400" : "text-slate-600"}`}>{prod.brand} • {prod.unit}</p>
-                      <p className="text-xs text-emerald-500 font-bold mt-2"><MapPin size={12} className="inline mr-1" />{prod.dealerName}</p>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenGoogleMaps(prod.dealerName, `${prod.dealerName.replace(/\(.*?\)/g, "").trim()}, Kopargaon, Maharashtra`)}
+                        className="text-xs text-emerald-500 hover:text-emerald-400 font-bold mt-2 flex items-center gap-1 hover:underline cursor-pointer text-left"
+                        title="Open Shop Location on Google Maps"
+                      >
+                        <MapPin size={12} className="inline mr-1 shrink-0" />
+                        <span>{prod.dealerName}</span>
+                      </button>
+                      <p className={`text-[11px] font-mono mt-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>{prod.stock}</p>
                     </div>
 
                     <div className="mt-4 pt-3 border-t border-slate-700/30 flex items-center justify-between">
                       <span className="text-xl font-black text-emerald-500">₹{prod.priceINR}</span>
-                      <button onClick={() => handleSimulatePurchase(prod)} className="rounded-xl bg-emerald-500 px-4 py-2 text-xs font-black text-slate-950 hover:bg-emerald-400 transition shadow">
-                        Order Now
+                      <button
+                        onClick={() => handleSimulatePurchase(prod)}
+                        className="flex items-center gap-1.5 rounded-xl bg-emerald-500 px-3.5 py-2 text-xs font-black text-slate-950 hover:bg-emerald-400 transition shadow hover:shadow-emerald-500/25 active:scale-95 cursor-pointer"
+                        title="Order via WhatsApp to 9270547135"
+                      >
+                        <span className="text-sm leading-none">💬</span>
+                        <span>Order Now</span>
                       </button>
                     </div>
                   </div>
                 ))}
+              </div>
+
+              {/* Direct Institutional Buyers & FPO Section */}
+              <div className="mt-10 pt-8 border-t border-slate-700/30">
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-6">
+                  <div>
+                    <h3 className={`text-lg font-black flex items-center gap-2 ${isDark ? "text-white" : "text-slate-900"}`}>
+                      <Award className="text-amber-400" size={22} />
+                      Verified Institutional Buyers & FPOs (Kopargaon Taluka)
+                    </h3>
+                    <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-600"}`}>
+                      Direct procurement aggregators purchasing harvested crops with guaranteed e-NAM settlement
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-mono font-bold text-emerald-400 border border-emerald-500/30">
+                    4 Verified Buyers Active
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {DIRECT_BUYERS_LIST.map((buyer) => (
+                    <div key={buyer.id} className={`rounded-2xl border p-4 flex flex-col justify-between transition ${
+                      isDark ? "border-emerald-900/60 bg-[#04160f] hover:border-emerald-500/50" : "border-slate-200 bg-slate-50 shadow-xs hover:border-emerald-500"
+                    }`}>
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-bold text-amber-400 uppercase tracking-widest">{buyer.type}</span>
+                          <span className="text-[11px] font-bold text-emerald-400">⭐ {buyer.rating}</span>
+                        </div>
+                        <h4 className={`font-black text-base mt-1 ${isDark ? "text-white" : "text-slate-900"}`}>{buyer.name}</h4>
+                        <p className={`text-xs mt-1 ${isDark ? "text-slate-400" : "text-slate-600"}`}>
+                          <MapPin size={12} className="inline mr-1" />{buyer.distanceKm} km from Kopargaon Center • {buyer.contactPerson}
+                        </p>
+                        {buyer.shopAddress && (
+                          <p className={`text-[11px] font-mono mt-0.5 ${isDark ? "text-emerald-400/80" : "text-emerald-700 font-semibold"}`}>
+                            📍 {buyer.shopAddress}
+                          </p>
+                        )}
+                        <div className="flex flex-wrap gap-1.5 mt-2.5">
+                          {buyer.buyingCrops.map((cropName, cIdx) => (
+                            <span key={cIdx} className={`rounded-md px-2 py-0.5 text-[10px] font-bold ${
+                              isDark ? "bg-emerald-950 text-emerald-300 border border-emerald-800/60" : "bg-white text-emerald-800 border border-slate-200"
+                            }`}>
+                              {cropName}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="mt-4 pt-3 border-t border-slate-700/30 flex items-center justify-between">
+                        <div>
+                          <p className="text-[10px] text-slate-400 font-mono">Offered Modal Rate</p>
+                          <span className="text-lg font-black text-emerald-400">₹{buyer.offeredPriceINR} <span className="text-xs font-normal text-slate-400">/ Qtl</span></span>
+                        </div>
+                        <button
+                          onClick={() => handleOpenGoogleMaps(buyer.name, buyer.mapsQuery || buyer.shopAddress || `${buyer.name}, Kopargaon, Maharashtra`)}
+                          className="flex items-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500 hover:text-slate-950 px-3.5 py-1.5 text-xs font-bold text-emerald-300 transition shadow cursor-pointer active:scale-95"
+                          title={`Open Google Maps for ${buyer.name} location`}
+                        >
+                          <MapPin size={13} className="shrink-0" />
+                          <span>Connect Direct</span>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -1292,9 +1247,13 @@ export default function App() {
         isDark ? "border-emerald-900/40 bg-[#03100a] text-slate-400" : "border-slate-200 bg-slate-100 text-slate-600"
       }`}>
         <div className="mx-auto max-w-7xl px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className={`flex items-center gap-2 font-extrabold ${isDark ? "text-white" : "text-slate-900"}`}>
-            <Leaf size={16} className="text-emerald-600" />
-            <span>Agri Nirvana Platform (100% Free Open Access)</span>
+          <div className={`flex items-center gap-3 font-extrabold ${isDark ? "text-white" : "text-slate-900"}`}>
+            <img
+              src={isDark ? "/logo-dark.png" : "/logo-light.png"}
+              alt="Agri Nirvana Logo"
+              className="h-8 w-auto object-contain"
+            />
+            <span className="text-xs font-semibold text-slate-400">| 100% Free Open-Access AgTech Platform</span>
           </div>
           <p>© 2026 Agri Nirvana AgTech Systems. Powered by Three.js 3D Engine & Hugging Face AI.</p>
         </div>
