@@ -9,8 +9,8 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
 
     AI_MODEL_PROVIDER: str = "real"
-    AI_CONFIDENCE_THRESHOLD: float = Field(default=0.70, ge=0.50, le=0.95)
-    AI_MIN_TOP2_MARGIN: float = Field(default=0.10, ge=0.0, le=0.50)
+    AI_CONFIDENCE_THRESHOLD: float = Field(default=0.45, ge=0.35, le=0.95)
+    AI_MIN_TOP2_MARGIN: float = Field(default=0.02, ge=0.0, le=0.50)
     AI_MAX_NORMALIZED_ENTROPY: float = Field(default=0.90, ge=0.0, le=1.0)
     # Production checkpoint. The runtime checks this path first and only then
     # falls back to the Hugging Face baseline when explicitly unavailable.

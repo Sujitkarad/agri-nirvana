@@ -563,10 +563,10 @@ export default function CropDiagnosticsWorkspace({
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleLoadPresetSample("Corn", "/images/farmer_cornfield_tablet.jpg", "In-Field Cornfield Tablet Scouting")}
+                      onClick={() => handleLoadPresetSample("Corn", "/samples/sample_corn_leaf.jpg", "Corn Common Rust Leaf Sample")}
                       className="px-2.5 py-1 rounded-lg bg-yellow-500/10 border border-yellow-500/30 text-yellow-300 hover:bg-yellow-500/20 transition font-bold flex items-center gap-1"
                     >
-                      🌽 In-Field Corn Tablet (New)
+                      🌽 Corn Rust Sample (New)
                     </button>
                   </div>
 
@@ -734,7 +734,7 @@ export default function CropDiagnosticsWorkspace({
                     <button
                       type="button"
                       onClick={() => {
-                        handleLoadPresetSample("Corn", "/images/farmer_cornfield_tablet.jpg", "In-Field Cornfield Tablet Scouting");
+                        handleLoadPresetSample("Corn", "/samples/sample_corn_leaf.jpg", "In-Field Corn Leaf Pathology Sample");
                         setInputMode("vision");
                       }}
                       className="flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 px-6 py-3.5 text-xs font-black text-slate-950 shadow-lg glow-emerald hover:brightness-110 transition active:scale-[0.98]"

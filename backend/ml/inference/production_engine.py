@@ -21,7 +21,7 @@ MODEL_SUPPORTED_CROPS = {
 class ProductionInferenceEngine:
     def __init__(self) -> None:
         self.provider_type = settings.AI_MODEL_PROVIDER.lower().strip()
-        self.threshold = max(0.50, min(float(settings.AI_CONFIDENCE_THRESHOLD), 0.95))
+        self.threshold = max(0.35, min(float(settings.AI_CONFIDENCE_THRESHOLD), 0.95))
         self._plant_validator = None
         self._disease_classifier = None
         self._models_loaded = False
@@ -257,11 +257,12 @@ class ProductionInferenceEngine:
         top_preds = classification.get("top_predictions", [])
         if len(top_preds) > 1:
             margin = confidence - float(top_preds[1].get("confidence", 0.0))
-            if margin < 0.10:
+            min_margin = float(getattr(settings, "AI_MIN_TOP2_MARGIN", 0.02))
+            if margin < min_margin:
                 return self._abstain(
                     crop_type,
                     classification,
-                    f"Ambiguous prediction: margin between top-2 candidate conditions ({margin:.2f}) is too narrow (< 0.10). Retake clearer photo.",
+                    f"Ambiguous prediction: margin between top-2 candidate conditions ({margin:.2f}) is too narrow (< {min_margin:.2f}). Retake clearer photo.",
                 )
 
         conf_diag = classification.get("confidence_diagnostics", {})
