@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Sparkles, Layers, Activity, Eye, Zap, RefreshCw } from "lucide-react";
 
 function detectWebGL() {
   try {
@@ -16,28 +15,7 @@ function detectWebGL() {
 export default function Hero3DCropModel({ theme = "light" }) {
   const mountRef = useRef(null);
   const [webglSupported, setWebglSupported] = useState(true);
-  const [activeLayer, setActiveLayer] = useState("all"); // 'all' | 'bio' | 'spectral' | 'cellular'
-  const [timeTravelHour, setTimeTravelHour] = useState(12); // 4D: 0h to 24h diurnal growth & daylight cycle
-  const [isScanning, setIsScanning] = useState(true);
-  const [hoverData, setHoverData] = useState({
-    vitality: "99.4%",
-    chlorophyllIndex: "0.86 NDVI",
-    cellularStatus: "Active Photophosphorylation",
-    pathogenRisk: "0.02% (Protected)",
-  });
-
   const isDark = theme === "cyber" || theme === "dark" || theme === "monochrome";
-
-  // References to communicate with the Three.js render loop
-  const configRef = useRef({
-    activeLayer: "all",
-    timeTravelHour: 12,
-    isScanning: true,
-  });
-
-  useEffect(() => {
-    configRef.current = { activeLayer, timeTravelHour, isScanning };
-  }, [activeLayer, timeTravelHour, isScanning]);
 
   useEffect(() => {
     if (!detectWebGL()) {
@@ -452,7 +430,6 @@ export default function Hero3DCropModel({ theme = "light" }) {
       const animate = () => {
         animationFrameId = requestAnimationFrame(animate);
         const elapsed = clock.getElapsedTime();
-        const cfg = configRef.current;
 
         // Auto-rotation & smooth drag damping
         if (autoRotate) {
@@ -461,42 +438,16 @@ export default function Hero3DCropModel({ theme = "light" }) {
         mainRig.rotation.y += (targetRotationY - mainRig.rotation.y) * 0.06;
         mainRig.rotation.x += (targetRotationX - mainRig.rotation.x) * 0.06;
 
-        // 4D Diurnal Growth / Sunlight Simulation based on timeTravelHour
-        const hour = cfg.timeTravelHour;
-        const sunAngle = ((hour - 6) / 12) * Math.PI; // Peak at 12 PM
-        const sunIntensity = Math.max(0.6, Math.sin(sunAngle) * 3.5);
-        sunLight.intensity = sunIntensity;
-        sunLight.color.setHSL(0.35 - (hour - 12) * 0.01, 0.8, 0.5);
-
-        // 5D Active Layer Visibility Dispatch
-        if (cfg.activeLayer === "bio") {
-          plantGroup.visible = true;
-          cellularCoreGroup.visible = false;
-          spectralFieldGroup.visible = false;
-        } else if (cfg.activeLayer === "spectral") {
-          plantGroup.visible = true;
-          cellularCoreGroup.visible = false;
-          spectralFieldGroup.visible = true;
-        } else if (cfg.activeLayer === "cellular") {
-          plantGroup.visible = false;
-          cellularCoreGroup.visible = true;
-          spectralFieldGroup.visible = true;
-        } else {
-          // 'all'
-          plantGroup.visible = true;
-          cellularCoreGroup.visible = true;
-          spectralFieldGroup.visible = true;
-        }
+        // Dynamic 5D Composite: all visual layers active
+        plantGroup.visible = true;
+        cellularCoreGroup.visible = true;
+        spectralFieldGroup.visible = true;
 
         // 5D Scanning Laser Beam Sweep
-        if (cfg.isScanning) {
-          laserBeamPlane.visible = true;
-          const scanY = Math.sin(elapsed * 2.2) * 1.8;
-          laserBeamPlane.position.y = scanY;
-          laserBeamPlane.material.opacity = 0.25 + Math.abs(Math.cos(elapsed * 4.0)) * 0.35;
-        } else {
-          laserBeamPlane.visible = false;
-        }
+        laserBeamPlane.visible = true;
+        const scanY = Math.sin(elapsed * 2.2) * 1.8;
+        laserBeamPlane.position.y = scanY;
+        laserBeamPlane.material.opacity = 0.25 + Math.abs(Math.cos(elapsed * 4.0)) * 0.35;
 
         // Plant gentle bio-breathing float
         plantGroup.position.y = Math.sin(elapsed * 1.5) * 0.07;
@@ -567,7 +518,7 @@ export default function Hero3DCropModel({ theme = "light" }) {
   }
 
   return (
-    <div className="relative w-full h-full flex flex-col items-center justify-center select-none">
+    <div className="relative w-full h-full flex items-center justify-center select-none">
       {/* Radial soft backdrop glow */}
       <div
         className={`absolute inset-0 pointer-events-none transition-colors duration-500 ${
@@ -577,105 +528,12 @@ export default function Hero3DCropModel({ theme = "light" }) {
         }`}
       />
 
-      {/* 5D HUD TOP CONTROLS: SPECTRAL LAYER SWITCHER */}
-      <div className="absolute top-3 inset-x-3 z-20 flex flex-wrap items-center justify-between gap-2 pointer-events-auto">
-        <div className="flex items-center gap-1 p-1 rounded-2xl bg-black/60 backdrop-blur-md border border-emerald-500/30 shadow-lg">
-          {[
-            { id: "all", label: "5D Composite", icon: Sparkles },
-            { id: "bio", label: "Physical Bio", icon: Layers },
-            { id: "spectral", label: "NDVI Aura", icon: Eye },
-            { id: "cellular", label: "Cellular DNA", icon: Activity },
-          ].map(({ id, label, icon: Icon }) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setActiveLayer(id)}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[10px] font-mono font-bold transition-all ${
-                activeLayer === id
-                  ? "bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/40 font-black scale-[1.02]"
-                  : "text-slate-300 hover:text-white hover:bg-white/10"
-              }`}
-            >
-              <Icon size={12} />
-              <span>{label}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Laser Scanner Toggle */}
-        <button
-          type="button"
-          onClick={() => setIsScanning(!isScanning)}
-          title="Toggle 5D Diagnostic Laser Sweep"
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-mono font-bold border transition-all ${
-            isScanning
-              ? "bg-cyan-500/20 border-cyan-400/50 text-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.3)]"
-              : "bg-black/50 border-white/10 text-slate-400"
-          }`}
-        >
-          <Zap size={12} className={isScanning ? "animate-pulse text-cyan-400" : ""} />
-          <span>{isScanning ? "Scanner Active" : "Scanner Paused"}</span>
-        </button>
-      </div>
-
-      {/* 3D Canvas Mount Point */}
+      {/* Pure 3D Canvas Mount Point */}
       <div
         ref={mountRef}
         className="w-full h-full cursor-grab active:cursor-grabbing"
         style={{ minHeight: "470px" }}
-        title="Click and drag to rotate 3D crop in 360°"
       />
-
-      {/* 5D HUD BOTTOM BAR: 4D TIME-TRAVEL SLIDER & TELEMETRY */}
-      <div className="absolute bottom-3 inset-x-3 z-20 flex flex-col gap-2 pointer-events-auto">
-        {/* 4D Diurnal Time Travel Slider */}
-        <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-2xl bg-black/65 backdrop-blur-md border border-emerald-500/30">
-          <div className="flex items-center gap-2 shrink-0">
-            <span className="text-[10px] font-mono font-bold text-emerald-400 flex items-center gap-1">
-              <RefreshCw size={11} className="animate-spin" style={{ animationDuration: "8s" }} />
-              4D Diurnal Cycle:
-            </span>
-            <span className="text-[11px] font-mono font-extrabold text-white">
-              {timeTravelHour < 10 ? `0${timeTravelHour}:00` : `${timeTravelHour}:00`}{" "}
-              {timeTravelHour >= 6 && timeTravelHour <= 18 ? "☀️ Day" : "🌙 Night"}
-            </span>
-          </div>
-
-          <input
-            type="range"
-            min="0"
-            max="24"
-            value={timeTravelHour}
-            onChange={(e) => setTimeTravelHour(Number(e.target.value))}
-            className="w-full h-1.5 accent-emerald-400 bg-white/20 rounded-lg cursor-pointer"
-            title="Slide to simulate full 24-hour crop sunlight and diurnal metabolism"
-          />
-
-          <span className="text-[9px] font-mono font-bold text-emerald-400/80 shrink-0">
-            Drag 360°
-          </span>
-        </div>
-
-        {/* 5th Dimension Telemetry Metrics Pills */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-center">
-          <div className="px-2 py-1 rounded-xl bg-black/55 backdrop-blur-sm border border-emerald-500/20">
-            <div className="text-[8px] font-mono uppercase text-slate-400">Vitality Index</div>
-            <div className="text-[11px] font-mono font-extrabold text-emerald-400">{hoverData.vitality}</div>
-          </div>
-          <div className="px-2 py-1 rounded-xl bg-black/55 backdrop-blur-sm border border-cyan-500/20">
-            <div className="text-[8px] font-mono uppercase text-slate-400">NDVI Chlorophyll</div>
-            <div className="text-[11px] font-mono font-extrabold text-cyan-300">{hoverData.chlorophyllIndex}</div>
-          </div>
-          <div className="px-2 py-1 rounded-xl bg-black/55 backdrop-blur-sm border border-amber-500/20">
-            <div className="text-[8px] font-mono uppercase text-slate-400">Cellular State</div>
-            <div className="text-[11px] font-mono font-extrabold text-amber-300 truncate">{hoverData.cellularStatus}</div>
-          </div>
-          <div className="px-2 py-1 rounded-xl bg-black/55 backdrop-blur-sm border border-emerald-500/20">
-            <div className="text-[8px] font-mono uppercase text-slate-400">Pathogen Risk</div>
-            <div className="text-[11px] font-mono font-extrabold text-emerald-300">{hoverData.pathogenRisk}</div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
