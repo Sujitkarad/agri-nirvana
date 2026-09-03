@@ -26,6 +26,26 @@ class TestProductionEngine(unittest.TestCase):
         engine._is_calibrated = False
         return engine
 
+    def test_constructor_initializes_uncertainty_gates_from_settings(self):
+        original_provider = settings.AI_MODEL_PROVIDER
+        try:
+            settings.AI_MODEL_PROVIDER = "mock"
+            engine = ProductionInferenceEngine()
+            self.assertEqual(engine.min_margin, float(settings.AI_MIN_TOP2_MARGIN))
+            self.assertEqual(engine.max_entropy, float(settings.AI_MAX_NORMALIZED_ENTROPY))
+            self.assertEqual(engine.min_crop_mass, float(settings.AI_MIN_CROP_PROBABILITY_MASS))
+        finally:
+            settings.AI_MODEL_PROVIDER = original_provider
+
+    def test_abstain_returns_safe_uncertain_result(self):
+        engine = self._engine("real")
+        result = engine._abstain("Tomato", {"crop": "Tomato", "confidence": 0.61}, "ambiguous prediction")
+        self.assertEqual(result["status"], "uncertain")
+        self.assertTrue(result["uncertainty"]["abstain"])
+        self.assertEqual(result["confidence"], 0.61)
+        self.assertEqual(result["uncertainty"]["reason"], "ambiguous prediction")
+        self.assertFalse(result["isMock"])
+
     def test_engine_abstains_for_unsupported_crop(self):
         result = self._engine("real").analyze(None, "Cotton")
         self.assertEqual(result["status"], "unsupported_crop")
