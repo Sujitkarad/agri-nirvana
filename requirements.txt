@@ -1,0 +1,2 @@
+# Vercel Python runtime dependencies
+-r backend/requirements.txt
