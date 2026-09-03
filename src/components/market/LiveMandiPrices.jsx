@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertCircle, ArrowDownRight, ArrowUpRight, RefreshCw, TrendingUp } from "lucide-react";
 
 const COMMODITIES = ["Wheat", "Onion", "Soybean", "Cotton", "Tomato"];
-const API_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:8000").replace(/\/$/, "");
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "http://localhost:8000" : "")).replace(/\/$/, "");
 
 function formatPrice(value) {
   if (value === null || value === undefined || Number.isNaN(Number(value))) return "—";
@@ -33,15 +33,12 @@ export default function LiveMandiPrices({ isDark = true }) {
     else setLoading(true);
     setError("");
     try {
-      const results = await Promise.all(
-        COMMODITIES.map(async (commodity) => {
-          const response = await fetch(`${API_BASE}/api/v1/market/mandi-prices?commodity=${encodeURIComponent(commodity)}&limit=12`);
-          const payload = await response.json();
-          if (!response.ok) throw new Error(payload.detail || `Unable to load ${commodity}`);
-          return payload.records || [];
-        })
-      );
-      setRows(results.flat());
+      const response = await fetch(`${API_BASE}/api/v1/market/mandi-prices?limit=200`, {
+        headers: { Accept: "application/json" },
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.detail || "Unable to load mandi prices");
+      setRows(Array.isArray(payload.records) ? payload.records : []);
       setUpdatedAt(new Date());
     } catch (err) {
       setError(err instanceof Error ? err.message : "Mandi feed unavailable");
@@ -74,7 +71,7 @@ export default function LiveMandiPrices({ isDark = true }) {
           <div>
             <div className="flex items-center gap-2">
               <TrendingUp size={18} className="text-emerald-500" />
-              <h2 className={`text-lg font-black ${isDark ? "text-white" : "text-slate-900"}`}>Live Mandi Prices</h2>
+              <h2 className={`text-lg font-black ${isDark ? "text-white" : "text-slate-900"}`}>Mandi Prices</h2>
               <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-black text-emerald-500">DATA.GOV.IN</span>
             </div>
             <p className={`mt-1 text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>
@@ -94,7 +91,7 @@ export default function LiveMandiPrices({ isDark = true }) {
         {error && (
           <div className="mb-4 flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-500">
             <AlertCircle size={15} />
-            <span>{error}. Add DATA_GOV_IN_API_KEY to the backend environment.</span>
+            <span>{error}</span>
           </div>
         )}
 
@@ -114,7 +111,7 @@ export default function LiveMandiPrices({ isDark = true }) {
                   {records.length === 0 ? (
                     <div className="px-4 py-4 text-xs text-slate-500">No current record returned.</div>
                   ) : records.map((row, index) => (
-                    <div key={`${row.market}-${row.variety}-${row.grade}-${row.arrival_date}-${index}`} className="px-4 py-3">
+                    <div key={`${row.state}-${row.district}-${row.market}-${row.variety}-${row.grade}-${row.arrival_date}-${index}`} className="px-4 py-3">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <div className={`truncate text-xs font-black ${isDark ? "text-slate-100" : "text-slate-800"}`}>{row.market}</div>
@@ -139,7 +136,7 @@ export default function LiveMandiPrices({ isDark = true }) {
         )}
 
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-[10px] text-slate-500">
-          <span>Source: Government of India Open Government Data / AGMARKNET. This is daily reported wholesale data, not an executable live quote.</span>
+          <span>Source: Government of India Open Government Data / AGMARKNET. Daily reported wholesale data, not a live executable quote.</span>
           {updatedAt && <span>Fetched {updatedAt.toLocaleTimeString("en-IN")}</span>}
         </div>
       </div>
