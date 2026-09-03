@@ -1,16 +1,18 @@
 from typing import Optional
+
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Agri Nirvana - Crop AI Health Diagnostic API"
-    VERSION: str = "4.2.0"
+    VERSION: str = "4.2.1"
     API_V1_STR: str = "/api/v1"
 
     AI_MODEL_PROVIDER: str = "real"
-    AI_CONFIDENCE_THRESHOLD: float = Field(default=0.45, ge=0.35, le=0.95)
-    AI_MIN_TOP2_MARGIN: float = Field(default=0.02, ge=0.0, le=0.50)
+    # Safe production defaults. These can still be overridden explicitly by env vars.
+    AI_CONFIDENCE_THRESHOLD: float = Field(default=0.70, ge=0.35, le=0.95)
+    AI_MIN_TOP2_MARGIN: float = Field(default=0.10, ge=0.0, le=0.50)
     AI_MAX_NORMALIZED_ENTROPY: float = Field(default=0.90, ge=0.0, le=1.0)
     AI_MIN_CROP_PROBABILITY_MASS: float = Field(default=0.45, ge=0.0, le=1.0)
     AI_REQUIRE_LOCAL_CHECKPOINT: bool = True
