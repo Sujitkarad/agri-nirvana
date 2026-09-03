@@ -1,16 +1,23 @@
 import unittest
 from unittest.mock import patch
 
+from backend.config import settings
 from backend.services import mandi_market
 
 
 class TestMandiMarket(unittest.TestCase):
-    def tearDown(self):
+    def setUp(self):
+        self.original_key = settings.DATA_GOV_IN_API_KEY
         mandi_market._cache.clear()
 
-    @patch.dict("os.environ", {"DATA_GOV_IN_API_KEY": "test-key"})
+    def tearDown(self):
+        settings.DATA_GOV_IN_API_KEY = self.original_key
+        mandi_market._cache.clear()
+
     @patch("backend.services.mandi_market.requests.get")
     def test_fetch_and_daily_trend(self, mock_get):
+        settings.DATA_GOV_IN_API_KEY = "test-key"
+
         class Response:
             def raise_for_status(self):
                 return None
@@ -55,11 +62,12 @@ class TestMandiMarket(unittest.TestCase):
         mock_get.assert_called_once()
 
     def test_rejects_unsupported_commodity(self):
+        settings.DATA_GOV_IN_API_KEY = "test-key"
         with self.assertRaises(ValueError):
             mandi_market.get_mandi_prices("Rice")
 
-    @patch.dict("os.environ", {}, clear=True)
     def test_requires_api_key(self):
+        settings.DATA_GOV_IN_API_KEY = None
         with self.assertRaises(RuntimeError):
             mandi_market.get_mandi_prices("Wheat")
 
