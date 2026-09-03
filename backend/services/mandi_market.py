@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-import os
 import time
 from collections import defaultdict
 from datetime import datetime, timezone
 from typing import Any
 
 import requests
+
+from backend.config import settings
 
 RESOURCE_ID = "9ef84268-d588-465a-a308-a864a43d0070"
 API_URL = f"https://api.data.gov.in/resource/{RESOURCE_ID}"
@@ -20,7 +21,7 @@ _cache: dict[str, tuple[float, Any]] = {}
 
 
 def _api_key() -> str:
-    key = os.getenv("DATA_GOV_IN_API_KEY", "").strip()
+    key = (settings.DATA_GOV_IN_API_KEY or "").strip()
     if not key:
         raise RuntimeError("DATA_GOV_IN_API_KEY is not configured")
     return key
@@ -107,7 +108,6 @@ def get_mandi_prices(commodity: str | None = None, state: str | None = None, lim
         if state:
             rows = [r for r in rows if r["state"].casefold() == state.casefold()]
 
-        # Keep the latest observation for each market/variety/grade.
         latest: dict[tuple[str, str, str], dict[str, Any]] = {}
         for row in rows:
             key = (row["market"], row["variety"], row["grade"])
@@ -115,7 +115,6 @@ def get_mandi_prices(commodity: str | None = None, state: str | None = None, lim
             if existing is None or row["arrival_date"] > existing["arrival_date"]:
                 latest[key] = row
 
-        # Find the previous observation for each market/variety/grade to calculate a daily move.
         grouped: dict[tuple[str, str, str], list[dict[str, Any]]] = defaultdict(list)
         for row in rows:
             grouped[(row["market"], row["variety"], row["grade"])].append(row)
