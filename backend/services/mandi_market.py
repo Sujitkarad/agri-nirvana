@@ -34,22 +34,31 @@ def _decimal(value: Any) -> float | None:
         return None
 
 
-def _fetch(commodity: str, limit: int = 1000) -> list[dict[str, Any]]:
-    key = f"{commodity}:{limit}"
+def _fetch(
+    commodity: str,
+    state: str | None = None,
+    limit: int = 1000,
+) -> list[dict[str, Any]]:
+    normalized_state = state.strip() if state else None
+    key = f"{commodity}:{normalized_state or '*'}:{limit}"
     cached = _cache.get(key)
     if cached and time.time() - cached[0] < CACHE_TTL_SECONDS:
         return cached[1]
 
+    params: dict[str, Any] = {
+        "api-key": _api_key(),
+        "format": "json",
+        "offset": 0,
+        "limit": min(max(limit, 1), 1000),
+        "filters[commodity]": commodity,
+        "sort[arrival_date]": "desc",
+    }
+    if normalized_state:
+        params["filters[state]"] = normalized_state
+
     response = requests.get(
         API_URL,
-        params={
-            "api-key": _api_key(),
-            "format": "json",
-            "offset": 0,
-            "limit": min(max(limit, 1), 1000),
-            "filters[commodity]": commodity,
-            "sort[arrival_date]": "desc",
-        },
+        params=params,
         timeout=REQUEST_TIMEOUT_SECONDS,
     )
     response.raise_for_status()
@@ -95,7 +104,11 @@ def _trend(current: float, previous: float | None) -> dict[str, Any]:
     }
 
 
-def get_mandi_prices(commodity: str | None = None, state: str | None = None, limit: int = 50) -> dict[str, Any]:
+def get_mandi_prices(
+    commodity: str | None = None,
+    state: str | None = None,
+    limit: int = 50,
+) -> dict[str, Any]:
     commodities = [commodity] if commodity else list(SUPPORTED_COMMODITIES)
     invalid = [c for c in commodities if c not in SUPPORTED_COMMODITIES]
     if invalid:
@@ -103,33 +116,41 @@ def get_mandi_prices(commodity: str | None = None, state: str | None = None, lim
 
     output: list[dict[str, Any]] = []
     for name in commodities:
-        raw = _fetch(name)
+        raw = _fetch(name, state=state)
         rows = [r for r in (_normalize_record(x) for x in raw) if r is not None]
-        if state:
-            rows = [r for r in rows if r["state"].casefold() == state.casefold()]
 
-        latest: dict[tuple[str, str, str], dict[str, Any]] = {}
+        # Keep the full market identity. Market names can repeat across states/districts.
+        group_key = lambda r: (
+            r["state"],
+            r["district"],
+            r["market"],
+            r["variety"],
+            r["grade"],
+        )
+        grouped: dict[tuple[str, str, str, str, str], list[dict[str, Any]]] = defaultdict(list)
         for row in rows:
-            key = (row["market"], row["variety"], row["grade"])
-            existing = latest.get(key)
-            if existing is None or row["arrival_date"] > existing["arrival_date"]:
-                latest[key] = row
+            grouped[group_key(row)].append(row)
 
-        grouped: dict[tuple[str, str, str], list[dict[str, Any]]] = defaultdict(list)
-        for row in rows:
-            grouped[(row["market"], row["variety"], row["grade"])].append(row)
         for group in grouped.values():
-            group.sort(key=lambda r: r["arrival_date"], reverse=True)
+            # Use one observation per arrival date so duplicate same-day rows cannot
+            # accidentally become the "previous day" price.
+            by_date: dict[str, dict[str, Any]] = {}
+            for row in group:
+                existing = by_date.get(row["arrival_date"])
+                if existing is None:
+                    by_date[row["arrival_date"]] = row
+            dated = sorted(by_date.values(), key=lambda r: r["arrival_date"], reverse=True)
+            if not dated:
+                continue
 
-        for key, current in latest.items():
-            group = grouped[key]
-            previous = group[1]["modal_price"] if len(group) > 1 and group[1]["arrival_date"] != current["arrival_date"] else None
+            current = dated[0]
+            previous = dated[1]["modal_price"] if len(dated) > 1 else None
             item = dict(current)
             item["trend"] = _trend(current["modal_price"], previous)
             item["previous_modal_price"] = previous
             output.append(item)
 
-    output.sort(key=lambda r: (r["arrival_date"], r["commodity"], r["market"]), reverse=True)
+    output.sort(key=lambda r: (r["arrival_date"], r["commodity"], r["state"], r["district"], r["market"]), reverse=True)
     return {
         "success": True,
         "source": "data.gov.in Agmarknet",
