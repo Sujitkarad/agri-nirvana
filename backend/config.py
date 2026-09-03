@@ -30,6 +30,8 @@ class Settings(BaseSettings):
 
     ALLOWED_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5173,https://agri-nirvana.vercel.app"
 
+    DATA_GOV_IN_API_KEY: Optional[str] = None
+
     GEMINI_API_KEY: Optional[str] = None
     GEMINI_RATE_LIMIT_PER_MINUTE: int = 15
     GEMINI_MODEL: str = "gemini-1.5-flash"
