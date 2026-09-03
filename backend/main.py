@@ -1,7 +1,6 @@
 import sys
 from pathlib import Path
 
-# Ensure root workspace directory is on sys.path whether running from root or backend/
 _backend_dir = Path(__file__).resolve().parent
 _root_dir = _backend_dir.parent
 if str(_root_dir) not in sys.path:
@@ -27,7 +26,6 @@ configured_origins = {
     for origin in settings.ALLOWED_ORIGINS.split(",")
     if origin.strip()
 }
-# Ensure verified Vercel production domain and local dev origins are always permitted
 configured_origins.update([
     "https://agri-nirvana.vercel.app",
     "http://localhost:5173",
@@ -49,12 +47,14 @@ from backend.routes.ai_chat import router as ai_chat_router
 from backend.routes.auth import router as auth_router
 from backend.routes.diagnosis import router as diagnosis_router
 from backend.routes.field_intelligence import router as field_intelligence_router
+from backend.routes.market import router as market_router
 from backend.routes.weather import router as weather_router
 
 app.include_router(auth_router, prefix=settings.API_V1_STR)
 app.include_router(ai_chat_router, prefix=settings.API_V1_STR)
 app.include_router(diagnosis_router, prefix=settings.API_V1_STR)
 app.include_router(field_intelligence_router, prefix=settings.API_V1_STR)
+app.include_router(market_router, prefix=settings.API_V1_STR)
 app.include_router(weather_router, prefix=settings.API_V1_STR)
 
 
