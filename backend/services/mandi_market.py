@@ -20,8 +20,8 @@ REQUEST_TIMEOUT_SECONDS = 12
 MAX_API_LIMIT = 1000
 RETRY_COUNT = 2
 
-# key -> (expires_at, records). A stale copy is intentionally retained so a
-# temporary government API outage does not erase the last known good response.
+# key -> (expires_at, records). A stale copy is retained so a temporary
+# government API outage does not erase the last known good response.
 _cache: dict[str, tuple[float, list[dict[str, Any]]]] = {}
 
 
@@ -43,7 +43,6 @@ def _decimal(value: Any) -> float | None:
 
 
 def _date_key(value: Any) -> str:
-    """Return a sortable YYYY-MM-DD key, or empty for malformed dates."""
     text = str(value or "").strip()
     if not text:
         return ""
@@ -78,8 +77,8 @@ def _fetch(
     api_limit = min(max(limit, 1), MAX_API_LIMIT)
     cache_key = f"{commodity}:{normalized_state or '*'}:{api_limit}"
     now = time.time()
-
     cached = _cache.get(cache_key)
+
     if cached and now < cached[0]:
         return cached[1]
 
@@ -102,7 +101,6 @@ def _fetch(
         _cache[cache_key] = (now + CACHE_TTL_SECONDS, records)
         return records
     except Exception:
-        # Only serve stale data if we have previously fetched the exact query.
         if cached and cached[1]:
             return cached[1]
         raise
@@ -115,8 +113,7 @@ def _normalize_record(record: dict[str, Any]) -> dict[str, Any] | None:
     modal = _decimal(record.get("modal_price"))
     minimum = _decimal(record.get("min_price"))
     maximum = _decimal(record.get("max_price"))
-    raw_date = str(record.get("arrival_date") or "").strip()
-    date_key = _date_key(raw_date)
+    date_key = _date_key(record.get("arrival_date"))
     market = str(record.get("market") or "").strip()
 
     if modal is None or not date_key or not market:
@@ -155,7 +152,7 @@ def _trend(current: float, previous: float | None) -> dict[str, Any]:
 
 
 def _merge_same_day(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Deduplicate a market/day identity without manufacturing a trend."""
+    """Deduplicate observations without manufacturing a previous-day price."""
     grouped: dict[tuple[str, str, str, str, str, str], list[dict[str, Any]]] = defaultdict(list)
     for row in rows:
         key = (
@@ -165,65 +162,22 @@ def _merge_same_day(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
         grouped[key].append(row)
 
     result: list[dict[str, Any]] = []
-    for group in grouped.values():
+    for observations in grouped.values():
         by_date: dict[str, list[dict[str, Any]]] = defaultdict(list)
-        for row in group:
+        for row in observations:
             by_date[row["arrival_date"]].append(row)
-        for date, observations in by_date.items():
-            # If multiple API rows represent the same identity/date, average the
-            # numeric values rather than arbitrarily selecting one record.
-            modal_values = [r["modal_price"] for r in observations]
-            min_values = [r["min_price"] for r in observations if r["min_price"] is not None]
-            max_values = [r["max_price"] for r in observations if r["max_price"] is not None]
-            base = dict(observations[0])
+
+        for date, same_day in by_date.items():
+            modal_values = [r["modal_price"] for r in same_day]
+            min_values = [r["min_price"] for r in same_day if r["min_price"] is not None]
+            max_values = [r["max_price"] for r in same_day if r["max_price"] is not None]
+            base = dict(same_day[0])
             base["arrival_date"] = date
             base["modal_price"] = round(sum(modal_values) / len(modal_values), 2)
             base["min_price"] = round(min(min_values), 2) if min_values else None
             base["max_price"] = round(max(max_values), 2) if max_values else None
             result.append(base)
     return result
-
-
-def get_mandi_prices(
-    commodity: str | None = None,
-    state: str | None = None,
-    limit: int = 50,
-) -> dict[str, Any]:
-    if limit < 1:
-        raise ValueError("limit must be at least 1")
-
-    commodities = [commodity] if commodity else list(SUPPORTED_COMMODITIES)
-    invalid = [c for c in commodities if c not in SUPPORTED_COMMODITIES]
-    if invalid:
-        raise ValueError(f"Unsupported commodity: {', '.join(invalid)}")
-
-    normalized_state = state.strip() if state else None
-    output: list[dict[str, Any]] = []
-    stale = False
-
-    for name in commodities:
-        raw = _fetch(name, state=normalized_state, limit=MAX_API_LIMIT)
-        rows = [r for r in (_normalize_record(x) for x in raw) if r is not None]
-        output.extend(_with_trends(_merge_same_day(rows)))
-
-    output.sort(
-        key=lambda r: (
-            r["arrival_date"], r["commodity"], r["state"],
-            r["district"], r["market"], r["variety"], r["grade"],
-        ),
-        reverse=True,
-    )
-
-    return {
-        "success": True,
-        "source": "data.gov.in Agmarknet",
-        "resource_id": RESOURCE_ID,
-        "retrieved_at": datetime.now(timezone.utc).isoformat(),
-        "unit": "₹/quintal",
-        "daily_data": True,
-        "stale": stale,
-        "records": output[: min(limit, 200)],
-    }
 
 
 def _with_trends(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -244,3 +198,42 @@ def _with_trends(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
         item["previous_modal_price"] = previous
         result.append(item)
     return result
+
+
+def get_mandi_prices(
+    commodity: str | None = None,
+    state: str | None = None,
+    limit: int = 50,
+) -> dict[str, Any]:
+    if limit < 1:
+        raise ValueError("limit must be at least 1")
+
+    commodities = [commodity] if commodity else list(SUPPORTED_COMMODITIES)
+    invalid = [c for c in commodities if c not in SUPPORTED_COMMODITIES]
+    if invalid:
+        raise ValueError(f"Unsupported commodity: {', '.join(invalid)}")
+
+    normalized_state = state.strip() if state else None
+    output: list[dict[str, Any]] = []
+    for name in commodities:
+        raw = _fetch(name, state=normalized_state, limit=MAX_API_LIMIT)
+        rows = [r for r in (_normalize_record(x) for x in raw) if r is not None]
+        output.extend(_with_trends(_merge_same_day(rows)))
+
+    output.sort(
+        key=lambda r: (
+            r["arrival_date"], r["commodity"], r["state"],
+            r["district"], r["market"], r["variety"], r["grade"],
+        ),
+        reverse=True,
+    )
+
+    return {
+        "success": True,
+        "source": "data.gov.in Agmarknet",
+        "resource_id": RESOURCE_ID,
+        "retrieved_at": datetime.now(timezone.utc).isoformat(),
+        "unit": "₹/quintal",
+        "daily_data": True,
+        "records": output[: min(limit, 200)],
+    }
