@@ -11,6 +11,11 @@ class ProductionInferenceEngine:
     def __init__(self) -> None:
         self.provider_type = settings.AI_MODEL_PROVIDER.lower().strip()
         self.threshold = max(0.35, min(float(settings.AI_CONFIDENCE_THRESHOLD), 0.95))
+        # These attributes were referenced by analyze() but were never initialized,
+        # causing a production AttributeError immediately after model inference.
+        self.min_crop_mass = float(getattr(settings, "AI_MIN_CROP_PROBABILITY_MASS", 0.45))
+        self.min_margin = float(getattr(settings, "AI_MIN_TOP2_MARGIN", 0.02))
+        self.max_entropy = float(getattr(settings, "AI_MAX_NORMALIZED_ENTROPY", 0.90))
         self._plant_validator = None
         self._disease_classifier = None
         self._models_loaded = False
@@ -85,6 +90,13 @@ class ProductionInferenceEngine:
             "isMock": False,
         }
 
+    def _abstain(self, crop: str, classification: Dict[str, Any], reason: str) -> Dict[str, Any]:
+        """Return the standard safe uncertain response for ambiguous predictions."""
+        confidence = float(classification.get("confidence", 0.0))
+        result = self._safe(crop, "uncertain", reason, confidence)
+        result["top_predictions"] = classification.get("top_predictions", [])[:5]
+        return result
+
     def analyze(self, pil_image: Image.Image, crop_type: str) -> Dict[str, Any]:
         from backend.ml.models.disease_classifier import normalize_crop_name
         crop = normalize_crop_name((crop_type or "").strip())
@@ -124,7 +136,7 @@ class ProductionInferenceEngine:
             min_margin = float(getattr(settings, "AI_MIN_TOP2_MARGIN", 0.02))
             if margin < min_margin:
                 return self._abstain(
-                    crop_type,
+                    crop,
                     classification,
                     f"Ambiguous prediction: margin between top-2 candidate conditions ({margin:.2f}) is too narrow (< {min_margin:.2f}). Retake clearer photo.",
                 )
@@ -133,14 +145,13 @@ class ProductionInferenceEngine:
         norm_entropy = float(conf_diag.get("normalized_entropy", 0.0))
         if norm_entropy > 0.90:
             return self._abstain(
-                crop_type,
+                crop,
                 classification,
                 f"Prediction entropy ({norm_entropy:.2f}) exceeds 0.90, indicating visual ambiguity across classes.",
             )
 
         from backend.ml.models.severity_estimator import estimate_severity
         from backend.ml.config.disease_knowledge import get_disease_info
-        from backend.ml.models.severity_estimator import estimate_severity
         from backend.ml.inference.dynamic_advisor import generate_dynamic_advisory
         info = get_disease_info(classification.get("raw_label", ""))
         healthy = bool(classification.get("is_healthy"))
