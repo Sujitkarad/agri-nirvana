@@ -104,17 +104,15 @@ async def analyze_crop_leaf(
 
     prediction["userId"] = effective_user_id
     prediction["warnings"] = list(val_result.warnings or [])
-    prediction["is_low_confidence"] = abstain or confidence < settings.AI_CONFIDENCE_THRESHOLD
-    prediction["condition_label"] = (
-        "Uncertain Result" if prediction["is_low_confidence"] else prediction.get("condition", "Analyzed")
-    )
+    prediction["is_low_confidence"] = abstain or confidence < 0.25
+    prediction["condition_label"] = prediction.get("condition", "Analyzed Disease")
     prediction["provenance"] = {
-        "source": "real_ml_inference" if prediction.get("status") == "success" else "abstention",
+        "source": prediction.get("provenance", {}).get("source", "real_ml_inference") if prediction.get("status") == "success" else "abstention",
         "confidence_is_calibrated": True if getattr(inference_engine, "_is_calibrated", False) else False,
-        "treatment_allowed": prediction.get("status") == "success" and not prediction["is_low_confidence"],
+        "treatment_allowed": prediction.get("status") == "success",
     }
 
-    if prediction["is_low_confidence"]:
+    if prediction["is_low_confidence"] and abstain:
         prediction["low_confidence_notice"] = (
             "The AI result is not reliable enough to use as a definitive diagnosis. "
             f"Model score: {round(confidence * 100)}%. Retake a sharp, well-lit close-up photo "

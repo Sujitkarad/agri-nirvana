@@ -49,12 +49,14 @@ from backend.routes.ai_chat import router as ai_chat_router
 from backend.routes.auth import router as auth_router
 from backend.routes.diagnosis import router as diagnosis_router
 from backend.routes.field_intelligence import router as field_intelligence_router
+from backend.routes.mandi import router as mandi_router
 from backend.routes.weather import router as weather_router
 
 app.include_router(auth_router, prefix=settings.API_V1_STR)
 app.include_router(ai_chat_router, prefix=settings.API_V1_STR)
 app.include_router(diagnosis_router, prefix=settings.API_V1_STR)
 app.include_router(field_intelligence_router, prefix=settings.API_V1_STR)
+app.include_router(mandi_router, prefix=settings.API_V1_STR)
 app.include_router(weather_router, prefix=settings.API_V1_STR)
 
 

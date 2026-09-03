@@ -41,6 +41,10 @@ class Settings(BaseSettings):
     WEATHER_CACHE_TTL_SECONDS: int = 600
     WEATHER_TIMEOUT_SECONDS: float = 8.0
 
+    DATA_GOV_IN_API_KEY: Optional[str] = None
+    MANDI_CACHE_TTL_SECONDS: int = 900
+    MANDI_TIMEOUT_SECONDS: float = 10.0
+
     model_config = SettingsConfigDict(
         env_file=".env",
         case_sensitive=True,

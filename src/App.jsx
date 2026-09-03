@@ -62,6 +62,7 @@ import FarmWeatherDashboard from "./components/weather/FarmWeatherDashboard";
 import DiseaseHeatmapCanvas from "./components/DiseaseHeatmapCanvas";
 import CropDiagnosticsWorkspace from "./components/diagnostics/CropDiagnosticsWorkspace";
 import PrecisionFieldIntelligenceWorkspace from "./components/field-intelligence/PrecisionFieldIntelligenceWorkspace";
+import LiveMandiMarketView from "./components/mandi/LiveMandiMarketView";
 
 // Enterprise Shell Components
 import GlassHeader from "./components/shell/GlassHeader";
@@ -970,114 +971,17 @@ export default function App() {
 
         {/* SECTION: e-NAM MANDI MARKET LINKAGE */}
         {activeNav === "mandi" && (
-          <div className="space-y-6">
-            <div className={`rounded-3xl p-6 border transition-all ${
-              isDark ? "border-emerald-800/40 bg-[#072017]" : "border-slate-200 bg-white shadow-xl"
-            }`}>
-              <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-                <div>
-                  <h2 className={`text-xl font-black flex items-center gap-2 ${isDark ? "text-white" : "text-slate-900"}`}>
-                    <TrendingUp className="text-emerald-500" size={24} />
-                    {t.mandiTitle}
-                  </h2>
-                  <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-600"}`}>
-                    Kopargaon APMC (कृषी उत्पन्न बाजार समिती, कोपरगाव, अहिल्यानगर) • e-NAM AGMARKNET Telemetry
-                  </p>
-                </div>
-                <div className={`rounded-2xl border p-3.5 text-xs flex items-center gap-3 ${
-                  isDark ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-400" : "border-emerald-300 bg-emerald-50 text-emerald-900 shadow-xs"
-                }`}>
-                  <Award size={22} className="shrink-0 text-emerald-500" />
-                  <div>
-                    <p className={`font-black ${isDark ? "text-white" : "text-slate-900"}`}>{t.bestPriceToday}: {bestMandiItem.mandiName}</p>
-                    <p className="text-[11px]">{bestMandiItem.crop} @ ₹{bestMandiItem.modalPriceINR} {bestMandiItem.unit}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Mandi Cards Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {MANDI_PRICES_FEED.map((mandi) => (
-                  <div key={mandi.id} className={`rounded-2xl border p-4 flex justify-between items-start transition ${
-                    isDark ? "border-emerald-900/60 bg-[#04160f] hover:border-emerald-500/50" : "border-slate-200 bg-white shadow-xs hover:border-emerald-500"
-                  }`}>
-                    <div>
-                      <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">{mandi.crop}</span>
-                      <h3 className={`font-black text-base mt-0.5 ${isDark ? "text-white" : "text-slate-900"}`}>{mandi.mandiName}</h3>
-                      <p className={`text-xs mt-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}><MapPin size={12} className="inline mr-1" />{mandi.distanceKm} km away • Updated {mandi.lastUpdated}</p>
-                      {mandi.arrival && (
-                        <p className={`text-[11px] font-mono mt-1 ${isDark ? "text-emerald-400/90" : "text-emerald-700 font-semibold"}`}>
-                          Arrival: <span className="font-bold">{mandi.arrival}</span> • Range: ₹{mandi.minPriceINR} – ₹{mandi.maxPriceINR}
-                        </p>
-                      )}
-                    </div>
-                    <div className="text-right shrink-0 ml-3">
-                      <p className="text-2xl font-black text-emerald-500">₹{mandi.modalPriceINR}</p>
-                      <span className="text-[10px] text-slate-400 font-mono block">{mandi.unit}</span>
-                      <span className={`text-[11px] font-bold ${mandi.trendDirection === 'down' ? 'text-rose-400' : 'text-emerald-400'}`}>{mandi.trend}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Produce Listing Form */}
-              <div className={`mt-8 rounded-2xl border p-6 ${isDark ? "border-emerald-900/60 bg-[#04160f]" : "border-slate-200 bg-slate-50"}`}>
-                <h3 className={`text-base font-black mb-4 flex items-center gap-2 ${isDark ? "text-white" : "text-slate-900"}`}>
-                  <PlusCircle size={18} className="text-emerald-500" />
-                  {t.listProduce}
-                </h3>
-                <form onSubmit={handleProduceSubmit} className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-                  <div>
-                    <label className="block font-bold mb-1">Crop Type</label>
-                    <select
-                      value={produceFormCrop}
-                      onChange={(e) => setProduceFormCrop(e.target.value)}
-                      className={`w-full rounded-xl border p-2.5 outline-none font-bold ${
-                        isDark ? "border-emerald-900 bg-[#04160f] text-white" : "border-slate-300 bg-white text-slate-800"
-                      }`}
-                    >
-                      <option value="Onion">Onion (लाल कांदा / Nashik Red)</option>
-                      <option value="Soybean">Soybean (पिवळा सोयाबीन / JS-335)</option>
-                      <option value="Sugarcane">Sugarcane (ऊस / Co 86032)</option>
-                      <option value="Wheat">Wheat (शरबती / लोकवन)</option>
-                      <option value="Maize">Maize (पिवळी मका)</option>
-                      <option value="Pomegranate">Pomegranate (भगवा डाळिंब)</option>
-                      <option value="Cotton">Cotton (कापूस)</option>
-                      <option value="Chickpea">Chickpea / Gram (हरभरा)</option>
-                      <option value="Tomato">Tomato (Desi / Hybrid)</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block font-bold mb-1">Quantity (Quintals)</label>
-                    <input
-                      type="number"
-                      value={produceFormQty}
-                      onChange={(e) => setProduceFormQty(Number(e.target.value))}
-                      className={`w-full rounded-xl border p-2.5 outline-none ${
-                        isDark ? "border-emerald-900 bg-[#04160f] text-white" : "border-slate-300 bg-white text-slate-800"
-                      }`}
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-bold mb-1">Expected Price (₹/Quintal)</label>
-                    <input
-                      type="number"
-                      value={produceFormPrice}
-                      onChange={(e) => setProduceFormPrice(Number(e.target.value))}
-                      className={`w-full rounded-xl border p-2.5 outline-none ${
-                        isDark ? "border-emerald-900 bg-[#04160f] text-white" : "border-slate-300 bg-white text-slate-800"
-                      }`}
-                    />
-                  </div>
-                  <div className="sm:col-span-3">
-                    <button type="submit" className="w-full rounded-xl bg-emerald-500 py-3 font-black text-slate-950 hover:bg-emerald-400 transition shadow">
-                      List Produce for Verified Institutional Buyers
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
+          <LiveMandiMarketView
+            isDark={isDark}
+            t={t}
+            produceFormCrop={produceFormCrop}
+            setProduceFormCrop={setProduceFormCrop}
+            produceFormQty={produceFormQty}
+            setProduceFormQty={setProduceFormQty}
+            produceFormPrice={produceFormPrice}
+            setProduceFormPrice={setProduceFormPrice}
+            handleProduceSubmit={handleProduceSubmit}
+          />
         )}
 
         {/* SECTION: AGRI-INPUT & PRODUCE MARKETPLACE (KOPARGAON) */}

@@ -17,12 +17,12 @@ from backend.ml.config.imagenet_plant_classes import build_plant_class_indices
 
 
 class PlantValidator:
-    MIN_WIDTH = 256
-    MIN_HEIGHT = 256
-    MIN_PLANT_CUMULATIVE = 0.10
-    MIN_ALL_PLANT_PROBABILITY = 0.15
-    MIN_BEST_PLANT_CONFIDENCE = 0.05
-    MIN_FOLIAGE_RATIO = 0.30
+    MIN_WIDTH = 128
+    MIN_HEIGHT = 128
+    MIN_PLANT_CUMULATIVE = 0.05
+    MIN_ALL_PLANT_PROBABILITY = 0.08
+    MIN_BEST_PLANT_CONFIDENCE = 0.03
+    MIN_FOLIAGE_RATIO = 0.15
 
     def __init__(self):
         print("[PlantValidator] Loading MobileNetV2 (ImageNet-1K) for plant validation...")

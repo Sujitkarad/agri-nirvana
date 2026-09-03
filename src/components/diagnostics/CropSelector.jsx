@@ -35,9 +35,9 @@ export default function CropSelector({
                   : "border-slate-200 bg-white text-slate-700 hover:border-emerald-400 hover:bg-emerald-50/50"
               }`}
             >
-              <div className="flex items-center gap-2 overflow-hidden">
+              <div className="flex items-center gap-2 overflow-hidden min-w-0">
                 <span className="text-lg shrink-0">{crop.icon || "🌱"}</span>
-                <span className="text-xs font-bold truncate">{crop.name}</span>
+                <span className="text-xs font-bold leading-tight break-words line-clamp-2">{crop.name}</span>
               </div>
               {isSelected && (
                 <div className="h-4 w-4 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center shrink-0">

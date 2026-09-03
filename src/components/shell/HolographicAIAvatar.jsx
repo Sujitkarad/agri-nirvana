@@ -192,23 +192,6 @@ export default function HolographicAIAvatar({
     };
   }, []);
 
-  const getStatusLabel = () => {
-    switch (state) {
-      case "thinking":
-        return "AI REASONING · ANALYZING CONTEXT";
-      case "processing":
-        return "PROCESSING QUERY · SENTINEL-2 LINK";
-      case "speaking":
-        return "VOICE SYNTHESIZER ACTIVE";
-      case "success":
-        return "INFERENCE COMPLETE";
-      case "error":
-        return "DIAGNOSTIC NOTICE";
-      default:
-        return "3D HOLOGRAPHIC CORE ONLINE";
-    }
-  };
-
   return (
     <div className={`relative flex flex-col items-center justify-center select-none ${className}`}>
       {/* Background Ambient Radial Glow */}
@@ -228,34 +211,6 @@ export default function HolographicAIAvatar({
 
       {/* 3D WebGL Canvas Viewport */}
       <div ref={mountRef} className="relative h-48 w-48 sm:h-56 sm:w-56 cursor-pointer" />
-
-      {/* State Status Badge */}
-      <div
-        className={`-mt-2 flex items-center gap-2 rounded-full border px-3.5 py-1 text-[10px] font-mono font-bold shadow-lg backdrop-blur-md transition-all duration-300 ${
-          isDark
-            ? "border-emerald-500/30 bg-[#061910]/90 text-emerald-300"
-            : "border-slate-300 bg-white/90 text-slate-800"
-        }`}
-      >
-        <span
-          className={`h-2 w-2 rounded-full transition-colors ${
-            state === "thinking"
-              ? "bg-amber-400 animate-ping"
-              : state === "processing"
-              ? "bg-cyan-400 animate-pulse"
-              : state === "speaking"
-              ? "bg-emerald-400 animate-bounce"
-              : state === "error"
-              ? "bg-rose-500"
-              : "bg-emerald-400"
-          }`}
-        />
-        <span>{getStatusLabel()}</span>
-      </div>
-
-      <span className="text-[10px] font-mono text-emerald-400/80 mt-1 font-semibold">
-        {selectedModel} · 3D Particle Mesh
-      </span>
     </div>
   );
 }

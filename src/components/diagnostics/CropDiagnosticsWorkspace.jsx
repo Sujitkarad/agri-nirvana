@@ -20,7 +20,8 @@ import {
   Volume2,
   VolumeX,
   Download,
-  Maximize2
+  Maximize2,
+  Leaf
 } from "lucide-react";
 
 import {
@@ -85,6 +86,7 @@ export default function CropDiagnosticsWorkspace({
   const [currentDiagnosis, setCurrentDiagnosis] = useState(null);
   const [modelStatus, setModelStatus] = useState(null);
   const [analysisError, setAnalysisError] = useState(null);
+  const [is3DEcoMode, setIs3DEcoMode] = useState(false);
 
   // Modals
   const [isCameraModalOpen, setIsCameraModalOpen] = useState(false);
@@ -230,12 +232,13 @@ export default function CropDiagnosticsWorkspace({
       <div className={`rounded-2xl p-4 border flex flex-wrap items-center justify-between gap-3 text-xs ${
         isDark ? "border-emerald-800/40 bg-[#072017]" : "border-slate-200 bg-white shadow-sm"
       }`}>
-        <div className="flex items-center gap-2">
-          <Cpu className="text-emerald-400" size={18} />
-          <span className="font-black text-emerald-300">
-            ML Model Engine: {modelStatus?.model_name || "Kisan AI Dr. Agri Multimodal Vision"}
+        <div className="flex items-center gap-2 min-w-0">
+          <Cpu className="text-emerald-400 shrink-0" size={18} />
+          <span className="font-black text-emerald-300 truncate">
+            <span className="hidden sm:inline">ML Model Engine: {modelStatus?.model_name || "Kisan AI Dr. Agri Multimodal Vision"}</span>
+            <span className="sm:hidden">ML Engine: Hybrid Vision</span>
           </span>
-          <span className="rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-mono font-bold px-2 py-0.5 border border-emerald-500/30">
+          <span className="rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-mono font-bold px-2 py-0.5 border border-emerald-500/30 shrink-0">
             {modelStatus?.model_version || "v2.5-prod"}
           </span>
         </div>
@@ -406,18 +409,41 @@ export default function CropDiagnosticsWorkspace({
                         <span className="text-[11px] font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
                           <RotateCw size={14} /> 3D Leaf Pathology Inspector
                         </span>
-                        <span className="text-[10px] font-mono text-slate-400">Mouse Drag to Orbit</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-mono text-slate-400 hidden sm:inline">Mouse Drag to Orbit</span>
+                          <button
+                            type="button"
+                            onClick={() => setIs3DEcoMode(prev => !prev)}
+                            className={`px-2 py-0.5 rounded-lg text-[10px] font-bold transition border ${
+                              is3DEcoMode
+                                ? "bg-amber-500/20 border-amber-500/40 text-amber-300"
+                                : "bg-emerald-500/20 border-emerald-500/40 text-emerald-300"
+                            }`}
+                          >
+                            {is3DEcoMode ? "Eco: ON" : "3D: Live"}
+                          </button>
+                        </div>
                       </div>
 
                       <div className="h-64 w-full rounded-2xl overflow-hidden bg-slate-950/60 border border-emerald-900/40">
-                        <DiseaseLeaf3DModel
-                          disease={{
-                            diseaseName: currentDiagnosis.condition,
-                            severity: currentDiagnosis.severity,
-                            confidence: Math.round(currentDiagnosis.confidence * 100)
-                          }}
-                          theme={theme}
-                        />
+                        {is3DEcoMode ? (
+                          <div className="h-full w-full flex flex-col items-center justify-center text-center p-4">
+                            <div className="h-16 w-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mb-3">
+                              <Leaf size={32} className="text-emerald-400" />
+                            </div>
+                            <p className="text-xs font-bold text-emerald-300">3D Rendering Paused</p>
+                            <p className="text-[10px] text-slate-400 mt-1">Battery saver mode active. Tap the button above to resume WebGL rendering.</p>
+                          </div>
+                        ) : (
+                          <DiseaseLeaf3DModel
+                            disease={{
+                              diseaseName: currentDiagnosis.condition,
+                              severity: currentDiagnosis.severity,
+                              confidence: Math.round(currentDiagnosis.confidence * 100)
+                            }}
+                            theme={theme}
+                          />
+                        )}
                       </div>
 
                       <p className="text-[11px] text-slate-400 mt-2">
@@ -566,7 +592,14 @@ export default function CropDiagnosticsWorkspace({
                       onClick={() => handleLoadPresetSample("Corn", "/samples/sample_corn_leaf.jpg", "Corn Common Rust Leaf Sample")}
                       className="px-2.5 py-1 rounded-lg bg-yellow-500/10 border border-yellow-500/30 text-yellow-300 hover:bg-yellow-500/20 transition font-bold flex items-center gap-1"
                     >
-                      🌽 Corn Rust Sample (New)
+                      🌽 Corn Rust Sample
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleLoadPresetSample("Rice", "/samples/sample_rice_leaf.jpg", "Rice Bacterial Leaf Blight Sample")}
+                      className="px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/20 transition font-bold flex items-center gap-1"
+                    >
+                      🌾 Rice Blight Sample (New)
                     </button>
                   </div>
 

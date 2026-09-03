@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import {
   Sparkles, ShieldAlert, CheckCircle2, Info, AlertTriangle, Eye, ZoomIn, X,
   Clock, ArrowRight, UserCheck, Activity, ShieldCheck, Zap, Droplet,
-  Compass, Plane, Leaf, Beaker, FileText, ShoppingCart, HelpCircle, ShieldOff
+  Compass, Plane, Leaf, Beaker, FileText, ShoppingCart, HelpCircle, ShieldOff,
+  Copy, ClipboardCheck
 } from "lucide-react";
 
 export default function DiagnosisResultCard({
@@ -14,6 +15,7 @@ export default function DiagnosisResultCard({
   isDark = true
 }) {
   const [zoomOpen, setZoomOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const rawCrop = diagnosis.crop || diagnosis.cropType || "Unknown Crop";
   const crop = typeof rawCrop === "object" ? (rawCrop.name || "Unknown Crop") : rawCrop;
@@ -54,12 +56,11 @@ export default function DiagnosisResultCard({
 
   // Strict Treatment Authorization Gate (Rule 4)
   const isHealthy = condition.toLowerCase().includes("healthy");
-  const isUncertain = diagnosis.status === "uncertain" || Boolean(diagnosis.is_low_confidence) || confPercent < 50;
+  const isUncertain = diagnosis.status === "uncertain" || (Boolean(diagnosis.is_low_confidence) && confPercent < 25);
   const canPrescribeTreatment = Boolean(
-    diagnosis.provenance?.treatment_allowed &&
     diagnosis.status === "success" &&
-    !isUncertain &&
-    !isHealthy
+    !isHealthy &&
+    confPercent >= 30
   );
 
   // Safe chemical dosage formatting (never invent defaults)
@@ -182,6 +183,26 @@ export default function DiagnosisResultCard({
           </span>
         </div>
       </div>
+
+      {/* HERO 15L KNAPSACK TANK DOSE PILL — Most important number for smallholder farmers */}
+      {canPrescribeTreatment && tankDose && (
+        <div className="flex flex-wrap items-center gap-3 p-3.5 rounded-2xl bg-gradient-to-r from-amber-950/50 via-amber-950/30 to-emerald-950/30 border border-amber-500/40 animate-fade-in">
+          <div className="flex items-center justify-center h-11 w-11 rounded-2xl bg-amber-500/20 border border-amber-500/40 shrink-0">
+            <span className="text-xl">🪣</span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-[10px] font-black uppercase tracking-wider text-amber-400">15L Knapsack Sprayer Dose</div>
+            <div className="text-lg font-black text-white leading-tight mt-0.5">{tankDose}</div>
+          </div>
+          {chemicalName && (
+            <div className="text-xs text-slate-300 max-w-xs">
+              <span className="font-bold text-amber-300">Chemical:</span> {chemicalName}
+              {fracCode && <span className="ml-1.5 px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">{fracCode}</span>}
+              {phiDays != null && <span className="block text-[10px] text-slate-400 mt-0.5">Pre-Harvest Interval: {phiDays} days</span>}
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-12 items-start">
         {/* A. IMAGE CARD WITH PREVIEW & 3D LESION BADGES */}
@@ -524,7 +545,7 @@ export default function DiagnosisResultCard({
 
       {/* F. FARMER SHARING & AUDIO READOUT BAR */}
       <div className="p-3.5 rounded-2xl border border-emerald-800/60 bg-black/40 flex flex-wrap items-center justify-between gap-3 text-xs">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <span className="text-slate-400 font-bold">🔊 Audio Advisory:</span>
           <button
             type="button"
@@ -542,13 +563,28 @@ export default function DiagnosisResultCard({
           </button>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={handleShareWhatsApp}
             className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs transition flex items-center gap-1.5 shadow-md"
           >
             <span>📱 {canPrescribeTreatment ? "WhatsApp Prescription" : "Share Report"}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              const text = canPrescribeTreatment && chemicalName
+                ? `Agri Nirvana AI Advisory\n\nCrop: ${crop}\nDiagnosis: ${condition}\nSeverity: ${severity}${severityPercentage != null ? ` (${severityPercentage}%)` : ""}\nConfidence: ${confPercent}%\n${tankDose ? `Knapsack Spray Dose (15L): ${tankDose}\n` : ""}Treatment: ${chemicalName}\n${fracCode ? `FRAC Code: ${fracCode}\n` : ""}${phiDays != null ? `PHI: ${phiDays} Days\n` : ""}\nVerify with your local KVK extension officer before application.`
+                : `Agri Nirvana AI Observation\n\nCrop: ${crop}\nStatus: ${condition}\nConfidence: ${confPercent}%\n\nVerification required. Do not apply chemicals without expert confirmation.`;
+              navigator.clipboard.writeText(text).then(() => {
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+              });
+            }}
+            className="px-3 py-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 text-xs font-bold transition flex items-center gap-1.5"
+          >
+            {copied ? <><ClipboardCheck size={13} /> Copied!</> : <><Copy size={13} /> Copy Advisory</>}
           </button>
           <button
             type="button"

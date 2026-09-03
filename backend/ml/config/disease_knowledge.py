@@ -1519,6 +1519,506 @@ DISEASE_KNOWLEDGE = {
             "Burn infected stubble or incorporate with decomposing consortium after harvest"
         ],
         "severity_baseline": "severe"
+    },
+    # ══════════════════════════════════════════════════════════
+    # RICE & MAIZE EXPANDED PATHOLOGY & INSECT-PESTS
+    # ══════════════════════════════════════════════════════════
+    "Rice___bacterial_leaf_blight": {
+        "display_name": "Bacterial Leaf Blight",
+        "crop": "Rice",
+        "pathogen": "Xanthomonas oryzae pv. oryzae",
+        "pathogen_category": "Bacterial",
+        "symptoms_observed": [
+            "Water-soaked lesions on leaf margins turning yellow to straw-colored",
+            "Wavy margins advancing along veins toward leaf sheath",
+            "Milky bacterial ooze drops visible on young lesions in morning",
+            "Kresek phase causing wilting and death of young seedlings"
+        ],
+        "likely_cause": "Bacterial pathogen entering through hydathodes/wounds in humid, rainy conditions with high nitrogen application.",
+        "immediate_precautions": [
+            "Drain field standing water for 24-48 hours to halt bacterial spread",
+            "Immediately stop any nitrogenous top-dressing",
+            "Disinfect farm tools and footwear before entering unaffected plots"
+        ],
+        "treatment_organic": [
+            "Fresh cow dung slurry spray (20%) as traditional antimicrobial barrier",
+            "Pseudomonas fluorescens @ 5 g/L or 100g in 15L knapsack tank foliar spray",
+            "Neem oil (Azadirachtin 10,000 PPM) @ 3 ml/L"
+        ],
+        "treatment_chemical": [
+            "Copper Hydroxide 77% WP @ 2 g/L + Streptocycline @ 0.1 g/L (1.5g in 15L tank)",
+            "Plantomycin @ 1 g/L combined with Copper Oxychloride 50% WP @ 2.5 g/L"
+        ],
+        "prevention_tips": [
+            "Cultivate BLB-resistant varieties (e.g., Improved Samba Mahsuri, Swarna-Sub1)",
+            "Hot water seed treatment at 52-54°C for 10 minutes",
+            "Balanced fertilizer application: strictly apply recommended potash"
+        ],
+        "severity_baseline": "severe"
+    },
+    "Rice___brown_spot": {
+        "display_name": "Brown Spot",
+        "crop": "Rice",
+        "pathogen": "Bipolaris oryzae",
+        "pathogen_category": "Fungal",
+        "symptoms_observed": [
+            "Small, oval to circular dark brown lesions with yellow halo on leaves",
+            "Dark brown discoloration on grain husks and panicles",
+            "Seedling blight and poor seed germination"
+        ],
+        "likely_cause": "Airborne fungal spores thriving in nutrient-deficient soils, water-stressed crops, and high humidity.",
+        "immediate_precautions": [
+            "Correct soil moisture and avoid drought stress in paddy fields",
+            "Provide potassium and silicon supplementation to fortify leaf epidermis"
+        ],
+        "treatment_organic": [
+            "Pseudomonas fluorescens or Trichoderma harzianum @ 10 g/L seed & foliar treatment",
+            "Neem seed kernel extract (NSKE 5%) foliar spray"
+        ],
+        "treatment_chemical": [
+            "Propiconazole 25% EC @ 1 ml/L (15 ml in 15L tank) — systemic triazole (FRAC 3)",
+            "Mancozeb 75% WP @ 2.5 g/L (37.5g in 15L tank) as protectant spray"
+        ],
+        "prevention_tips": [
+            "Soil testing to correct micronutrient deficiencies (Zinc, Silicon, Potassium)",
+            "Seed treatment with Carbendazim 50% WP @ 2 g/kg seed"
+        ],
+        "severity_baseline": "moderate"
+    },
+    "Rice___false_smut": {
+        "display_name": "False Smut",
+        "crop": "Rice",
+        "pathogen": "Ustilaginoidea virens",
+        "pathogen_category": "Fungal",
+        "symptoms_observed": [
+            "Individual grains transformed into large velvety green/orange spore balls",
+            "Smut balls bursting to release yellowish-green to black powdery chlamydospores",
+            "Reduction in grain yield and quality"
+        ],
+        "likely_cause": "High relative humidity (>90%) and cloudy overcast weather during flowering/booting stage.",
+        "immediate_precautions": [
+            "Carefully hand-pick and destroy smutted balls in plastic bags to avoid spore dispersal",
+            "Avoid excessive late nitrogen applications"
+        ],
+        "treatment_organic": [
+            "Panchagavya (3%) foliar spray at pre-flowering stage",
+            "Trichoderma viride bio-fungicide foliar application"
+        ],
+        "treatment_chemical": [
+            "Trifloxystrobin 25% + Tebuconazole 50% WG @ 0.4 g/L (6g in 15L tank) at booting stage",
+            "Copper Oxychloride 50% WP @ 2.5 g/L spray before heading"
+        ],
+        "prevention_tips": [
+            "Early sowing to escape humid flowering windows",
+            "Strictly avoid overhead sprinkler irrigation during panicle emergence"
+        ],
+        "severity_baseline": "moderate"
+    },
+    "Rice___leaf_sheath_blight": {
+        "display_name": "Sheath Blight",
+        "crop": "Rice",
+        "pathogen": "Rhizoctonia solani",
+        "pathogen_category": "Fungal",
+        "symptoms_observed": [
+            "Oval or elliptical greenish-grey water-soaked spots on leaf sheaths near water line",
+            "Lesions enlarging with irregular dark brown margins resembling snake skin patterns",
+            "Lodging of crop and premature drying of upper canopy"
+        ],
+        "likely_cause": "Soil-borne sclerotia floating on irrigation water, flourishing in dense planting with high humidity.",
+        "immediate_precautions": [
+            "Avoid stagnant water; provide alternate wetting and drying irrigation",
+            "Remove weed hosts along field bunds"
+        ],
+        "treatment_organic": [
+            "Trichoderma harzianum @ 10 g/L root and sheath spray",
+            "Pseudomonas fluorescens @ 5 g/L"
+        ],
+        "treatment_chemical": [
+            "Validamycin 3% L @ 2.5 ml/L (37.5 ml in 15L tank) — targeted antibiotic fungicide",
+            "Hexaconazole 5% SC @ 2 ml/L (30 ml in 15L tank) directed at crop base"
+        ],
+        "prevention_tips": [
+            "Adopt wider hill spacing (20x15cm) to ensure canopy aeration",
+            "Deep summer ploughing to bury sclerotia"
+        ],
+        "severity_baseline": "severe"
+    },
+    "Rice___leaf_folder": {
+        "display_name": "Rice Leaf Folder",
+        "crop": "Rice",
+        "pathogen": "Cnaphalocrocis medinalis",
+        "pathogen_category": "Insect-pest",
+        "symptoms_observed": [
+            "Leaves folded longitudinally with silk threads into protective tubes",
+            "Green mesophyll scraped off leaving transparent white papery streaks",
+            "Scorched, bleached appearance of leaf canopy during severe infestation"
+        ],
+        "likely_cause": "Adult moths attracted to shaded, heavily fertilized lush green rice canopies.",
+        "immediate_precautions": [
+            "Pass a thorny rope across canopy to dislodge larvae from folded leaves",
+            "Release Trichogramma chilonis egg parasitoids @ 100,000/ha"
+        ],
+        "treatment_organic": [
+            "Neem Seed Kernel Extract (NSKE 5%) @ 50 ml/L",
+            "Bacillus thuringiensis (Bt) @ 2 g/L foliar spray"
+        ],
+        "treatment_chemical": [
+            "Chlorantraniliprole 18.5% SC @ 0.3 ml/L (5 ml in 15L tank) — systemic diamide",
+            "Cartap Hydrochloride 50% SP @ 2 g/L (30g in 15L tank)"
+        ],
+        "prevention_tips": [
+            "Avoid excess urea; apply nitrogen in 3 split doses",
+            "Conserve natural predators such as spiders, damselflies, and mirid bugs"
+        ],
+        "severity_baseline": "moderate"
+    },
+    "Rice___rice_skipper": {
+        "display_name": "Rice Skipper",
+        "crop": "Rice",
+        "pathogen": "Pelopidas mathias",
+        "pathogen_category": "Insect-pest",
+        "symptoms_observed": [
+            "Leaf margins fastened with silk to form cylindrical roll",
+            "Defoliation starting from leaf margins towards the midrib",
+            "Presence of pale green caterpillar with characteristic flat reddish head inside roll"
+        ],
+        "likely_cause": "Skipper butterflies ovipositing single eggs on leaves during tillering and vegetative stage.",
+        "immediate_precautions": [
+            "Manually unroll and crush caterpillars in smallholder plots",
+            "Install light traps to monitor adult skipper butterfly flight"
+        ],
+        "treatment_organic": [
+            "Beauveria bassiana entomopathogenic fungus @ 5 g/L",
+            "Azadirachtin 1% (10,000 PPM) @ 3 ml/L"
+        ],
+        "treatment_chemical": [
+            "Chlorantraniliprole 18.5% SC @ 0.3 ml/L (5 ml in 15L tank)",
+            "Flubendiamide 39.35% SC @ 0.2 ml/L (3 ml in 15L tank)"
+        ],
+        "prevention_tips": [
+            "Clear grasses and sedges from paddy bunds",
+            "Maintain balanced N-P-K nutrition"
+        ],
+        "severity_baseline": "low"
+    },
+    "Rice___white_stem_borer": {
+        "display_name": "White Stem Borer",
+        "crop": "Rice",
+        "pathogen": "Scirpophaga innotata",
+        "pathogen_category": "Insect-pest",
+        "symptoms_observed": [
+            "Deadhearts (drying of central tiller shoot) in vegetative phase",
+            "White ears (empty, erect white panicles with chaffy grains) at reproductive phase",
+            "Tiny pinhole boreholes at base of stem with frass pellets"
+        ],
+        "likely_cause": "Larvae boring into the nodal regions of rice culm and feeding internally.",
+        "immediate_precautions": [
+            "Set up sex pheromone lures @ 8-10 traps/ha for monitoring and mass trapping",
+            "Clip seedling leaf tips before transplanting to remove egg masses"
+        ],
+        "treatment_organic": [
+            "Release egg parasitoid Trichogramma japonicum @ 100,000/ha weekly",
+            "Neem oil 10,000 PPM @ 3 ml/L"
+        ],
+        "treatment_chemical": [
+            "Fipronil 5% SC @ 2 ml/L (30 ml in 15L tank) foliar spray",
+            "Cartap Hydrochloride 4% G @ 10 kg/acre broadcast with standing water"
+        ],
+        "prevention_tips": [
+            "Synchronized community planting in the village watershed",
+            "Stubble shaving/deep plowing immediately after harvest to destroy diapausing larvae"
+        ],
+        "severity_baseline": "severe"
+    },
+    "Rice___yellow_stem_borer": {
+        "display_name": "Yellow Stem Borer",
+        "crop": "Rice",
+        "pathogen": "Scirpophaga incertulas",
+        "pathogen_category": "Insect-pest",
+        "symptoms_observed": [
+            "Central whorl drying out producing typical 'Deadheart' symptom",
+            "Sterile white erect panicles without grains ('Whitehead')",
+            "Severed internal stem vascular bundles pulled easily by hand"
+        ],
+        "likely_cause": "Monophagous pest specific to paddy; thrives in continuous overlapping rice cultivation.",
+        "immediate_precautions": [
+            "Install pheromone traps with Scirpo-lure @ 12 traps/ha",
+            "Maintain 2-3 cm standing water during granular insecticide broadcast"
+        ],
+        "treatment_organic": [
+            "Trichogramma japonicum parasitoid release @ 50,000/ha",
+            "Castor oil/neem cake application in root zone"
+        ],
+        "treatment_chemical": [
+            "Chlorantraniliprole 0.4% GR @ 4 kg/acre or 18.5% SC @ 0.3 ml/L",
+            "Fipronil 0.3% GR @ 7.5 kg/acre"
+        ],
+        "prevention_tips": [
+            "Crop rotation with non-host pulses or oilseeds",
+            "Clip top 5 cm of nursery seedlings to eliminate egg masses prior to planting"
+        ],
+        "severity_baseline": "severe"
+    },
+    "Rice___healthy": {
+        "display_name": "Healthy Paddy Leaf",
+        "crop": "Rice",
+        "pathogen": "None (Beneficial Agro-Ecosystem)",
+        "pathogen_category": "Healthy",
+        "symptoms_observed": [
+            "Vibrant green, erect foliage without lesions or necrosis",
+            "Uniform tiller development with clean leaf sheaths",
+            "Intact leaf lamina free from insect feeding or larval webbing"
+        ],
+        "likely_cause": "Optimal soil moisture, balanced nutrition, and sound agroecological management.",
+        "immediate_precautions": [
+            "No chemical intervention required",
+            "Continue regular weekly field scouting"
+        ],
+        "treatment_organic": [
+            "Preventive bio-enhancer: Jeevamrutha @ 200 L/acre with irrigation",
+            "Pseudomonas fluorescens @ 5 g/L as preventive bioprotectant"
+        ],
+        "treatment_chemical": [
+            "No synthetic chemical sprays needed — protect beneficial field fauna"
+        ],
+        "prevention_tips": [
+            "Maintain alternate wetting and drying (AWD) water management",
+            "Keep field bunds free from alternative host weeds"
+        ],
+        "severity_baseline": "healthy"
+    },
+    "Maize___maydis_leaf_blight": {
+        "display_name": "Maydis Leaf Blight",
+        "crop": "Corn",
+        "pathogen": "Bipolaris maydis",
+        "pathogen_category": "Fungal",
+        "symptoms_observed": [
+            "Small, elongated rectangular lesions with buff to reddish-brown borders",
+            "Lesions restricted between leaf veins with parallel sides",
+            "Severe blighting and premature senescence of lower leaves moving upward"
+        ],
+        "likely_cause": "Fungal spores spreading through warm, moist weather (20-30°C) with frequent showers.",
+        "immediate_precautions": [
+            "Strip and burn severely diseased lower foliage to reduce spore load",
+            "Avoid overhead irrigation during mid-day"
+        ],
+        "treatment_organic": [
+            "Trichoderma viride @ 5 g/L foliar spray",
+            "Neem seed kernel extract (NSKE 5%)"
+        ],
+        "treatment_chemical": [
+            "Mancozeb 75% WP @ 2.5 g/L (37.5g in 15L tank)",
+            "Azoxystrobin 18.2% + Difenoconazole 11.4% SC @ 1 ml/L (15 ml in 15L tank)"
+        ],
+        "prevention_tips": [
+            "Select MLB-resistant hybrids (e.g., Pusa HM-4, DKC 9108)",
+            "Rotate maize with soybean, pulses, or mustard"
+        ],
+        "severity_baseline": "moderate"
+    },
+    "Maize___turcicum_leaf_blight": {
+        "display_name": "Turcicum Leaf Blight",
+        "crop": "Corn",
+        "pathogen": "Exserohilum turcicum",
+        "pathogen_category": "Fungal",
+        "symptoms_observed": [
+            "Long, spindle-shaped or elliptical grayish-green water-soaked lesions",
+            "Lesions turning tan to brown, up to 15 cm in length with dark fungal spores",
+            "Complete burning/blighting of leaves during grain filling stage"
+        ],
+        "likely_cause": "Moderate temperatures (18-27°C) with prolonged dew periods and overcast skies.",
+        "immediate_precautions": [
+            "Apply protective fungicide before flowering if lower leaves show cigar-shaped lesions",
+            "Clear infected crop residue after harvest"
+        ],
+        "treatment_organic": [
+            "Pseudomonas fluorescens @ 5 g/L",
+            "Neem oil 10,000 PPM @ 3 ml/L"
+        ],
+        "treatment_chemical": [
+            "Propiconazole 25% EC @ 1 ml/L (15 ml in 15L tank)",
+            "Zineb 75% WP @ 2 g/L as preventive contact spray"
+        ],
+        "prevention_tips": [
+            "Grow resistant cultivars (e.g., Deccan 103, COH(M) 8)",
+            "Avoid continuous mono-cropping of maize"
+        ],
+        "severity_baseline": "severe"
+    },
+    "Maize___curvularia_leaf_spot": {
+        "display_name": "Curvularia Leaf Spot",
+        "crop": "Corn",
+        "pathogen": "Curvularia lunata",
+        "pathogen_category": "Fungal",
+        "symptoms_observed": [
+            "Small, circular to oval chlorotic spots with reddish-brown halo",
+            "Center of spot turns straw-colored or necrotic white with dark border",
+            "Spots coalescing to form irregular necrotic foliar patches"
+        ],
+        "likely_cause": "Airborne conidia favored by high temperatures (25-32°C) and relative humidity >85%.",
+        "immediate_precautions": [
+            "Avoid high plant density to improve air circulation",
+            "Provide balanced potassium application"
+        ],
+        "treatment_organic": [
+            "Trichoderma harzianum @ 5 g/L foliar spray",
+            "Cow urine extract (10%) with turmeric"
+        ],
+        "treatment_chemical": [
+            "Carbendazim 12% + Mancozeb 63% WP (Saaf) @ 2 g/L (30g in 15L tank)",
+            "Difenoconazole 25% EC @ 0.5 ml/L"
+        ],
+        "prevention_tips": [
+            "Seed treatment with Thiram 75% WP @ 2.5 g/kg seed",
+            "Destroy crop debris post-harvest"
+        ],
+        "severity_baseline": "moderate"
+    },
+    "Maize___sorghum_downy_mildew": {
+        "display_name": "Sorghum Downy Mildew",
+        "crop": "Corn",
+        "pathogen": "Peronosclerospora sorghi",
+        "pathogen_category": "Oomycete",
+        "symptoms_observed": [
+            "Chlorotic striping on young leaves running parallel to midrib",
+            "Downy white fungal growth visible on underside of chlorotic streaks in morning",
+            "Stunted plants with 'crazy top' proliferation and sterile tassels"
+        ],
+        "likely_cause": "Soil-borne oospores infecting emerging seedlings in cool, moist soil conditions.",
+        "immediate_precautions": [
+            "Rogue out and burn infected chlorotic seedlings within 3 weeks of emergence",
+            "Do not allow standing water around seedling crowns"
+        ],
+        "treatment_organic": [
+            "Trichoderma asperellum seed coating @ 10 g/kg",
+            "Copper hydroxide foliar protectant"
+        ],
+        "treatment_chemical": [
+            "Metalaxyl-M 31.8% ES @ 2 ml/kg seed treatment (primary control)",
+            "Metalaxyl 8% + Mancozeb 64% WP @ 2.5 g/L foliar spray at early appearance"
+        ],
+        "prevention_tips": [
+            "Mandatory seed treatment with Metalaxyl",
+            "Strictly avoid sowing maize in fields with recent downy mildew history"
+        ],
+        "severity_baseline": "severe"
+    },
+    "Maize___aphid": {
+        "display_name": "Corn Leaf Aphid",
+        "crop": "Corn",
+        "pathogen": "Rhopalosiphum maidis",
+        "pathogen_category": "Insect-pest",
+        "symptoms_observed": [
+            "Dense colonies of bluish-green aphids clustered inside whorl and tassels",
+            "Leaves coated with sticky honeydew attracting black sooty mold",
+            "Curling and yellowing of young leaves; poor tassel emergence and pollination"
+        ],
+        "likely_cause": "Dry weather with water-stressed crops encouraging rapid aphid multiplication.",
+        "immediate_precautions": [
+            "Spray jet of water into whorls to dislodge light infestations",
+            "Conserve ladybird beetles and syrphid fly larvae"
+        ],
+        "treatment_organic": [
+            "Neem oil (10,000 PPM) @ 3-5 ml/L",
+            "Verticillium lecanii entomopathogenic fungus @ 5 g/L"
+        ],
+        "treatment_chemical": [
+            "Thiamethoxam 25% WG @ 0.3 g/L (5g in 15L tank)",
+            "Dimethoate 30% EC @ 1.5 ml/L (22.5 ml in 15L tank)"
+        ],
+        "prevention_tips": [
+            "Encourage diverse flowering border crops for natural predator build-up",
+            "Avoid late summer plantings in drought-prone tracts"
+        ],
+        "severity_baseline": "moderate"
+    },
+    "Maize___fall_armyworm": {
+        "display_name": "Fall Armyworm (FAW)",
+        "crop": "Corn",
+        "pathogen": "Spodoptera frugiperda",
+        "pathogen_category": "Insect-pest",
+        "symptoms_observed": [
+            "Ragged, irregular holes in whorl leaves with copious coarse yellowish frass",
+            "Larva with inverted 'Y' mark on head and 4 raised black dots in square on 8th segment",
+            "Destruction of growing point ('Deadheart') and bored ear cobs"
+        ],
+        "likely_cause": "Invasive nocturnal moth laying 100-200 eggs in woolly clusters on leaf undersides.",
+        "immediate_precautions": [
+            "Drop fine dry sand or wood ash into whorls to suffocate and irritate young larvae",
+            "Install FAW pheromone traps @ 5 traps/acre for adult monitoring"
+        ],
+        "treatment_organic": [
+            "Metarhizium rileyi or Beauveria bassiana @ 5 g/L foliar whorl spray",
+            "Bacillus thuringiensis kurstaki (Btk) @ 2 g/L",
+            "Neem seed kernel extract (NSKE 5%) @ 50 ml/L directed into whorl"
+        ],
+        "treatment_chemical": [
+            "Chlorantraniliprole 18.5% SC @ 0.4 ml/L (6 ml in 15L knapsack tank directed into whorls)",
+            "Emamectin Benzoate 5% SG @ 0.4 g/L (6g in 15L tank)",
+            "Spinetoram 11.7% SC @ 0.5 ml/L (7.5 ml in 15L tank)"
+        ],
+        "prevention_tips": [
+            "Community-wide synchronized planting",
+            "Intercropping with cowpea, pigeonpea, or desmodium (push-pull strategy)"
+        ],
+        "severity_baseline": "severe"
+    },
+    "Maize___FAW_symptoms": {
+        "display_name": "Fall Armyworm Damage",
+        "crop": "Corn",
+        "pathogen": "Spodoptera frugiperda",
+        "pathogen_category": "Insect-pest",
+        "symptoms_observed": [
+            "Early 'window-pane' translucent epidermal feeding by neonate larvae",
+            "Torn, shredded foliar lamina with visible fecal sawdust pellets in whorl",
+            "Bored entry holes in stalk and ear shucks"
+        ],
+        "likely_cause": "Feeding activity of 1st to 3rd instar Spodoptera frugiperda larvae inside central whorl.",
+        "immediate_precautions": [
+            "Immediate scouting of 20 consecutive plants across 5 spots in field",
+            "Hand-pick egg masses and caterpillars if crop is under 20 days"
+        ],
+        "treatment_organic": [
+            "Azadirachtin 10,000 PPM @ 3 ml/L + liquid soap sticker",
+            "Bt kurstaki @ 2 g/L applied in early morning or late evening"
+        ],
+        "treatment_chemical": [
+            "Emamectin Benzoate 5% SG @ 0.4 g/L (6g in 15L tank)",
+            "Chlorantraniliprole 18.5% SC @ 0.4 ml/L directed into central leaf whorls"
+        ],
+        "prevention_tips": [
+            "Seed treatment with Cyantraniliprole 19.8% + Thiamethoxam 19.8% FS",
+            "Install bird perches @ 10-15 per acre to encourage predatory birds"
+        ],
+        "severity_baseline": "severe"
+    },
+    "Maize___healthy": {
+        "display_name": "Healthy Maize Foliage",
+        "crop": "Corn",
+        "pathogen": "None (Healthy Crop)",
+        "pathogen_category": "Healthy",
+        "symptoms_observed": [
+            "Broad, dark green arching leaves without necrotic lesions or insect frass",
+            "Vigorous stalk elongation with intact central whorl and leaf margins",
+            "Uniform photosynthetic lamina free from chlorotic striping"
+        ],
+        "likely_cause": "Optimal nitrogen, phosphorus, and moisture balance with effective crop scouting.",
+        "immediate_precautions": [
+            "No chemical pesticide application required",
+            "Maintain soil moisture at critical silking and grain-fill stages"
+        ],
+        "treatment_organic": [
+            "Maintain soil biological health with vermicompost and Jeevamrutha",
+            "Foliar spray of Seaweed extract @ 2 ml/L during vegetative growth"
+        ],
+        "treatment_chemical": [
+            "No chemical intervention needed"
+        ],
+        "prevention_tips": [
+            "Regular scouting for early fall armyworm egg masses",
+            "Avoid water logging around root zone"
+        ],
+        "severity_baseline": "healthy"
     }
 }
 
