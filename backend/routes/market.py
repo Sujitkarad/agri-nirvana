@@ -1,6 +1,7 @@
 import logging
 
 from fastapi import APIRouter, HTTPException, Query
+from starlette.concurrency import run_in_threadpool
 
 from backend.services.mandi_market import SUPPORTED_COMMODITIES, get_mandi_prices
 
@@ -19,14 +20,23 @@ async def mandi_prices(
             status_code=400,
             detail=f"commodity must be one of: {', '.join(SUPPORTED_COMMODITIES)}",
         )
+
     try:
-        return get_mandi_prices(commodity=commodity, state=state, limit=limit)
+        # requests.get is synchronous; keep network I/O off FastAPI's event loop.
+        return await run_in_threadpool(
+            get_mandi_prices,
+            commodity=commodity,
+            state=state,
+            limit=limit,
+        )
     except RuntimeError as exc:
         logger.error("Mandi configuration error: %s", exc)
         raise HTTPException(
             status_code=503,
             detail="Mandi market feed is not configured",
         ) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception:
         logger.exception("Mandi market feed failed")
         raise HTTPException(
