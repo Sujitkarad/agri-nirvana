@@ -1,7 +1,9 @@
 """Single-model, fail-safe production crop diagnosis."""
 from pathlib import Path
 from typing import Any, Dict, List
+
 from PIL import Image
+
 from backend.config import settings
 
 MODEL_SUPPORTED_CROPS = {"Apple", "Blueberry", "Cherry", "Corn", "Grape", "Orange", "Peach", "Pepper", "Potato", "Raspberry", "Soybean", "Squash", "Strawberry", "Tomato"}
@@ -11,6 +13,9 @@ class ProductionInferenceEngine:
     def __init__(self) -> None:
         self.provider_type = settings.AI_MODEL_PROVIDER.lower().strip()
         self.threshold = max(0.35, min(float(settings.AI_CONFIDENCE_THRESHOLD), 0.95))
+        self.min_margin = max(0.0, min(float(settings.AI_MIN_TOP2_MARGIN), 0.50))
+        self.max_entropy = max(0.0, min(float(settings.AI_MAX_NORMALIZED_ENTROPY), 1.0))
+        self.min_crop_mass = max(0.0, min(float(settings.AI_MIN_CROP_PROBABILITY_MASS), 1.0))
         self._plant_validator = None
         self._disease_classifier = None
         self._models_loaded = False
@@ -85,8 +90,15 @@ class ProductionInferenceEngine:
             "isMock": False,
         }
 
+    def _abstain(self, crop: str, classification: Dict[str, Any], reason: str) -> Dict[str, Any]:
+        """Return a safe uncertain result whenever model evidence is ambiguous."""
+        confidence = float(classification.get("confidence", 0.0))
+        predicted_crop = str(classification.get("crop") or crop or "Unknown")
+        return self._safe(predicted_crop, "uncertain", reason, confidence)
+
     def analyze(self, pil_image: Image.Image, crop_type: str) -> Dict[str, Any]:
         from backend.ml.models.disease_classifier import normalize_crop_name
+
         crop = normalize_crop_name((crop_type or "").strip())
         if crop == "Unknown" or crop not in self.supported_crops():
             return self._safe(crop or "Unknown", "unsupported_crop", "Crop is outside the production model classes.")
@@ -110,38 +122,18 @@ class ProductionInferenceEngine:
         margin = float(diag.get("top2_margin", 0.0))
         entropy = float(diag.get("normalized_entropy", 1.0))
         if not bool(diag.get("crop_match", False)) or mass < self.min_crop_mass:
-            return self._safe(crop, "uncertain", f"Crop evidence is insufficient (mass={mass:.2f}).", confidence)
+            return self._abstain(crop, classification, f"Crop evidence is insufficient (mass={mass:.2f}).")
         if confidence < self.threshold:
-            return self._safe(crop, "uncertain", f"Confidence {confidence:.2f} is below {self.threshold:.2f}.", confidence)
+            return self._abstain(crop, classification, f"Confidence {confidence:.2f} is below {self.threshold:.2f}.")
         if margin < self.min_margin:
-            return self._safe(crop, "uncertain", "Top-2 diagnosis margin is too narrow.", confidence)
+            return self._abstain(crop, classification, "Top-2 diagnosis margin is too narrow.")
         if entropy > self.max_entropy:
-            return self._safe(crop, "uncertain", "Prediction entropy is too high.", confidence)
-
-        top_preds = classification.get("top_predictions", [])
-        if len(top_preds) > 1:
-            margin = confidence - float(top_preds[1].get("confidence", 0.0))
-            min_margin = float(getattr(settings, "AI_MIN_TOP2_MARGIN", 0.02))
-            if margin < min_margin:
-                return self._abstain(
-                    crop_type,
-                    classification,
-                    f"Ambiguous prediction: margin between top-2 candidate conditions ({margin:.2f}) is too narrow (< {min_margin:.2f}). Retake clearer photo.",
-                )
-
-        conf_diag = classification.get("confidence_diagnostics", {})
-        norm_entropy = float(conf_diag.get("normalized_entropy", 0.0))
-        if norm_entropy > 0.90:
-            return self._abstain(
-                crop_type,
-                classification,
-                f"Prediction entropy ({norm_entropy:.2f}) exceeds 0.90, indicating visual ambiguity across classes.",
-            )
+            return self._abstain(crop, classification, "Prediction entropy is too high.")
 
         from backend.ml.models.severity_estimator import estimate_severity
         from backend.ml.config.disease_knowledge import get_disease_info
-        from backend.ml.models.severity_estimator import estimate_severity
         from backend.ml.inference.dynamic_advisor import generate_dynamic_advisory
+
         info = get_disease_info(classification.get("raw_label", ""))
         healthy = bool(classification.get("is_healthy"))
         severity = estimate_severity(pil_image, model_confidence=confidence, is_healthy=healthy)
