@@ -16,6 +16,12 @@ import {
 
 const MODEL_OPTIONS = [
   {
+    id: "gemini-2.5-flash",
+    name: "Gemini 2.5 Flash",
+    desc: "Google AI multimodal agronomy, soil chemistry & diagnosis",
+    badge: "Active · Google AI"
+  },
+  {
     id: "DeepSeek-R1",
     name: "DeepSeek-R1 Agri-Reasoner",
     desc: "Deep chain-of-thought agronomy & soil chemistry",
@@ -51,7 +57,8 @@ export default function OmniPromptStudio({
   isDark = true,
   onSubmitPrompt,
   isLoading = false,
-  selectedModel = "Mistral-7B",
+  selectedModel = "gemini-2.5-flash",
+
   onSelectModel,
   onAttachFiles,
   onTriggerVoice

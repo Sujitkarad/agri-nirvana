@@ -31,10 +31,14 @@ class ChatRequest(BaseModel):
     diagnosis: Dict[str, Any] | None = None
 
 
-def _model_id(requested: str | None) -> str:
-    allowed = {m.strip() for m in settings.AI_CHAT_ALLOWED_MODELS.split(",") if m.strip()}
-    requested = (requested or "").strip()
-    return requested if requested in allowed else settings.AI_CHAT_MODEL
+def _model_id(requested: str | None) -> str | None:
+    if not requested:
+        return None
+    allowed = {m.strip().lower() for m in settings.AI_CHAT_ALLOWED_MODELS.split(",") if m.strip()}
+    requested_clean = requested.strip()
+    if requested_clean.lower() in allowed:
+        return requested_clean
+    return None
 
 
 def _check_rate_limit(client_key: str) -> None:
@@ -70,12 +74,14 @@ async def chat(request_body: ChatRequest, request_context: Request):
         )
     except RuntimeError as exc:
         detail = str(exc)
-        if "OPENAI_API_KEY" in detail:
-            raise HTTPException(status_code=503, detail="AI chat is not configured. Add OPENAI_API_KEY to the backend environment.") from exc
+        if "not configured" in detail:
+            raise HTTPException(status_code=503, detail="AI chat is not configured. Add GEMINI_API_KEY or OPENAI_API_KEY to the backend environment.") from exc
         raise HTTPException(status_code=502, detail="AI provider returned an unusable response.") from exc
     except Exception as exc:
         # Do not expose provider internals or credentials to the browser.
         raise HTTPException(status_code=502, detail="AI provider request failed. Please try again shortly.") from exc
+
+    provider_source = "google_gemini_api" if result.get("provider") == "gemini" else "openai_responses_api"
 
     return {
         "success": True,
@@ -84,7 +90,7 @@ async def chat(request_body: ChatRequest, request_context: Request):
         "provider": result["provider"],
         "usage": None,
         "provenance": {
-            "source": "openai_responses_api",
+            "source": provider_source,
             "is_mock": False,
             "is_real_time_market_data": False,
             "is_image_diagnosis": False,
@@ -95,12 +101,17 @@ async def chat(request_body: ChatRequest, request_context: Request):
 
 @router.get("/chat/status")
 async def chat_status():
-    configured = bool(os.getenv("OPENAI_API_KEY", "").strip())
+    gemini_key = (os.getenv("GEMINI_API_KEY", "") or settings.GEMINI_API_KEY or "").strip()
+    openai_key = os.getenv("OPENAI_API_KEY", "").strip()
+    configured = bool(gemini_key or openai_key)
+    provider = "Google Gemini API" if gemini_key else "OpenAI Responses API"
+    active_model = settings.AI_CHAT_DEFAULT_GEMINI_MODEL if gemini_key else settings.AI_CHAT_MODEL
     return {
         "configured": configured,
-        "provider": "OpenAI Responses API",
-        "model": settings.AI_CHAT_MODEL,
+        "provider": provider,
+        "model": active_model,
         "allowed_models": [m.strip() for m in settings.AI_CHAT_ALLOWED_MODELS.split(",") if m.strip()],
         "streaming": False,
         "rate_limit_per_minute": _RATE_LIMIT,
     }
+

@@ -20,11 +20,35 @@ unsafe dosing claims. Prefer integrated pest management and non-chemical steps.
 """
 
 
-def _client() -> OpenAI:
-    key = os.getenv("OPENAI_API_KEY", "").strip()
-    if not key:
-        raise RuntimeError("OPENAI_API_KEY is not configured")
-    return OpenAI(api_key=key, timeout=30.0, max_retries=2)
+from backend.config import settings
+
+
+def _get_client_and_model(requested_model: str | None = None) -> tuple[OpenAI, str, str]:
+    """
+    Returns (client, model_name, provider_name).
+    Supports Google Gemini (via GEMINI_API_KEY) and OpenAI (via OPENAI_API_KEY).
+    """
+    gemini_key = (os.getenv("GEMINI_API_KEY", "") or settings.GEMINI_API_KEY or "").strip()
+    openai_key = os.getenv("OPENAI_API_KEY", "").strip()
+
+    if gemini_key:
+        client = OpenAI(
+            api_key=gemini_key,
+            base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+            timeout=30.0,
+            max_retries=2,
+        )
+        model = requested_model or settings.AI_CHAT_DEFAULT_GEMINI_MODEL
+        if not ("gemini" in (model or "").lower()):
+            model = settings.AI_CHAT_DEFAULT_GEMINI_MODEL
+        return client, model, "gemini"
+
+    if openai_key:
+        client = OpenAI(api_key=openai_key, timeout=30.0, max_retries=2)
+        model = requested_model or settings.AI_CHAT_MODEL
+        return client, model, "openai"
+
+    raise RuntimeError("AI assistant is not configured. Add GEMINI_API_KEY or OPENAI_API_KEY to the backend environment.")
 
 
 def generate_chat(
@@ -50,14 +74,36 @@ def generate_chat(
             + str(diagnosis)
         )
 
-    selected_model = model or os.getenv("OPENAI_CHAT_MODEL", "gpt-5.6-luna")
-    response = _client().responses.create(
-        model=selected_model,
-        instructions=SYSTEM_PROMPT + "\n" + context,
-        input=clean_messages,
-        max_output_tokens=1200,
-    )
-    text = (response.output_text or "").strip()
+    client, selected_model, provider = _get_client_and_model(model)
+    full_instruction = SYSTEM_PROMPT + "\n" + context
+
+    if provider == "gemini":
+        chat_messages = [{"role": "system", "content": full_instruction}] + clean_messages
+        completion = client.chat.completions.create(
+            model=selected_model,
+            messages=chat_messages,
+            max_tokens=1200,
+        )
+        text = (completion.choices[0].message.content or "").strip()
+    else:
+        try:
+            response = client.responses.create(
+                model=selected_model,
+                instructions=full_instruction,
+                input=clean_messages,
+                max_output_tokens=1200,
+            )
+            text = (response.output_text or "").strip()
+        except Exception:
+            chat_messages = [{"role": "system", "content": full_instruction}] + clean_messages
+            completion = client.chat.completions.create(
+                model=selected_model,
+                messages=chat_messages,
+                max_tokens=1200,
+            )
+            text = (completion.choices[0].message.content or "").strip()
+
     if not text:
-        raise RuntimeError("OpenAI returned an empty response")
-    return {"message": text, "model": selected_model, "provider": "openai"}
+        raise RuntimeError(f"{provider} returned an empty response")
+    return {"message": text, "model": selected_model, "provider": provider}
+

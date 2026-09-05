@@ -39,6 +39,7 @@ export async function generateAIChatResponse({
     { role: "user", content: `${userContent}${attachmentContext}` }
   ].slice(-12);
 
+  const startTime = Date.now();
   const response = await sendAgriAIChat({
     messages: nextHistory,
     crop,
@@ -51,24 +52,27 @@ export async function generateAIChatResponse({
     throw new Error("The AI assistant did not return a valid response.");
   }
 
+  const latency = `${Date.now() - startTime}ms`;
+
   conversationHistory = [
     ...nextHistory,
     { role: "assistant", content: response.message }
   ].slice(-12);
 
   return {
-    text: responseData.text,
-    source: `${selectedModel} Neural Inference Engine`,
-    reasoning: responseData.reasoning,
+    text: response.message,
+    source: `${response.model || selectedModel || "Gemini 2.5 Flash"} Neural Inference Engine`,
+    reasoning: `Agronomic query processed with ${response.provider || "Gemini"} context (${crop}, ${userLang}) in ${latency}.`,
     latency,
-    tableData: responseData.tableData || null,
-    suggestedFollowUps: responseData.suggestedFollowUps || [
+    tableData: null,
+    suggestedFollowUps: [
       "Calculate fertilizer dosage for my field",
       "Show organic bio-pesticide alternatives",
       "What are today's APMC mandi prices?"
     ]
   };
 }
+
 
 function synthesizeAgronomicAIResponse(promptLower, originalPrompt, attachments, selectedModel, userLang) {
   // 1. Attached image or leaf analysis query

@@ -18,7 +18,9 @@ class Settings(BaseSettings):
     LOCAL_TRAINED_MODEL_PATH: str = "backend/ml/models/weights/agri_nirvana_efficientnet_v2_l.pt"
 
     AI_CHAT_MODEL: str = "gpt-5.6-luna"
-    AI_CHAT_ALLOWED_MODELS: str = "gpt-5.6-luna,gpt-5.6-terra,gpt-5.6-sol"
+    AI_CHAT_DEFAULT_GEMINI_MODEL: str = "gemini-2.5-flash"
+    AI_CHAT_ALLOWED_MODELS: str = "gpt-5.6-luna,gpt-5.6-terra,gpt-5.6-sol,gemini-2.5-flash,gemini-1.5-flash,gemini-flash-latest"
+
 
     MAX_IMAGE_SIZE_MB: int = Field(default=10, ge=1, le=25)
     ALLOWED_EXTENSIONS: set[str] = {"jpg", "jpeg", "png", "webp"}

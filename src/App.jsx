@@ -158,15 +158,16 @@ export default function App() {
   const [selectedProductCategory, setSelectedProductCategory] = useState("all");
   const [totalCommissionEarnedINR, setTotalCommissionEarnedINR] = useState(4820);
 
-  // 3D AI Bot & Hugging Face Model State
-  const [selectedHfModel, setSelectedHfModel] = useState("Mistral-7B");
+  // 3D AI Bot & Model State
+  const [selectedHfModel, setSelectedHfModel] = useState("gemini-2.5-flash");
   const [chatMessages, setChatMessages] = useState([
     {
       sender: "bot",
-      text: "👋 Namaste! I am your 3D Animated Hugging Face AI Agri Assistant (powered by Mistral-7B & pre-processed Kaggle Ag-Datasets). Ask me about real-time vegetable market prices, mandi trends, fertilizer ratios, or crop disease remedies!",
-      source: "Hugging Face API (mistralai/Mistral-7B-Instruct-v0.2)"
+      text: "👋 Namaste! I am your Agri Nirvana AI Assistant (powered by Google Gemini 2.5 Flash & precision agronomy intelligence). Ask me about crop diagnostics, soil NPK, fertilizer dosage, mandi rates, or field remedies!",
+      source: "Google Gemini 2.5 Flash"
     }
   ]);
+
   const [botInputText, setBotInputText] = useState("");
   const [botLoading, setBotLoading] = useState(false);
   const [vegSearchQuery, setVegSearchQuery] = useState("");
