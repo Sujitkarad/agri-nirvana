@@ -1,0 +1,51 @@
+name: Update Agri Nirvana Terminology
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  update-terminology:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Replace Build Think Discover
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('src/App.jsx')
+          text = path.read_text(encoding='utf-8')
+          replacements = {
+              'Build. Think. Discover.': 'Scan. Diagnose. Grow.',
+              'Build. Think. Discover': 'Scan. Diagnose. Grow',
+              'Build': 'Scan',
+              'Think': 'Diagnose',
+              'Discover': 'Grow',
+          }
+          updated = text
+          for old, new in replacements.items():
+              updated = updated.replace(old, new)
+          if updated != text:
+              path.write_text(updated, encoding='utf-8')
+          PY
+
+      - name: Commit changes
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet; then
+            echo "No terminology changes needed."
+            exit 0
+          fi
+          git add src/App.jsx
+          git commit -m "feat: rename hero workflow to Scan Diagnose Grow"
+          git push
