@@ -12,12 +12,15 @@ Notes:
 import argparse
 import os
 import time
+import logging
 from typing import Tuple
 
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms, models
+
+logger = logging.getLogger(__name__)
 
 try:
     from torch.utils.tensorboard import SummaryWriter
@@ -55,7 +58,7 @@ def get_dataloaders(data_root: str, image_size: int, batch_size: int, num_worker
 
     num_classes = len(train_ds.classes)
     classes = train_ds.classes
-    print(f"Loaded data. Train classes: {num_classes}, train samples: {len(train_ds)}, val samples: {len(val_ds)}")
+    logger.info(f"Loaded data. Train classes: {num_classes}, train samples: {len(train_ds)}, val samples: {len(val_ds)}")
     return train_loader, val_loader, classes
 
 
@@ -135,7 +138,7 @@ def save_state_and_checkpoint(model, optimizer, meta_out_path, state_out_path, e
         "classes": classes if classes is not None else []
     }
     torch.save(meta, meta_out_path)
-    print(f"Saved state to {state_out_path} and meta checkpoint to {meta_out_path}")
+    logger.info(f"Saved state to {state_out_path} and meta checkpoint to {meta_out_path}")
 
 
 def main():
@@ -155,10 +158,10 @@ def main():
     args = parser.parse_args()
 
     device = args.device or ("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Using device: {device}")
+    logger.info(f"Using device: {device}")
 
     if args.amp and device == "cpu":
-        print("AMP requested but no CUDA available; proceeding without AMP")
+        logger.warning("AMP requested but no CUDA available; proceeding without AMP")
         use_amp = False
     else:
         use_amp = args.amp
@@ -181,9 +184,9 @@ def main():
     writer = None
     if TENSORBOARD_AVAILABLE:
         writer = SummaryWriter(log_dir=args.log_dir)
-        print(f"TensorBoard enabled; logs at {args.log_dir}")
+        logger.info(f"TensorBoard enabled; logs at {args.log_dir}")
     else:
-        print("TensorBoard not available; skipping logging")
+        logger.info("TensorBoard not available; skipping logging")
 
     # Resume if requested
     meta_checkpoint_path = None
@@ -193,7 +196,7 @@ def main():
         meta_checkpoint_path = args.out + ".ckpt.pth"
 
     if meta_checkpoint_path and os.path.exists(meta_checkpoint_path):
-        print(f"Resuming from checkpoint {meta_checkpoint_path}")
+        logger.info(f"Resuming from checkpoint {meta_checkpoint_path}")
         ckpt = torch.load(meta_checkpoint_path, map_location=device)
         if 'model_state_dict' in ckpt:
             model.load_state_dict(ckpt['model_state_dict'])
@@ -203,10 +206,10 @@ def main():
             try:
                 optimizer.load_state_dict(ckpt['optimizer_state_dict'])
             except Exception:
-                print("Warning: optimizer state could not be loaded")
+                logger.warning("Warning: optimizer state could not be loaded")
         start_epoch = int(ckpt.get('epoch', 0)) + 1
         best_val_acc = float(ckpt.get('best_val_acc', 0.0))
-        print(f"Resumed. Starting epoch {start_epoch}, best_val_acc={best_val_acc}")
+        logger.info(f"Resumed. Starting epoch {start_epoch}, best_val_acc={best_val_acc}")
 
     total_start = time.time()
     for epoch in range(start_epoch, args.epochs + 1):
@@ -214,7 +217,7 @@ def main():
         train_loss, train_acc = train_one_epoch(model, device, train_loader, criterion, optimizer, scaler=scaler, use_amp=use_amp)
         val_loss, val_acc = validate(model, device, val_loader, criterion, scaler=scaler, use_amp=use_amp)
         elapsed = time.time() - t0
-        print(f"Epoch {epoch}/{args.epochs} - {elapsed:.1f}s - train_loss={train_loss:.4f} train_acc={train_acc:.4f} val_loss={val_loss:.4f} val_acc={val_acc:.4f}")
+        logger.info(f"Epoch {epoch}/{args.epochs} - {elapsed:.1f}s - train_loss={train_loss:.4f} train_acc={train_acc:.4f} val_loss={val_loss:.4f} val_acc={val_acc:.4f}")
 
         # TensorBoard logging
         if writer:
@@ -233,10 +236,10 @@ def main():
             best_out = args.out.replace('.pth', '.best.pth') if args.out.endswith('.pth') else args.out + '.best'
             # save best state_dict
             torch.save(model.state_dict(), best_out)
-            print(f"New best model saved to {best_out}")
+            logger.info(f"New best model saved to {best_out}")
 
     total_time = time.time() - total_start
-    print(f"Training completed in {total_time/60:.2f} minutes. Best val acc: {best_val_acc:.4f}")
+    logger.info(f"Training completed in {total_time/60:.2f} minutes. Best val acc: {best_val_acc:.4f}")
 
     if writer:
         writer.close()

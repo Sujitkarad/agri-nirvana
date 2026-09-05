@@ -134,7 +134,7 @@ def main():
 
     if args.list_hf:
         info = query_huggingface_dataset(args.list_hf)
-        print(json.dumps(info, indent=2, ensure_ascii=False))
+        logger.info(json.dumps(info, indent=2, ensure_ascii=False))
         return
 
     if args.download_hf:
@@ -157,7 +157,7 @@ def main():
             logger.error("Folder %s does not exist", folder); sys.exit(2)
         out_manifest = os.path.join(folder, "dataset_manifest.json")
         m = create_dataset_manifest_for_folder(folder, out_manifest)
-        print(json.dumps(m, indent=2))
+        logger.info(json.dumps(m, indent=2))
         return
 
     parser.print_help()

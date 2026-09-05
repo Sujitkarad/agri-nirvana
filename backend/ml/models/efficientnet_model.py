@@ -1,8 +1,11 @@
 import os
+import logging
 from PIL import Image
 from typing import Dict, Any
 from backend.ml.models.base import CropDiseaseModel
 from backend.ml.config.ml_config import KNOWLEDGE_BASE, SUPPORTED_CROPS
+
+logger = logging.getLogger(__name__)
 
 try:
     import torch
@@ -12,6 +15,7 @@ except ImportError:
     HAS_TORCH = False
     torch = None
     nn = None
+    logger.warning("PyTorch not available in the environment; EfficientNet model will run in fallback/mock mode.")
 
 class EfficientNetCropDiseaseModel(CropDiseaseModel):
     def __init__(self, checkpoint_path: str = None):
@@ -26,7 +30,7 @@ class EfficientNetCropDiseaseModel(CropDiseaseModel):
         if HAS_TORCH:
             self._init_model()
         else:
-            print("[ML Engine Notice] PyTorch not installed in Python environment. Operating in EfficientNet Architecture evaluation standard.")
+            logger.warning("[ML Engine Notice] PyTorch not installed in Python environment. Operating in EfficientNet Architecture evaluation standard.")
 
     def _init_model(self):
         try:
@@ -63,32 +67,32 @@ class EfficientNetCropDiseaseModel(CropDiseaseModel):
                     # Replace classifier to match checkpoint's number of classes
                     try:
                         self.model.classifier[1] = nn.Linear(in_feat, ck_num_classes)
-                        print(f"[ML Engine] Adjusted classifier from {current_num} to {ck_num_classes} classes to match checkpoint")
+                        logger.info(f"[ML Engine] Adjusted classifier from {current_num} to {ck_num_classes} classes to match checkpoint")
                         # If no class labels provided in meta, produce placeholder labels
                         if not self.class_labels:
                             self.class_labels = [f"Class_{i}" for i in range(ck_num_classes)]
                     except Exception as e:
-                        print(f"[ML Engine Warning] Failed to adjust classifier: {e}")
+                        logger.warning(f"[ML Engine Warning] Failed to adjust classifier: {e}")
 
                 # Try loading state_dict; first strict=True then fallback to strict=False
                 try:
                     self.model.load_state_dict(state)
                     self.model_loaded = True
-                    print(f"[ML Engine] Loaded EfficientNet-B3 PyTorch checkpoint from {self.checkpoint_path}")
+                    logger.info(f"[ML Engine] Loaded EfficientNet-B3 PyTorch checkpoint from {self.checkpoint_path}")
                 except Exception as e:
-                    print(f"[ML Engine Warning] Error(s) in loading state_dict for EfficientNet: {e}")
+                    logger.warning(f"[ML Engine Warning] Error(s) in loading state_dict for EfficientNet: {e}")
                     try:
                         self.model.load_state_dict(state, strict=False)
                         self.model_loaded = True
-                        print(f"[ML Engine] Loaded checkpoint with strict=False (partial load).")
+                        logger.info(f"[ML Engine] Loaded checkpoint with strict=False (partial load).")
                     except Exception as e2:
-                        print(f"[ML Engine Error] Failed to load checkpoint: {e2}")
+                        logger.error(f"[ML Engine Error] Failed to load checkpoint: {e2}")
                         self.model_loaded = False
 
                 if self.class_labels:
-                    print(f"[ML Engine] Class labels: {len(self.class_labels)} classes loaded")
+                    logger.info(f"[ML Engine] Class labels: {len(self.class_labels)} classes loaded")
             else:
-                print(f"[ML Engine] PyTorch EfficientNet-B3 initialized. Checkpoint not found at '{self.checkpoint_path}', ready for training or evaluation.")
+                logger.info(f"[ML Engine] PyTorch EfficientNet-B3 initialized. Checkpoint not found at '{self.checkpoint_path}', ready for training or evaluation.")
             
             self.model.to(self.device)
             self.model.eval()
@@ -99,7 +103,7 @@ class EfficientNetCropDiseaseModel(CropDiseaseModel):
                 transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
             ])
         except Exception as e:
-            print(f"[ML Engine Warning] PyTorch EfficientNet loading notice: {e}")
+            logger.warning(f"[ML Engine Warning] PyTorch EfficientNet loading notice: {e}")
             self.model_loaded = False
 
     @property
@@ -178,7 +182,7 @@ class EfficientNetCropDiseaseModel(CropDiseaseModel):
                 "is_mock": not self.model_loaded
             }
         except Exception as e:
-            print(f"[ML Engine Predict Error] {e}")
+            logger.exception(f"[ML Engine Predict Error] {e}")
             crop_kb = KNOWLEDGE_BASE.get(crop_type, KNOWLEDGE_BASE["Default"])
             conditions = list(crop_kb.keys()) if isinstance(crop_kb, dict) else []
             if not conditions:

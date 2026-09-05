@@ -1,10 +1,13 @@
 from PIL import Image
 from typing import Dict, Any
 import os
+import logging
 from backend.config import settings
 from backend.ml.models.base import CropDiseaseModel
 from backend.ml.models.mock_model import MockCropDiseaseModel
 from backend.ml.models.efficientnet_model import EfficientNetCropDiseaseModel
+
+logger = logging.getLogger(__name__)
 
 class InferenceEngine:
     def __init__(self):
@@ -15,7 +18,7 @@ class InferenceEngine:
     def _load_provider(self) -> CropDiseaseModel:
         # If explicit provider is set to efficientnet, use it.
         if self.provider_type == "efficientnet":
-            print(f"[InferenceEngine] Initializing EfficientNet-B3 provider with threshold {self.threshold}...")
+            logger.info(f"[InferenceEngine] Initializing EfficientNet-B3 provider with threshold {self.threshold}...")
             return EfficientNetCropDiseaseModel(checkpoint_path=settings.AI_MODEL_PATH)
 
         # Auto-detect: if a checkpoint file exists at AI_MODEL_PATH, prefer EfficientNet provider
@@ -25,19 +28,19 @@ class InferenceEngine:
                 # If a meta checkpoint exists alongside the state dict, prefer loading meta so class labels are available
                 meta_path = ck_path + ".ckpt.pth"
                 if os.path.exists(meta_path):
-                    print(f"[InferenceEngine] Meta checkpoint found at {meta_path}; initializing EfficientNet provider with meta (auto-detect).")
+                    logger.info(f"[InferenceEngine] Meta checkpoint found at {meta_path}; initializing EfficientNet provider with meta (auto-detect).")
                     self.provider_type = 'efficientnet'
                     return EfficientNetCropDiseaseModel(checkpoint_path=meta_path)
 
                 # No meta; fallback to raw checkpoint file if present
-                print(f"[InferenceEngine] Checkpoint detected at {ck_path}; initializing EfficientNet provider (auto-detect).")
+                logger.info(f"[InferenceEngine] Checkpoint detected at {ck_path}; initializing EfficientNet provider (auto-detect).")
                 self.provider_type = 'efficientnet'
                 return EfficientNetCropDiseaseModel(checkpoint_path=ck_path)
         except Exception:
             pass
 
         # Fallback to mock
-        print(f"[InferenceEngine] Initializing Development Mock provider with threshold {self.threshold}...")
+        logger.info(f"[InferenceEngine] Initializing Development Mock provider with threshold {self.threshold}...")
         self.provider_type = 'mock'
         return MockCropDiseaseModel()
 
