@@ -609,7 +609,7 @@ export default function App() {
               <h1 className={`text-4xl font-black tracking-tight sm:text-5xl lg:text-6xl ${
                 isDark ? "ai-gradient-text" : "ai-gradient-text-light"
               }`}>
-                Build. Think. Discover.
+                Scan. Diagnose. Grow.
               </h1>
 
               <p className={`max-w-xl text-sm sm:text-base leading-relaxed ${
