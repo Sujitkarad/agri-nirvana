@@ -76,6 +76,17 @@ class ProductionInferenceEngine:
             except Exception as exc:
                 logger.warning("Local EfficientNet checkpoint failed: %s", exc)
 
+        # Do not silently substitute a different label space when production
+        # explicitly requires the trained local checkpoint.
+        if settings.AI_REQUIRE_LOCAL_CHECKPOINT and not loaded_primary:
+            self._models_loaded = False
+            self._model_source = "required_local_checkpoint_unavailable"
+            logger.error(
+                "Required local model checkpoint is unavailable or failed to load; "
+                "refusing to silently substitute a different model."
+            )
+            return
+
         if not loaded_primary:
             try:
                 from backend.ml.models.disease_classifier import DiseaseClassifier
