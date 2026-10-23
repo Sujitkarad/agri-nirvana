@@ -20,7 +20,6 @@ import { generateAIChatResponse } from "./services/aiChatbotEngine";
 import Hero3DCropModel from "./components/Hero3DCropModel";
 import DiseaseLeaf3DModel from "./components/DiseaseLeaf3DModel";
 import FarmWeatherDashboard from "./components/weather/FarmWeatherDashboard";
-import DiseaseHeatmapCanvas from "./components/DiseaseHeatmapCanvas";
 import CropDiagnosticsWorkspace from "./components/diagnostics/CropDiagnosticsWorkspace";
 import PrecisionFieldIntelligenceWorkspace from "./components/field-intelligence/PrecisionFieldIntelligenceWorkspace";
 import LiveMandiMarketView from "./components/mandi/LiveMandiMarketView";
