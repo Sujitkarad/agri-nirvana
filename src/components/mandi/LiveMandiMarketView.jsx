@@ -82,8 +82,10 @@ export default function LiveMandiMarketView({
         setPrices(priceRes.prices);
         setDataSource(priceRes.source);
       }
-      if (summaryRes) {
+      if (summaryRes && priceRes.source !== "static_reference_not_live") {
         setSummary(summaryRes);
+      } else {
+        setSummary(null);
       }
       setLastUpdated(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
     } catch (err) {
