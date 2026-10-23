@@ -139,9 +139,9 @@ export default function LiveMandiMarketView({
                   {t.mandiTitle || "Data.gov.in Agmarknet & e-NAM Live Mandi Telemetry"}
                 </h2>
                 <div className="flex flex-wrap items-center gap-2 mt-0.5">
-                  <span className="inline-flex items-center gap-1 text-[11px] font-mono text-emerald-400">
-                    <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                    Open Government Data (Agmarknet Portal)
+                  <span className={`inline-flex items-center gap-1 text-[11px] font-mono ${dataSource === "static_reference_not_live" ? "text-amber-400" : "text-emerald-400"}`}>
+                    <span className={`h-2 w-2 rounded-full ${dataSource === "static_reference_not_live" ? "bg-amber-400" : "bg-emerald-400 animate-pulse"}`} />
+                    {dataSource === "static_reference_not_live" ? "Static reference data — not live" : "Open Government Data (Agmarknet Portal)"}
                   </span>
                   <span className="text-slate-500">•</span>
                   <span className={`text-[11px] font-mono ${isDark ? "text-slate-400" : "text-slate-600"}`}>
