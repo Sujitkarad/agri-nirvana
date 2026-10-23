@@ -50,7 +50,7 @@ export default function LiveMandiMarketView({
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState("");
-  const [dataSource, setDataSource] = useState("agmarknet_verified");
+  const [dataSource, setDataSource] = useState("unknown");
   const [localMandiTarget, setLocalMandiTarget] = useState("Kopargaon APMC Main Yard");
 
   const qtyValue = produceQuantity !== undefined ? produceQuantity : (produceFormQty !== undefined ? produceFormQty : 25);
@@ -192,6 +192,12 @@ export default function LiveMandiMarketView({
           </div>
         </div>
 
+        {dataSource === "static_reference_not_live" && (
+          <div className={`mb-5 rounded-xl border px-4 py-3 text-xs ${isDark ? "border-amber-500/40 bg-amber-500/10 text-amber-200" : "border-amber-300 bg-amber-50 text-amber-900"}`}>
+            <strong>Live mandi feed unavailable.</strong> The prices below are static reference values, not verified prices for today. Do not use them as a sale quote; confirm current rates with the local APMC or Agmarknet.
+          </div>
+        )}
+
         {/* MARKET SUMMARY STATS BAR */}
         {summary && (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
@@ -262,9 +268,11 @@ export default function LiveMandiMarketView({
               <div className="mt-1">
                 <p className="text-xs font-bold text-emerald-400 flex items-center gap-1">
                   <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
-                  AGMARKNET / e-NAM Linked
+                  {dataSource === "static_reference_not_live" ? "Live feed unavailable" : "AGMARKNET / e-NAM Linked"}
                 </p>
-                <p className="text-[10px] text-slate-400 mt-0.5">Daily Modal & Trend Differential Active</p>
+                <p className="text-[10px] text-slate-400 mt-0.5">
+                  {dataSource === "static_reference_not_live" ? "Static reference values only" : "Daily Modal & Trend Differential Active"}
+                </p>
               </div>
             </div>
           </div>
@@ -381,7 +389,9 @@ export default function LiveMandiMarketView({
                           )}
                           <span>{mandi.trend}</span>
                         </div>
-                        <span className="text-[10px] text-slate-500 font-mono block mt-1">24h Momentum</span>
+                        <span className="text-[10px] text-slate-500 font-mono block mt-1">
+                          {dataSource === "static_reference_not_live" ? "Not available" : "24h Momentum"}
+                        </span>
                       </div>
                     </div>
 
