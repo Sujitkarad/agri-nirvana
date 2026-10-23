@@ -5,6 +5,8 @@ import unittest
 from PIL import Image
 from fastapi.testclient import TestClient
 from backend.main import app
+from backend.config import settings
+from backend.routes.auth import create_access_token
 
 client = TestClient(app)
 
@@ -59,33 +61,57 @@ class TestDiagnosisAPI(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
 
     def test_diagnosis_history_and_deletion(self):
-        # Create a symptom record
-        symptom_payload = {
-            "cropType": "Potato",
-            "symptomsText": "Water soaked dark lesions with white fungal mold under leaves"
-        }
-        symptom_res = client.post("/api/v1/diagnosis/symptoms", data=symptom_payload)
-        self.assertEqual(symptom_res.status_code, 200)
-        diag_id = symptom_res.json()["diagnosis"]["id"]
+        # Private record access must be tied to a verified token subject.
+        previous_secret = settings.JWT_SECRET
+        settings.JWT_SECRET = "test-only-secret-that-is-long-enough-123"
+        try:
+            token = create_access_token("test_farmer")
+            headers = {"Authorization": f"Bearer {token}"}
+            symptom_payload = {
+                "cropType": "Potato",
+                "symptomsText": "Water soaked dark lesions with white fungal mold under leaves",
+                "userId": "test_farmer",
+            }
+            symptom_res = client.post(
+                "/api/v1/diagnosis/symptoms", data=symptom_payload, headers=headers
+            )
+            self.assertEqual(symptom_res.status_code, 200)
+            diag_id = symptom_res.json()["diagnosis"]["id"]
 
-        # Retrieve history
-        hist_res = client.get("/api/v1/diagnosis/history")
-        self.assertEqual(hist_res.status_code, 200)
-        history = hist_res.json()["history"]
-        self.assertTrue(any(item["id"] == diag_id for item in history))
+            hist_res = client.get("/api/v1/diagnosis/history", headers=headers)
+            self.assertEqual(hist_res.status_code, 200)
+            history = hist_res.json()["history"]
+            self.assertTrue(any(item["id"] == diag_id for item in history))
 
-        # Get single item
-        item_res = client.get(f"/api/v1/diagnosis/{diag_id}")
-        self.assertEqual(item_res.status_code, 200)
-        self.assertEqual(item_res.json()["diagnosis"]["id"], diag_id)
+            item_res = client.get(f"/api/v1/diagnosis/{diag_id}", headers=headers)
+            self.assertEqual(item_res.status_code, 200)
+            self.assertEqual(item_res.json()["diagnosis"]["id"], diag_id)
 
-        # Delete item
-        del_res = client.delete(f"/api/v1/diagnosis/{diag_id}")
-        self.assertEqual(del_res.status_code, 200)
+            # A different authenticated farmer cannot read or delete the record.
+            other_token = create_access_token("other_farmer")
+            other_headers = {"Authorization": f"Bearer {other_token}"}
+            other_read = client.get(f"/api/v1/diagnosis/{diag_id}", headers=other_headers)
+            self.assertEqual(other_read.status_code, 404)
+            other_delete = client.delete(f"/api/v1/diagnosis/{diag_id}", headers=other_headers)
+            self.assertEqual(other_delete.status_code, 404)
 
-        # Confirm 404 after deletion
-        del_check = client.get(f"/api/v1/diagnosis/{diag_id}")
-        self.assertEqual(del_check.status_code, 404)
+            del_res = client.delete(f"/api/v1/diagnosis/{diag_id}", headers=headers)
+            self.assertEqual(del_res.status_code, 200)
+            del_check = client.get(f"/api/v1/diagnosis/{diag_id}", headers=headers)
+            self.assertEqual(del_check.status_code, 404)
+        finally:
+            settings.JWT_SECRET = previous_secret
+
+    def test_private_history_requires_authentication(self):
+        response = client.get("/api/v1/diagnosis/history?userId=another_farmer")
+        self.assertEqual(response.status_code, 401)
+
+    def test_unverified_session_creation_is_disabled(self):
+        response = client.post(
+            "/api/v1/auth/session",
+            json={"farmerId": "victim_farmer", "phone": "9999999999", "name": "Impersonator"},
+        )
+        self.assertEqual(response.status_code, 503)
 
     def test_analyze_image_valid_upload(self):
         img = Image.new("RGB", (256, 256), color=(40, 140, 40))
