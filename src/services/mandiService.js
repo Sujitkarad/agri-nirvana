@@ -63,6 +63,9 @@ export async function fetchMandiPrices(commodity = null, state = null) {
         (f.commodity && f.commodity.toLowerCase() === commodity.toLowerCase())
       );
     }
+    if (state) {
+      fallback = fallback.filter((f) => (f.state || "").toLowerCase() === state.toLowerCase());
+    }
 
     return {
       success: true,
