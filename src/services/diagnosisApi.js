@@ -12,7 +12,7 @@
 import { runClientSideDiagnosis } from "./clientDiagnosisEngine";
 
 const ENV_API_BASE = import.meta.env.VITE_API_BASE_URL || "";
-const API_BASE = ENV_API_BASE || (typeof window !== "undefined" ? "" : "http://localhost:8000");
+const API_BASE = ENV_API_BASE || (typeof window === "undefined" ? "http://localhost:8000" : "");
 
 // Helper to get or create authenticated farmer session token
 export function getAuthToken() {
@@ -63,11 +63,15 @@ function getEndpoints(path) {
   if (API_BASE && API_BASE !== "") {
     list.push(`${API_BASE}${path}`);
   }
-  if (!list.includes(`http://localhost:8000${path}`)) {
-    list.push(`http://localhost:8000${path}`);
-  }
-  if (!list.includes(`http://127.0.0.1:8000${path}`)) {
-    list.push(`http://127.0.0.1:8000${path}`);
+  // Browser clients must never silently call the visitor's own localhost.
+  // Local development should configure VITE_API_BASE_URL or a dev-server proxy.
+  if (typeof window === "undefined") {
+    if (!list.includes(`http://localhost:8000${path}`)) {
+      list.push(`http://localhost:8000${path}`);
+    }
+    if (!list.includes(`http://127.0.0.1:8000${path}`)) {
+      list.push(`http://127.0.0.1:8000${path}`);
+    }
   }
   return [...new Set(list)];
 }
