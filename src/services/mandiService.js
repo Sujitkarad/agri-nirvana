@@ -39,21 +39,21 @@ export async function fetchMandiPrices(commodity = null, state = null) {
       count: data.count || 0,
     };
   } catch (err) {
-    console.warn("[mandiService] API unavailable, using resilient fallback feed:", err);
-    // Fallback to enhanced local feed
+    console.warn("[mandiService] Live market API unavailable; showing static reference data only:", err);
+    // This feed is not live or independently verified. Never synthesize price movement.
     let fallback = MANDI_PRICES_FEED.map((item) => {
-      const modal = item.modalPriceINR || 2400;
-      const prev = modal - 60;
-      const diff = 60;
+      const modal = item.modalPriceINR || null;
       return {
         ...item,
-        diffINR: diff,
-        percentChange: 2.5,
-        prevModalPriceINR: prev,
-        trend: item.trend || `+ ₹${diff}/Qtl (+2.5%)`,
-        trendDirection: item.trendDirection || "up",
-        priceKg: (modal / 100).toFixed(2),
-        source: "local_verified_benchmark",
+        diffINR: null,
+        percentChange: null,
+        prevModalPriceINR: null,
+        trend: "Reference only — live feed unavailable",
+        trendDirection: "unknown",
+        priceKg: modal == null ? null : (modal / 100).toFixed(2),
+        source: "static_reference_not_live",
+        isLive: false,
+        dataWarning: "Static reference value, not today's verified mandi price. Confirm with the APMC/Agmarknet before making a sale decision.",
       };
     });
 
@@ -67,7 +67,9 @@ export async function fetchMandiPrices(commodity = null, state = null) {
     return {
       success: true,
       prices: fallback,
-      source: "local_verified_benchmark",
+      source: "static_reference_not_live",
+      isLive: false,
+      warning: "Live mandi data is unavailable. Values shown are static references, not current prices.",
       count: fallback.length,
     };
   }
