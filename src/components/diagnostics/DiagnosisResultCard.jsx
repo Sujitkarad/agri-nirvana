@@ -1,9 +1,22 @@
 import React, { useState } from "react";
 import {
-  Sparkles, ShieldAlert, CheckCircle2, Info, AlertTriangle, Eye, ZoomIn, X,
-  Clock, ArrowRight, UserCheck, Activity, ShieldCheck, Zap, Droplet,
-  Compass, Leaf, Beaker, FileText, HelpCircle, ShieldOff,
-  Copy, ClipboardCheck
+  Sparkles,
+  Info,
+  AlertTriangle,
+  Eye,
+  ZoomIn,
+  X,
+  Clock,
+  ArrowRight,
+  UserCheck,
+  Activity,
+  ShieldCheck,
+  Droplet,
+  Leaf,
+  Beaker,
+  ShieldOff,
+  Copy,
+  ClipboardCheck
 } from "lucide-react";
 
 export default function DiagnosisResultCard({
