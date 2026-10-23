@@ -49,3 +49,4 @@ env/
 *.pth
 backend/ml/datasets/
 backend/ml/models/weights/*
+!backend/ml/models/weights/README.md
