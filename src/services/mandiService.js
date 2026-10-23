@@ -1,7 +1,6 @@
 /**
  * Agri Nirvana - Data.gov.in Agmarknet Market Intelligence Frontend Service.
- * Fetches real-time mandi prices and daily momentum trends (+ / - ₹/quintal)
- * for flagship commodities: Wheat, Onion, Soybean, Cotton, Tomato.
+ * Reads the configured mandi API and provides clearly labelled static references when it is unavailable.
  */
 
 import { MANDI_PRICES_FEED } from "../data/agriData";
@@ -39,21 +38,27 @@ export async function fetchMandiPrices(commodity = null, state = null) {
       count: data.count || 0,
     };
   } catch (err) {
-    console.warn("[mandiService] API unavailable, using resilient fallback feed:", err);
-    // Fallback to enhanced local feed
+    console.warn("[mandiService] Live market API unavailable; showing static reference data only:", err);
+    // This feed is not live or independently verified. Never synthesize price movement.
     let fallback = MANDI_PRICES_FEED.map((item) => {
-      const modal = item.modalPriceINR || 2400;
-      const prev = modal - 60;
-      const diff = 60;
+      const reference = { ...item };
+      ["trend", "trendDirection", "arrival", "isBestPrice", "lastUpdated", "bestSellingWindow"].forEach((key) => delete reference[key]);
+      const modal = item.modalPriceINR || null;
+      const denominator = item.unit === "₹ / Tonne" ? 1000 : 100;
       return {
-        ...item,
-        diffINR: diff,
-        percentChange: 2.5,
-        prevModalPriceINR: prev,
-        trend: item.trend || `+ ₹${diff}/Qtl (+2.5%)`,
-        trendDirection: item.trendDirection || "up",
-        priceKg: (modal / 100).toFixed(2),
-        source: "local_verified_benchmark",
+        ...reference,
+        commodity: item.commodity || item.crop,
+        district: item.district || "Kopargaon region",
+        state: item.state || "Maharashtra",
+        diffINR: null,
+        percentChange: null,
+        prevModalPriceINR: null,
+        trend: "Static reference",
+        trendDirection: "unknown",
+        priceKg: modal == null ? null : (modal / denominator).toFixed(2),
+        source: "static_reference_not_live",
+        isLive: false,
+        dataWarning: "Static reference value, not today's verified mandi price. Confirm with the APMC/Agmarknet before making a sale decision.",
       };
     });
 
@@ -63,11 +68,16 @@ export async function fetchMandiPrices(commodity = null, state = null) {
         (f.commodity && f.commodity.toLowerCase() === commodity.toLowerCase())
       );
     }
+    if (state) {
+      fallback = fallback.filter((f) => (f.state || "").toLowerCase() === state.toLowerCase());
+    }
 
     return {
       success: true,
       prices: fallback,
-      source: "local_verified_benchmark",
+      source: "static_reference_not_live",
+      isLive: false,
+      warning: "Live mandi data is unavailable. Values shown are static references, not current prices.",
       count: fallback.length,
     };
   }

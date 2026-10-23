@@ -50,9 +50,14 @@ def get_data_transforms() -> Dict[str, transforms.Compose]:
     }
 
 
-def create_model(num_classes: int) -> nn.Module:
-    """Build MobileNetV3-Small transfer learning model with customized classification head."""
-    model = models.mobilenet_v3_small(weights=models.MobileNet_V3_Small_Weights.DEFAULT)
+def create_model(num_classes: int, pretrained: bool = True) -> nn.Module:
+    """Build MobileNetV3-Small with an optional ImageNet-pretrained backbone.
+
+    Training uses pretrained weights by default. Tests and offline validation can
+    pass pretrained=False to avoid network downloads.
+    """
+    weights = models.MobileNet_V3_Small_Weights.DEFAULT if pretrained else None
+    model = models.mobilenet_v3_small(weights=weights)
     in_features = model.classifier[3].in_features
     # Replace final linear layer
     model.classifier[3] = nn.Sequential(

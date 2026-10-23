@@ -1,4 +1,6 @@
-const API_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1").replace(/\/$/, "");
+const CONFIGURED_API_BASE = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
+const API_BASE = CONFIGURED_API_BASE.replace(/\/api\/v1$/, "");
+const API_PREFIX = `${API_BASE}/api/v1`;
 
 export async function sendAgriAIChat({
   messages,
@@ -7,7 +9,7 @@ export async function sendAgriAIChat({
   model,
   diagnosis = null,
 }) {
-  const response = await fetch(`${API_BASE}/ai/chat`, {
+  const response = await fetch(`${API_PREFIX}/ai/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ messages, crop, language, model, diagnosis }),
@@ -21,7 +23,7 @@ export async function sendAgriAIChat({
 }
 
 export async function getAgriAIChatStatus() {
-  const response = await fetch(`${API_BASE}/ai/chat/status`);
+  const response = await fetch(`${API_PREFIX}/ai/chat/status`);
   if (!response.ok) throw new Error("Unable to check AI chat status");
   return response.json();
 }

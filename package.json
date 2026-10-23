@@ -2,7 +2,7 @@
   "name": "agri-nirvana",
   "private": true,
   "version": "3.4.0",
-  "description": "Enterprise Precision Agriculture, AI Vision Diagnostics, 3D WebGL Telemetry & AgFintech Platform",
+  "description": "Agriculture decision-support app for crop-image diagnostics, farm weather, illustrative field scenarios, soil nutrient estimates, and mandi price references.",
   "type": "module",
   "author": "Sujit Karad <sujitkarad@github.com>",
   "license": "MIT",
@@ -16,16 +16,14 @@
   "homepage": "https://github.com/Sujitkarad/agri-nirvana#readme",
   "keywords": [
     "precision-agriculture",
-    "ai-vision",
-    "threejs",
-    "webgl",
-    "resnet50",
-    "huggingface",
+    "crop-diagnostics",
     "farm-weather",
     "agricultural-meteorology",
+    "mandi-prices",
     "agtech",
-    "fintech",
-    "kisan-credit"
+    "react",
+    "vite",
+    "threejs"
   ],
   "scripts": {
     "dev": "vite",

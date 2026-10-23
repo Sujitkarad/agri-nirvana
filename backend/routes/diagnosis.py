@@ -16,7 +16,7 @@ from backend.ml.config.disease_knowledge import DISEASE_KNOWLEDGE
 from backend.ml.inference.production_engine import inference_engine
 from backend.ml.models.disease_classifier import normalize_crop_name
 from backend.ml.preprocessing.image_processor import validate_and_preprocess_image
-from backend.routes.auth import get_current_user_optional
+from backend.routes.auth import get_current_user_optional, get_current_user_required
 
 logger = logging.getLogger("agri_nirvana.diagnosis")
 router = APIRouter(prefix="/diagnosis", tags=["Crop Diagnostics"])
@@ -109,7 +109,7 @@ async def analyze_crop_leaf(
     prediction["provenance"] = {
         "source": prediction.get("provenance", {}).get("source", "real_ml_inference") if prediction.get("status") == "success" else "abstention",
         "confidence_is_calibrated": True if getattr(inference_engine, "_is_calibrated", False) else False,
-        "treatment_allowed": prediction.get("status") == "success",
+        "treatment_allowed": False,  # Product registration and label-dose validation are not implemented.
     }
 
     if prediction["is_low_confidence"] and abstain:
@@ -312,7 +312,7 @@ Return ONLY a valid, single JSON object with these exact fields (no markdown, no
     confidence = float(validated_gemini.confidence)
     is_healthy = validated_gemini.pathogen_category == "Healthy" or "healthy" in validated_gemini.disease_name.lower()
     is_low_conf = confidence < settings.AI_CONFIDENCE_THRESHOLD or confidence <= 0.0
-    treatment_allowed = not is_low_conf and not is_healthy and validated_gemini.disease_name != "Unknown Disease"
+    treatment_allowed = False  # Chemical treatment is disabled until product-label validation is implemented.
 
     diag_record = {
         "status": "uncertain" if is_low_conf else "success",
@@ -333,10 +333,10 @@ Return ONLY a valid, single JSON object with these exact fields (no markdown, no
         "likely_cause": validated_gemini.likely_cause or "",
         "immediate_precautions": validated_gemini.immediate_actions,
         "treatment_organic": [validated_gemini.organic_treatment] if validated_gemini.organic_treatment else [],
-        "treatment_chemical": [validated_gemini.chemical_treatment] if validated_gemini.chemical_treatment else [],
+        "treatment_chemical": [],
         "treatmentPlan": {
             "organic": {"name": validated_gemini.organic_treatment or "Not prescribed", "dosage": "Consult label"},
-            "chemical": {"name": validated_gemini.chemical_treatment or "Not prescribed", "dosage": "Consult label"},
+            "chemical": {"name": "Withheld pending crop/product registration and label verification", "dosage": "Not provided", "warning": "Use only a product registered for this crop and target disease; follow its exact label and local KVK/agriculture-extension guidance."},
             "preventive": {"cultural": "Maintain field sanitation"}
         } if treatment_allowed else {},
         "recommendations": {
@@ -524,8 +524,9 @@ async def get_diagnosis_history(
     userId: Optional[str] = Query(None)
 ):
     """Retrieves diagnosis history with server-side farmer identity protection."""
-    current_user = get_current_user_optional(authorization)
-    effective_user_id = current_user.get("sub") if current_user else userId
+    # Private history must never be selected by a caller-supplied userId.
+    current_user = get_current_user_required(authorization)
+    effective_user_id = current_user["sub"]
     history = db.get_history(user_id=effective_user_id, crop_filter=crop)
     return {"success": True, "total": len(history), "history": history}
 
@@ -585,8 +586,9 @@ async def get_diagnosis_item(
     authorization: Optional[str] = Header(None),
     userId: Optional[str] = Query(None)
 ):
-    current_user = get_current_user_optional(authorization)
-    effective_user_id = current_user.get("sub") if current_user else userId
+    # Record access is always scoped to the verified token subject.
+    current_user = get_current_user_required(authorization)
+    effective_user_id = current_user["sub"]
     item = db.get_diagnosis_by_id(diag_id, user_id=effective_user_id)
     if not item:
         raise HTTPException(status_code=404, detail=f"Diagnosis with ID '{diag_id}' not found or access denied.")
@@ -599,8 +601,9 @@ async def delete_diagnosis_item(
     authorization: Optional[str] = Header(None),
     userId: Optional[str] = Query(None)
 ):
-    current_user = get_current_user_optional(authorization)
-    effective_user_id = current_user.get("sub") if current_user else userId
+    # Deletion is always scoped to the verified token subject.
+    current_user = get_current_user_required(authorization)
+    effective_user_id = current_user["sub"]
     deleted = db.delete_diagnosis(diag_id, user_id=effective_user_id)
     if not deleted:
         raise HTTPException(status_code=404, detail=f"Diagnosis with ID '{diag_id}' not found or access denied.")

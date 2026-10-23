@@ -1,17 +1,12 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   Leaf,
   Globe,
   Sun,
-  Moon,
   ChevronDown,
   Sparkles,
-  Bot,
-  Layers,
-  Radar,
   Calculator,
   TrendingUp,
-  ShoppingCart,
   Compass,
   Home,
   CloudSun
@@ -34,20 +29,17 @@ export default function GlassHeader({
   onChangeLang,
   activeTab = "workspace",
   onChangeTab,
-  onOpenPricing,
   onOpenCommandPalette
 }) {
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
 
   const navItems = [
     { id: "workspace", label: "Home", icon: Home },
-    { id: "intel", label: "Drone Tech", icon: Compass },
+    { id: "intel", label: "Field Scenario", icon: Compass },
     { id: "diag", label: "Diagnostics", icon: Leaf },
     { id: "weather", label: "Weather", icon: CloudSun },
-    { id: "map", label: "Radar", icon: Radar },
     { id: "calc", label: "Soil NPK", icon: Calculator },
     { id: "mandi", label: "Mandi", icon: TrendingUp },
-    { id: "market", label: "Market", icon: ShoppingCart },
   ];
 
   return (

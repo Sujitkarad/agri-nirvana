@@ -1,14 +1,9 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import {
   Layers,
-  Cpu,
   Compass,
   Wind,
   Droplets,
-  CloudRain,
-  ShieldCheck,
-  ShieldAlert,
-  AlertTriangle,
   Download,
   Printer,
   Copy,
@@ -16,19 +11,10 @@ import {
   Sparkles,
   Zap,
   Activity,
-  Maximize2,
   TrendingUp,
   Coins,
-  MapPin,
-  RefreshCw,
-  Eye,
-  Sliders,
   Plane,
   FileText,
-  BarChart3,
-  CheckCircle2,
-  RotateCw,
-  Info,
   Video,
   Play,
   Pause,
@@ -37,7 +23,6 @@ import {
   Radio
 } from "lucide-react";
 
-import DroneMissionGeneratorModal from "../DroneMissionGeneratorModal";
 
 // Preset Real-World Agricultural Scenarios
 const PRESET_FIELDS = [
@@ -141,7 +126,6 @@ export default function PrecisionFieldIntelligenceWorkspace({
   const [isVideoPlaying, setIsVideoPlaying] = useState(true);
   const [isVideoMuted, setIsVideoMuted] = useState(true);
   const [showDroneHud, setShowDroneHud] = useState(true);
-  const [isDroneModalOpen, setIsDroneModalOpen] = useState(false);
   const videoRef = useRef(null);
   const canvas3DRef = useRef(null);
 
@@ -270,50 +254,11 @@ export default function PrecisionFieldIntelligenceWorkspace({
     { id: "WP12", lat: (centerLat - 0.0030).toFixed(6), lng: (centerLng - 0.0025).toFixed(6), alt: 45, head: "360°", act: "Survey -> RTL", zone: "🟢 Alpha / LZ" },
   ];
 
-  // Export handlers
-  const handleDownloadFile = (content, filename, type) => {
-    const blob = new Blob([content], { type });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    showToast(`Downloaded ${filename}`);
-  };
-
-  const handleExportMavlink = () => {
-    let mav = "QGC WPL 110\n";
-    waypoints.forEach((wp, idx) => {
-      mav += `${idx}\t${idx === 0 ? 1 : 0}\t3\t16\t0\t0\t0\t0\t${wp.lat}\t${wp.lng}\t${wp.alt}\t1\n`;
-    });
-    handleDownloadFile(mav, `agri_nirvana_${fieldParams.crop.toLowerCase()}_mission.waypoint`, "text/plain");
-  };
-
-  const handleExportKML = () => {
-    const kml = `<?xml version="1.0" encoding="UTF-8"?>
-<kml xmlns="http://www.opengis.net/kml/2.2">
-  <Document>
-    <name>Agri Nirvana Drone Survey — ${fieldParams.crop}</name>
-    <Placemark>
-      <name>Survey Flight Corridor</name>
-      <LineString>
-        <coordinates>
-          ${waypoints.map((w) => `${w.lng},${w.lat},${w.alt}`).join("\n          ")}
-        </coordinates>
-      </LineString>
-    </Placemark>
-  </Document>
-</kml>`;
-    handleDownloadFile(kml, `agri_nirvana_${fieldParams.crop.toLowerCase()}_flight.kml`, "application/vnd.google-earth.kml+xml");
-  };
-
   // Full 20-Section Technical Markdown Document
-  const fullTechnicalMarkdownReport = `# 🌾 AGRI NIRVANA — PRECISION FIELD INTELLIGENCE REPORT
+  const fullTechnicalMarkdownReport = `# AGRI NIRVANA — ILLUSTRATIVE FIELD SCENARIO REPORT
+**IMPORTANT: Preset demonstration data only. Not a live field survey, diagnosis, flight plan, or authorization for chemical application.**
 **Execution Mode:** ${provenanceTag}
-**Standard Compliance:** ESA Sentinel-2 L2A BOA Reflectance • DGCA Drone Rules 2021 • CIB&RC Label Regulations
+**Reference note:** Regulatory references are informational only; this report does not verify compliance, airspace status, or product-label instructions.
 
 ---
 
@@ -333,7 +278,7 @@ export default function PrecisionFieldIntelligenceWorkspace({
 │ Drainage Risk     : HIGH (Depression Zone in South-East Sector)
 │ Disease/Pest Risk : HIGH (${fieldParams.pathogen})
 │ Overall Confidence: 87.5%
-│ Drone Mission     : ${flightSafetyStatus}
+│ Drone Data        : Not connected; no operational mission generated
 ╰──────────────────────────────────────────────────────────────────────────╯
 \`\`\`
 
@@ -410,9 +355,8 @@ Validated for **${fieldParams.crop}** at **${fieldParams.stage}**. Normal expect
 
 ---
 
-## 11. Drone Mission Planning
-• **Mission A (Survey):** 🟢 Authorized (High-Resolution Multispectral Stand Count)
-• **Mission B (Spot Spray):** 🟡 On Hold (Awaiting ground scouting confirmation)
+## 11. Operational Drone Planning
+No operational flight plan is generated. This scenario preview is not based on a live survey and must not be used to operate a drone.
 
 ---
 
@@ -423,8 +367,7 @@ $$\\text{GSD} = \\frac{17.3\\text{ mm} \\times 45\\text{ m} \\times 100}{12.29\\
 ---
 
 ## 13. Drone Flight Safety & Airspace Assessment
-• Status: **${flightSafetyStatus}**
-• DGCA Digital Sky: Green Zone | Wind: ${fieldParams.windKmh} km/h (Gust: ${fieldParams.gustKmh} km/h) | Rain Prob: ${fieldParams.rainProb}%
+Live airspace, current weather, aircraft configuration, and regulatory checks are not integrated. Do not use this preview to authorize or plan a flight.
 
 ---
 
@@ -540,23 +483,23 @@ WP12 ← WP11 ← WP10 ◄─┘
             <div className="flex flex-wrap items-center gap-2 mb-2">
               <span className="rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-mono font-bold text-emerald-400 border border-emerald-500/40 uppercase tracking-wider flex items-center gap-1.5">
                 <Sparkles size={13} className="text-amber-400 animate-pulse" />
-                Sentinel-2 L2A + 3D DEM + Autonomous Avionics
+                Illustrative Scenario • Not Live Data
               </span>
               <span className="rounded-full bg-amber-500/20 px-2.5 py-0.5 text-[11px] font-mono font-bold text-amber-300 border border-amber-500/30">
                 {provenanceTag}
               </span>
             </div>
             <h1 className={`text-2xl sm:text-3xl font-black tracking-tight ${isDark ? "ai-gradient-text" : "ai-gradient-text-light"}`}>
-              Precision Field Intelligence & Drone Avionics Engine
+              Precision Field Intelligence — Scenario Preview
             </h1>
             <p className={`text-xs sm:text-sm mt-1 max-w-2xl ${isDark ? "text-emerald-100/70" : "text-slate-600"}`}>
-              Multi-spectral vegetation zoning, hydro-topographic flow routing, safety-constrained drone mission waypoints, and variable-rate chemical ROI analytics.
+              Explore sample field indicators and scenario analytics. Values are preset examples, not live satellite imagery, measured soil data, or connected drone telemetry.
             </p>
           </div>
 
           {/* Quick Preset Selector */}
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 mr-1">Calibrated AOI:</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 mr-1">Sample Field Scenario:</span>
             {PRESET_FIELDS.map((preset) => (
               <button
                 key={preset.id}
@@ -930,20 +873,10 @@ WP12 ← WP11 ← WP10 ◄─┘
     │                                                   ▼
   WP12 [RTL Land @ 0m] ◄────── WP11 ◄──────────────── WP10`}
                   </pre>
-                  <div className="flex justify-center gap-3">
-                    <button
-                      onClick={handleExportMavlink}
-                      className="flex items-center gap-1.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 px-3 py-1.5 text-xs font-bold text-emerald-300 hover:bg-emerald-500/30 transition"
-                    >
-                      <Download size={13} /> Export MavLink .waypoint
-                    </button>
-                    <button
-                      onClick={handleExportKML}
-                      className="flex items-center gap-1.5 rounded-xl bg-teal-500/20 border border-teal-500/40 px-3 py-1.5 text-xs font-bold text-teal-300 hover:bg-teal-500/30 transition"
-                    >
-                      <Download size={13} /> Export KML (DJI Terra)
-                    </button>
-                  </div>
+                  <p className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200">
+                    Illustrative scenario only. This visualization is not a surveyed route and must not be exported or used to operate a drone.
+                  </p>
+
                 </div>
               )}
             </div>
@@ -1074,72 +1007,6 @@ WP12 ← WP11 ← WP10 ◄─┘
           </div>
         </div>
 
-        {/* Card 2: Autonomous Spot-Spray Mission Dispatch */}
-        <div
-          className={`lg:col-span-5 rounded-3xl p-6 sm:p-8 border transition-all flex flex-col justify-between ${
-            isDark ? "border-emerald-500/30 bg-[#04160f] shadow-2xl" : "border-slate-200 bg-white shadow-xl"
-          }`}
-        >
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <Plane className="text-emerald-400" size={22} />
-              <h3 className={`text-lg sm:text-xl font-black ${isDark ? "text-white" : "text-slate-900"}`}>
-                Autonomous Mission Dispatch
-              </h3>
-            </div>
-            <p className="text-xs text-slate-400 mb-5">
-              Direct telemetry integration with ArduPilot, PX4, and DJI Agras flight controllers for precision spot-spraying.
-            </p>
-
-            {/* Flight Avionics Telemetry Grid */}
-            <div className="grid grid-cols-2 gap-3 mb-5 text-left font-mono">
-              <div className="p-3 rounded-2xl bg-slate-950/60 border border-emerald-900/40">
-                <span className="text-[10px] text-slate-400 uppercase block">Flight Corridor</span>
-                <span className="text-sm font-bold text-emerald-300">420m (12 WP)</span>
-              </div>
-              <div className="p-3 rounded-2xl bg-slate-950/60 border border-emerald-900/40">
-                <span className="text-[10px] text-slate-400 uppercase block">Swath Width</span>
-                <span className="text-sm font-bold text-teal-300">6.5m Centrifugal</span>
-              </div>
-              <div className="p-3 rounded-2xl bg-slate-950/60 border border-emerald-900/40">
-                <span className="text-[10px] text-slate-400 uppercase block">Target Area</span>
-                <span className="text-sm font-bold text-amber-300">{gammaHa} ha (Zone Γ)</span>
-              </div>
-              <div className="p-3 rounded-2xl bg-slate-950/60 border border-emerald-900/40">
-                <span className="text-[10px] text-slate-400 uppercase block">Chemical Savings</span>
-                <span className="text-sm font-bold text-emerald-400">68% Reduction</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Actions & Export Buttons */}
-          <div className="space-y-2.5 pt-2">
-            <button
-              onClick={() => setIsDroneModalOpen(true)}
-              className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 px-5 py-3 text-xs font-black text-slate-950 shadow-lg glow-emerald hover:brightness-110 transition hover:scale-[1.02] active:scale-[0.98]"
-            >
-              <Plane size={15} />
-              <span>Generate Autonomous Flight Plan (MavLink / KML)</span>
-            </button>
-
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={handleExportMavlink}
-                className="flex items-center justify-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-950/50 hover:bg-emerald-900/50 px-3 py-2 text-xs font-bold text-emerald-300 transition"
-              >
-                <Download size={13} />
-                <span>Export .waypoint</span>
-              </button>
-              <button
-                onClick={handleExportKML}
-                className="flex items-center justify-center gap-1.5 rounded-xl border border-teal-500/40 bg-teal-950/50 hover:bg-teal-900/50 px-3 py-2 text-xs font-bold text-teal-300 transition"
-              >
-                <Download size={13} />
-                <span>Export DJI KML</span>
-              </button>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* 4. VARIABLE-RATE APPLICATION (VRA) & ECONOMIC ROI LEDGER */}
@@ -1259,7 +1126,7 @@ WP12 ← WP11 ← WP10 ◄─┘
               className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 px-4 py-2 text-xs font-black text-slate-950 hover:brightness-110 shadow transition active:scale-95"
             >
               <Printer size={14} />
-              <span>Print Official PDF</span>
+              <span>Print / Save Scenario Report</span>
             </button>
           </div>
         </div>
@@ -1270,17 +1137,6 @@ WP12 ← WP11 ← WP10 ◄─┘
         </div>
       </div>
 
-      {/* 6. MODAL: AUTONOMOUS DRONE SPOT-SPRAYING MISSION GENERATOR */}
-      <DroneMissionGeneratorModal
-        isOpen={isDroneModalOpen}
-        onClose={() => setIsDroneModalOpen(false)}
-        disease={{
-          crop: fieldParams.crop,
-          condition: fieldParams.pathogen,
-          diagnosis: fieldParams.pathogen
-        }}
-        isDark={isDark}
-      />
     </div>
   );
 }

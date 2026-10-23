@@ -3,12 +3,8 @@ import {
   Sparkles,
   History,
   Cpu,
-  FileText,
-  ShoppingCart,
   UserCheck,
-  Landmark,
   MessageSquare,
-  Mic,
   Send,
   RotateCw,
   AlertTriangle,
@@ -20,7 +16,6 @@ import {
   Volume2,
   VolumeX,
   Download,
-  Maximize2,
   Leaf
 } from "lucide-react";
 
@@ -29,7 +24,6 @@ import {
   fetchSupportedCrops,
   analyzeCropImageApi,
   analyzeCropSymptomsApi,
-  fetchDiagnosisHistoryApi,
   initFarmerSessionApi
 } from "../../services/diagnosisApi";
 
@@ -37,13 +31,10 @@ import CropSelector from "./CropSelector";
 import CropImageUploader from "./CropImageUploader";
 import AnalysisProgressScreen from "./AnalysisProgressScreen";
 import DiagnosisResultCard from "./DiagnosisResultCard";
-import LowConfidenceNotice from "./LowConfidenceNotice";
 import DiagnosisHistoryView from "./DiagnosisHistoryView";
 import DiseaseLeaf3DModel from "../DiseaseLeaf3DModel";
 
 import LiveCameraModal from "../LiveCameraModal";
-import DosageCalculatorModal from "../DosageCalculatorModal";
-import DroneMissionGeneratorModal from "../DroneMissionGeneratorModal";
 import AgronomistDispatchModal from "../AgronomistDispatchModal";
 
 export default function CropDiagnosticsWorkspace({
@@ -51,9 +42,7 @@ export default function CropDiagnosticsWorkspace({
   theme = "dark",
   t = {},
   selectedField = null,
-  showToast = () => {},
-  setMonthlyScansCount = () => {},
-  handleSimulatePurchase = () => {}
+  showToast = () => {}
 }) {
   const isDark = theme === "cyber" || theme === "dark" || theme === "monochrome";
 
@@ -90,8 +79,6 @@ export default function CropDiagnosticsWorkspace({
 
   // Modals
   const [isCameraModalOpen, setIsCameraModalOpen] = useState(false);
-  const [isDosageModalOpen, setIsDosageModalOpen] = useState(false);
-  const [isDroneModalOpen, setIsDroneModalOpen] = useState(false);
   const [isAgronomistModalOpen, setIsAgronomistModalOpen] = useState(false);
   const [isFieldVideoModalOpen, setIsFieldVideoModalOpen] = useState(false);
 
@@ -207,7 +194,6 @@ export default function CropDiagnosticsWorkspace({
         }
 
         setWorkflowState("result");
-        setMonthlyScansCount((c) => c + 1);
 
         // Save to local storage history
         try {
@@ -381,7 +367,7 @@ export default function CropDiagnosticsWorkspace({
                       Moderate / Field Confidence Score ({Math.round(currentDiagnosis.confidence > 1 ? currentDiagnosis.confidence : currentDiagnosis.confidence * 100)}%):
                     </span>
                     <p className="mt-0.5 text-slate-300 text-[11px] leading-relaxed">
-                      AI identified primary symptoms with moderate confidence. Full pathology report, chemical dosages, and 3-tier treatment recommendations are provided below. Verify secondary physical signs before spraying.
+                      AI screening is preliminary. Confirm symptoms in the field and consult an agricultural expert before making treatment decisions.
                     </p>
                   </div>
                 </div>
@@ -393,8 +379,6 @@ export default function CropDiagnosticsWorkspace({
                     <DiagnosisResultCard
                       diagnosis={currentDiagnosis}
                       onRetake={() => setWorkflowState("idle")}
-                      onOpenDosage={() => setIsDosageModalOpen(true)}
-                      onOpenDrone={() => setIsDroneModalOpen(true)}
                       onOpenAgronomist={() => setIsAgronomistModalOpen(true)}
                       isDark={isDark}
                     />
@@ -458,22 +442,8 @@ export default function CropDiagnosticsWorkspace({
                       <span className="text-[10px] font-black uppercase text-emerald-400 tracking-wider">
                         Integrated Field Workflow
                       </span>
-                      <button
-                        type="button"
-                        onClick={() => setIsDosageModalOpen(true)}
-                        className="w-full flex items-center justify-between p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 hover:bg-amber-500/20 transition text-xs font-bold"
-                      >
-                        <span className="flex items-center gap-2"><ShoppingCart size={15} /> Chemical Dosage Calculator</span>
-                        <span>→</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setIsDroneModalOpen(true)}
-                        className="w-full flex items-center justify-between p-3 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/20 transition text-xs font-bold"
-                      >
-                        <span className="flex items-center gap-2"><Cpu size={15} /> Spot-Spray Drone Mission (KML)</span>
-                        <span>→</span>
-                      </button>
+                      
+                      
                       <button
                         type="button"
                         onClick={() => setIsAgronomistModalOpen(true)}
@@ -818,30 +788,6 @@ export default function CropDiagnosticsWorkspace({
           setIsCameraModalOpen(false);
           showToast("Live Camera Snapshot Captured! Ready to analyze.");
         }}
-        isDark={isDark}
-      />
-
-      <DosageCalculatorModal
-        isOpen={isDosageModalOpen}
-        onClose={() => setIsDosageModalOpen(false)}
-        disease={currentDiagnosis ? {
-          ...currentDiagnosis,
-          crop: typeof currentDiagnosis.crop === "object" ? (currentDiagnosis.crop?.name || selectedCrop) : (currentDiagnosis.crop || selectedCrop),
-          diseaseName: typeof currentDiagnosis.condition === "object" ? (currentDiagnosis.condition?.name || "Diagnosed Condition") : (currentDiagnosis.condition || "Diagnosed Condition"),
-          severity: typeof currentDiagnosis.severity === "object" ? (currentDiagnosis.severity?.tier || "Moderate") : (currentDiagnosis.severity || "Moderate")
-        } : { crop: selectedCrop, diseaseName: "Early Blight", severity: "Moderate" }}
-        isDark={isDark}
-      />
-
-      <DroneMissionGeneratorModal
-        isOpen={isDroneModalOpen}
-        onClose={() => setIsDroneModalOpen(false)}
-        disease={currentDiagnosis ? {
-          ...currentDiagnosis,
-          crop: typeof currentDiagnosis.crop === "object" ? (currentDiagnosis.crop?.name || selectedCrop) : (currentDiagnosis.crop || selectedCrop),
-          diseaseName: typeof currentDiagnosis.condition === "object" ? (currentDiagnosis.condition?.name || "Diagnosed Condition") : (currentDiagnosis.condition || "Diagnosed Condition"),
-          severity: typeof currentDiagnosis.severity === "object" ? (currentDiagnosis.severity?.tier || "Moderate") : (currentDiagnosis.severity || "Moderate")
-        } : { crop: selectedCrop, diseaseName: "Early Blight", severity: "Moderate" }}
         isDark={isDark}
       />
 

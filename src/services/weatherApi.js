@@ -27,7 +27,7 @@ export const POPULAR_AGRI_LOCATIONS = [
 
 export const DEFAULT_LOCATION = POPULAR_AGRI_LOCATIONS[0]; // Kopargaon
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
 
 /**
  * Maps WMO weather code to standard descriptive name and icon token.

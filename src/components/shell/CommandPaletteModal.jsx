@@ -1,16 +1,10 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   Search,
-  Bot,
   Leaf,
-  Layers,
-  Radar,
   Calculator,
   TrendingUp,
-  ShoppingCart,
-  Zap,
   Sun,
-  Moon,
   Sparkles,
   X,
   Command,
@@ -26,8 +20,7 @@ export default function CommandPaletteModal({
   isDark = true,
   onSelectNav,
   onChangeTheme,
-  onRunDiagnosis,
-  onQuickPrompt
+  onToggle,
 }) {
   const [search, setSearch] = useState("");
 
@@ -36,7 +29,7 @@ export default function CommandPaletteModal({
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
         if (isOpen) onClose();
-        else onClose(false); // toggle trigger
+        else onToggle?.();
       }
       if (e.key === "Escape" && isOpen) {
         onClose();
@@ -44,19 +37,17 @@ export default function CommandPaletteModal({
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, onToggle]);
 
   if (!isOpen) return null;
 
   const actions = [
     { id: "workspace", label: "Home — 3D AI Overview", icon: Home, category: "Navigation", badge: "Home", run: () => { onSelectNav("workspace"); onClose(); } },
-    { id: "intel", label: "Drone Tech — Autonomous Avionics & Field Surveys", icon: Compass, category: "Drone & Avionics", badge: "Drone", run: () => { onSelectNav("intel"); onClose(); } },
+    { id: "intel", label: "Field Scenario — Illustrative Field Intelligence", icon: Compass, category: "Field Intelligence", badge: "Scenario", run: () => { onSelectNav("intel"); onClose(); } },
     { id: "diag", label: "Run AI Crop Leaf Diagnostics", icon: Leaf, category: "Diagnostics", badge: "ResNet-50", run: () => { onSelectNav("diag"); onClose(); } },
     { id: "weather", label: "Open Farm Weather & Agricultural Forecast", icon: CloudSun, category: "Weather", badge: "Live", run: () => { onSelectNav("weather"); onClose(); } },
-    { id: "map", label: "View 25km GIS Outbreak Radar", icon: Radar, category: "Telemetry", badge: "GIS", run: () => { onSelectNav("map"); onClose(); } },
     { id: "calc", label: "Calculate NPK Fertilizer Bags", icon: Calculator, category: "Tools", badge: "Agronomy", run: () => { onSelectNav("calc"); onClose(); } },
     { id: "mandi", label: "Live APMC Mandi Prices (e-NAM)", icon: TrendingUp, category: "Market", badge: "Live Feed", run: () => { onSelectNav("mandi"); onClose(); } },
-    { id: "market", label: "Direct Harvest Produce Marketplace", icon: ShoppingCart, category: "Market", badge: "Trade", run: () => { onSelectNav("market"); onClose(); } },
     { id: "theme-harvest", label: "Switch to 🌾 Golden Harvest Theme (Warm Wheat Fields)", icon: Sparkles, category: "Appearance", badge: "Primary", run: () => { onChangeTheme("harvest"); onClose(); } },
     { id: "theme-botanical", label: "Switch to 🌿 Botanical Daylight Theme (Sunlit Orchard)", icon: Sun, category: "Appearance", badge: "Daylight", run: () => { onChangeTheme("botanical"); onClose(); } },
     { id: "theme-cyber", label: "Switch to 🌲 Living Canopy Theme (Deep Organic Forest)", icon: Leaf, category: "Appearance", badge: "Canopy", run: () => { onChangeTheme("cyber"); onClose(); } },

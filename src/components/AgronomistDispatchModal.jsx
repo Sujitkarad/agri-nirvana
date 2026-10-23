@@ -1,5 +1,11 @@
-import React, { useState } from "react";
-import { UserCheck, X, Calendar, MapPin, CheckCircle2, PhoneCall, ShieldCheck, Loader2 } from "lucide-react";
+import { useState } from "react";
+import {
+  UserCheck,
+  X,
+  CheckCircle2,
+  ShieldCheck,
+  Loader2
+} from "lucide-react";
 import { requestAgronomistVisitApi } from "../services/diagnosisApi";
 
 export default function AgronomistDispatchModal({ isOpen, onClose, disease, isDark = false }) {

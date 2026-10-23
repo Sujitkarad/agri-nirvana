@@ -109,139 +109,75 @@ export async function checkImageQualityClient(imageUrl) {
   });
 }
 
-import { CROP_DISEASE_DATASETS, diagnoseBySymptomDescription } from "../data/agriData";
-
 /**
  * Executes calibrated offline/client agronomic diagnosis fallback.
  * Uses verified expert agricultural disease datasets from Kisan AI Dr. Agri.
  */
 export async function runClientSideDiagnosis({
-  cropType = "Tomato",
+  cropType = "Unknown",
   imageUrl = null,
   symptomText = "",
   inputMode = "vision",
 }) {
-  const quality = imageUrl
-    ? await checkImageQualityClient(imageUrl)
-    : { isAcceptable: true, qualityIssues: [] };
-
-  const id = "diag_edge_" + Date.now().toString(36);
-
-  // If image quality check flagged significant issues in vision mode
-  if (!quality.isAcceptable && inputMode === "vision") {
-    return {
-      id,
-      status: "invalid_image",
-      is_valid_crop_image: false,
-      rejection_reason: quality.qualityIssues.join(" ") || "Image quality verification failed.",
-      condition: "Image Quality Check Failed",
-      confidence: 0,
-      confidence_pct: 0,
-      severity: "Unknown",
-      cropType,
-      recommendations: {
-        immediate: quality.qualityIssues[0] || "Please take a sharper, well-lit photo of the leaf.",
-        expert_help: "Ensure natural sunlight without harsh glare or heavy shadows."
-      },
-      is_low_confidence: true,
-      provenance: { source: "image_quality_gate", treatment_allowed: false }
-    };
-  }
-
-  // Match best candidate from expert agricultural disease registry
-  let matched = null;
-  if (symptomText && symptomText.trim().length > 0) {
-    matched = diagnoseBySymptomDescription(symptomText, cropType);
-  } else {
-    const normalizedCrop = (cropType || "Tomato").toLowerCase();
-    matched = CROP_DISEASE_DATASETS.find(d => {
-      const dCrop = (d.crop || "").toLowerCase();
-      return dCrop.includes(normalizedCrop) || normalizedCrop.includes(dCrop);
-    }) || CROP_DISEASE_DATASETS[0];
-  }
-
-  const confidenceScore = matched.confidence > 1 ? matched.confidence / 100 : (matched.confidence || 0.91);
-  const confidencePct = Math.round(confidenceScore * 100);
+  const quality = await checkImageQualityClient(imageUrl);
+  const message = inputMode === "symptoms"
+    ? "Offline symptom assessment is unavailable. No disease was identified; please retry when the diagnostic service is online or contact your local KVK/agriculture-extension officer."
+    : "The diagnostic backend is unavailable. This offline check evaluates image quality only and cannot identify a crop disease.";
 
   return {
-    id,
-    status: "success",
-    is_valid_crop_image: true,
-    crop: matched.crop || cropType,
-    cropType: cropType,
-    condition: matched.diseaseName || "Pathology Detected",
-    diagnosis: matched.diseaseName || "Pathology Detected",
-    pathogen: matched.pathogen || "Phytopathogenic agent",
-    pathogen_category: "Foliar Plant Pathology",
-    confidence: confidenceScore,
-    confidence_pct: confidencePct,
-    severity: matched.severity || "Moderate",
-    severityPercentage: matched.severity === "High" ? 65 : (matched.severity === "Medium" ? 42 : 25),
-    symptoms: [matched.symptoms || "Foliar chlorotic lesions and necrotic tissue spots."],
-    symptoms_observed: [matched.symptoms || "Foliar chlorotic lesions."],
-    likely_cause: `Spread by airborne fungal spores during humid conditions (>80% RH) or splash irrigation.`,
-    farmer_summary: matched.audioAdvisoryText || `${matched.crop} ${matched.diseaseName} detected with high confidence. Immediate treatment recommended.`,
-    audioAdvisoryText: matched.audioAdvisoryText,
+    id: `offline-guard-${Date.now()}`,
+    status: "uncertain",
+    is_valid_crop_image: null,
+    crop: cropType,
+    cropType,
+    condition: "Uncertain — diagnosis unavailable",
+    diagnosis: "Uncertain — diagnosis unavailable",
+    pathogen: null,
+    pathogen_category: "Unknown",
+    confidence: 0,
+    confidence_pct: 0,
+    severity: "Unknown",
+    severityPercentage: null,
+    symptoms: symptomText ? [symptomText] : [],
+    symptoms_observed: [],
+    likely_cause: "",
+    farmer_summary: message,
     immediate_precautions: [
-      "Avoid overhead sprinkler irrigation to reduce foliar leaf moisture duration.",
-      "Prune and destroy severely infected bottom leaves to prevent spore propagation.",
-      "Disinfect pruning shears with a 1% sodium hypochlorite solution between plants."
+      "Do not apply pesticides based on this offline result.",
+      "Retake a clear, well-lit image and retry when the diagnostic service is available.",
+      "For spreading or severe symptoms, consult a local Krishi Vigyan Kendra (KVK) or agriculture-extension officer.",
     ],
-    treatment_organic: [
-      `${matched.remedies?.organic?.title || "Trichoderma viride"}: ${matched.remedies?.organic?.dosage || "5g/L"} — ${matched.remedies?.organic?.instructions || "Spray during late afternoon."}`
-    ],
-    treatment_chemical: [
-      `${matched.remedies?.chemical?.title || "Target Protectant"}: ${matched.remedies?.chemical?.dosage || "2g/L"} — ${matched.remedies?.chemical?.instructions || "Spray at first sign of lesions."}`
-    ],
+    treatment_organic: [],
+    treatment_chemical: [],
     treatmentPlan: {
-      organic: {
-        name: matched.remedies?.organic?.title || "Bio-Fungicide",
-        dosage: matched.remedies?.organic?.dosage || "5g/L",
-        instructions: matched.remedies?.organic?.instructions || "Apply foliar mist."
-      },
+      organic: { name: "Not prescribed", dosage: "Not provided" },
       chemical: {
-        name: matched.remedies?.chemical?.title || "Foliar Protectant",
-        dose_15L_tank: "30–45g per 15L tank",
-        safetyIntervalDays: 7,
-        frac_code: "FRAC Group M03",
-        instructions: matched.remedies?.chemical?.instructions || "Apply uniform mist."
+        name: "Not prescribed",
+        dosage: "Not provided",
+        dose_15L_tank: null,
+        safetyIntervalDays: null,
+        warning: "No chemical recommendation is provided without verified diagnosis and product-label validation.",
       },
-      prevention: {
-        name: matched.remedies?.prevention?.title || "Crop Hygiene",
-        instructions: matched.remedies?.prevention?.instructions || "Maintain proper plant spacing."
-      }
+      prevention: { name: "Crop observation", instructions: "Photograph symptoms and monitor whether they spread." },
     },
     recommendations: {
-      immediate: matched.remedies?.chemical?.dosage || "Apply recommended foliar protectant.",
-      monitoring: "Inspect new foliage growth after 72 hours for lesion stabilization.",
-      prevention: matched.remedies?.prevention?.instructions || "Rotate chemical classes to prevent pathogen resistance.",
-      expert_help: "Local Krishi Vigyan Kendra (KVK) agronomist advisory is on standby."
+      immediate: message,
+      monitoring: "Record symptoms and inspect nearby plants for spread.",
+      prevention: "Avoid unnecessary pesticide use until the cause is confirmed.",
+      expert_help: "Contact your local KVK or agriculture-extension officer for confirmation.",
     },
-    differential_diagnoses: [
-      {
-        crop: cropType,
-        condition: "Bacterial Foliar Blight",
-        confidence_pct: 12,
-        key_distinguishing_feature: "Angular lesions delimited strictly by leaf veins."
-      },
-      {
-        crop: cropType,
-        condition: "Physiological Sunscald / Nutrient Chlorosis",
-        confidence_pct: 7,
-        key_distinguishing_feature: "Absence of fungal sporulation or concentric target rings."
-      }
-    ],
-    is_low_confidence: false,
+    differential_diagnoses: [],
+    is_low_confidence: true,
     provenance: {
-      source: "client_offline_knowledge_engine",
-      confidence_is_calibrated: true,
-      treatment_allowed: true,
+      source: "client_quality_guard",
+      confidence_is_calibrated: false,
+      treatment_allowed: false,
     },
-    modelName: "Kisan AI Dr. Agri On-Device Diagnostic Engine",
-    modelVersion: "v4.0-edge",
-    isMock: false,
+    modelName: "Offline image-quality guard (no disease inference)",
+    modelVersion: "offline-guard",
+    isMock: true,
     createdAt: new Date().toISOString(),
-    warnings: quality.qualityIssues,
+    warnings: quality.qualityIssues || [],
   };
 }
 
