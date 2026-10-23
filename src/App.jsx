@@ -399,9 +399,9 @@ export default function App() {
         ...prev,
         {
           sender: "bot",
-          text: "🌾 **Agri Nirvana AI Intelligence Active**:\n• Crop Health & Market Telemetry online.\n• Select a prompt below or ask any question regarding crop diagnostics, soil NPK, mandi prices, or pest remedies.",
-          source: `${selectedHfModel} Offline Fallback`,
-          reasoning: `Local offline edge heuristics executed in 18ms.`
+          text: "The Agri Nirvana AI service is unavailable right now. No AI answer or diagnosis was generated. Please try again later.",
+          source: "AI service unavailable",
+          reasoning: "The request failed; no offline inference was performed."
         }
       ]);
       setTimeout(() => {
