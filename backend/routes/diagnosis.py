@@ -312,7 +312,7 @@ Return ONLY a valid, single JSON object with these exact fields (no markdown, no
     confidence = float(validated_gemini.confidence)
     is_healthy = validated_gemini.pathogen_category == "Healthy" or "healthy" in validated_gemini.disease_name.lower()
     is_low_conf = confidence < settings.AI_CONFIDENCE_THRESHOLD or confidence <= 0.0
-    treatment_allowed = not is_low_conf and not is_healthy and validated_gemini.disease_name != "Unknown Disease"
+    treatment_allowed = False  # Chemical treatment is disabled until product-label validation is implemented.
 
     diag_record = {
         "status": "uncertain" if is_low_conf else "success",
@@ -333,10 +333,10 @@ Return ONLY a valid, single JSON object with these exact fields (no markdown, no
         "likely_cause": validated_gemini.likely_cause or "",
         "immediate_precautions": validated_gemini.immediate_actions,
         "treatment_organic": [validated_gemini.organic_treatment] if validated_gemini.organic_treatment else [],
-        "treatment_chemical": [validated_gemini.chemical_treatment] if validated_gemini.chemical_treatment else [],
+        "treatment_chemical": [],
         "treatmentPlan": {
             "organic": {"name": validated_gemini.organic_treatment or "Not prescribed", "dosage": "Consult label"},
-            "chemical": {"name": validated_gemini.chemical_treatment or "Not prescribed", "dosage": "Consult label"},
+            "chemical": {"name": "Withheld pending crop/product registration and label verification", "dosage": "Not provided", "warning": "Use only a product registered for this crop and target disease; follow its exact label and local KVK/agriculture-extension guidance."},
             "preventive": {"cultural": "Maintain field sanitation"}
         } if treatment_allowed else {},
         "recommendations": {
