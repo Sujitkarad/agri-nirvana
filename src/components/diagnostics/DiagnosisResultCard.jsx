@@ -2,15 +2,13 @@ import React, { useState } from "react";
 import {
   Sparkles, ShieldAlert, CheckCircle2, Info, AlertTriangle, Eye, ZoomIn, X,
   Clock, ArrowRight, UserCheck, Activity, ShieldCheck, Zap, Droplet,
-  Compass, Plane, Leaf, Beaker, FileText, ShoppingCart, HelpCircle, ShieldOff,
+  Compass, Leaf, Beaker, FileText, HelpCircle, ShieldOff,
   Copy, ClipboardCheck
 } from "lucide-react";
 
 export default function DiagnosisResultCard({
   diagnosis = {},
   onRetake = () => {},
-  onOpenDosage = () => {},
-  onOpenDrone = () => {},
   onOpenAgronomist = () => {},
   isDark = true
 }) {
@@ -37,7 +35,6 @@ export default function DiagnosisResultCard({
     lesionCoordinates3D = [],
     treatmentPlan = {},
     recommendations = {},
-    droneMissionReady = null,
     modelName = "AI Vision Pathology Service",
     modelVersion = "v4.0",
     isMock = false,
@@ -58,6 +55,7 @@ export default function DiagnosisResultCard({
   const isHealthy = condition.toLowerCase().includes("healthy");
   const isUncertain = diagnosis.status === "uncertain" || (Boolean(diagnosis.is_low_confidence) && confPercent < 25);
   const canPrescribeTreatment = Boolean(
+    diagnosis.provenance?.treatment_allowed === true &&
     diagnosis.status === "success" &&
     !isHealthy &&
     confPercent >= 30
@@ -525,25 +523,7 @@ export default function DiagnosisResultCard({
         </div>
       </div>
 
-      {/* E. DRONE MISSION READINESS BAR — Strictly gated behind authorization */}
-      {droneMissionReady && canPrescribeTreatment && (
-        <div className="p-3.5 rounded-2xl bg-cyan-950/30 border border-cyan-800/40 flex flex-wrap items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-2 text-cyan-300">
-            <Plane size={16} />
-            <span className="font-bold">Autonomous Drone Spot-Spray Telemetry Ready:</span>
-            <span className="text-slate-300">Altitude: {droneMissionReady.recommendedAltitudeMeters || 3.5}m • Flow: {droneMissionReady.flowRateLitresPerHectare || 15} L/ha</span>
-          </div>
-          <button
-            type="button"
-            onClick={onOpenDrone}
-            className="px-3 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-black text-xs transition"
-          >
-            Launch Drone Mission
-          </button>
-        </div>
-      )}
-
-      {/* F. FARMER SHARING & AUDIO READOUT BAR */}
+      {/* E. FARMER SHARING & AUDIO READOUT BAR */}
       <div className="p-3.5 rounded-2xl border border-emerald-800/60 bg-black/40 flex flex-wrap items-center justify-between gap-3 text-xs">
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-slate-400 font-bold">🔊 Audio Advisory:</span>
@@ -612,15 +592,7 @@ export default function DiagnosisResultCard({
           >
             <UserCheck size={14} /> Request Agronomist
           </button>
-          {canPrescribeTreatment && (
-            <button
-              type="button"
-              onClick={onOpenDosage}
-              className="shrink-0 rounded-xl bg-amber-600 px-3 py-2 text-xs font-black text-white hover:bg-amber-500 transition"
-            >
-              Dosage Calc
-            </button>
-          )}
+
           <button
             type="button"
             onClick={onRetake}
