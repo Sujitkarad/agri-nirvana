@@ -269,9 +269,10 @@ export default function PrecisionFieldIntelligenceWorkspace({
   ];
 
   // Full 20-Section Technical Markdown Document
-  const fullTechnicalMarkdownReport = `# 🌾 AGRI NIRVANA — PRECISION FIELD INTELLIGENCE REPORT
+  const fullTechnicalMarkdownReport = `# AGRI NIRVANA — ILLUSTRATIVE FIELD SCENARIO REPORT
+**IMPORTANT: Preset demonstration data only. Not a live field survey, diagnosis, flight plan, or authorization for chemical application.**
 **Execution Mode:** ${provenanceTag}
-**Standard Compliance:** ESA Sentinel-2 L2A BOA Reflectance • DGCA Drone Rules 2021 • CIB&RC Label Regulations
+**Reference note:** Regulatory references are informational only; this report does not verify compliance, airspace status, or product-label instructions.
 
 ---
 
@@ -291,7 +292,7 @@ export default function PrecisionFieldIntelligenceWorkspace({
 │ Drainage Risk     : HIGH (Depression Zone in South-East Sector)
 │ Disease/Pest Risk : HIGH (${fieldParams.pathogen})
 │ Overall Confidence: 87.5%
-│ Drone Mission     : ${flightSafetyStatus}
+│ Drone Data        : Not connected; no operational mission generated
 ╰──────────────────────────────────────────────────────────────────────────╯
 \`\`\`
 
@@ -368,9 +369,8 @@ Validated for **${fieldParams.crop}** at **${fieldParams.stage}**. Normal expect
 
 ---
 
-## 11. Drone Mission Planning
-• **Mission A (Survey):** 🟢 Authorized (High-Resolution Multispectral Stand Count)
-• **Mission B (Spot Spray):** 🟡 On Hold (Awaiting ground scouting confirmation)
+## 11. Operational Drone Planning
+No operational flight plan is generated. This scenario preview is not based on a live survey and must not be used to operate a drone.
 
 ---
 
@@ -381,8 +381,7 @@ $$\\text{GSD} = \\frac{17.3\\text{ mm} \\times 45\\text{ m} \\times 100}{12.29\\
 ---
 
 ## 13. Drone Flight Safety & Airspace Assessment
-• Status: **${flightSafetyStatus}**
-• DGCA Digital Sky: Green Zone | Wind: ${fieldParams.windKmh} km/h (Gust: ${fieldParams.gustKmh} km/h) | Rain Prob: ${fieldParams.rainProb}%
+Live airspace, current weather, aircraft configuration, and regulatory checks are not integrated. Do not use this preview to authorize or plan a flight.
 
 ---
 
@@ -498,23 +497,23 @@ WP12 ← WP11 ← WP10 ◄─┘
             <div className="flex flex-wrap items-center gap-2 mb-2">
               <span className="rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-mono font-bold text-emerald-400 border border-emerald-500/40 uppercase tracking-wider flex items-center gap-1.5">
                 <Sparkles size={13} className="text-amber-400 animate-pulse" />
-                Sentinel-2 L2A + 3D DEM + Autonomous Avionics
+                Illustrative Scenario • Not Live Data
               </span>
               <span className="rounded-full bg-amber-500/20 px-2.5 py-0.5 text-[11px] font-mono font-bold text-amber-300 border border-amber-500/30">
                 {provenanceTag}
               </span>
             </div>
             <h1 className={`text-2xl sm:text-3xl font-black tracking-tight ${isDark ? "ai-gradient-text" : "ai-gradient-text-light"}`}>
-              Precision Field Intelligence & Drone Avionics Engine
+              Precision Field Intelligence — Scenario Preview
             </h1>
             <p className={`text-xs sm:text-sm mt-1 max-w-2xl ${isDark ? "text-emerald-100/70" : "text-slate-600"}`}>
-              Multi-spectral vegetation zoning, hydro-topographic flow routing, safety-constrained drone mission waypoints, and variable-rate chemical ROI analytics.
+              Explore sample field indicators and scenario analytics. Values are preset examples, not live satellite imagery, measured soil data, or connected drone telemetry.
             </p>
           </div>
 
           {/* Quick Preset Selector */}
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 mr-1">Calibrated AOI:</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 mr-1">Sample Field Scenario:</span>
             {PRESET_FIELDS.map((preset) => (
               <button
                 key={preset.id}
@@ -1141,7 +1140,7 @@ WP12 ← WP11 ← WP10 ◄─┘
               className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 px-4 py-2 text-xs font-black text-slate-950 hover:brightness-110 shadow transition active:scale-95"
             >
               <Printer size={14} />
-              <span>Print Official PDF</span>
+              <span>Print / Save Scenario Report</span>
             </button>
           </div>
         </div>
