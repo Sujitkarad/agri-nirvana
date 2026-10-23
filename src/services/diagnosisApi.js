@@ -361,6 +361,7 @@ export const analyzeCropSymptomsApi = analyzeSymptomDiagnosisApi;
 export async function fetchDiagnosisHistoryApi(cropFilter = null) {
   const queryString = cropFilter && cropFilter !== "All" ? `?crop=${encodeURIComponent(cropFilter)}` : "";
   const endpoints = getEndpoints(`/api/v1/diagnosis/history${queryString}`);
+  let authRequired = false;
 
   for (const ep of endpoints) {
     try {
@@ -379,12 +380,16 @@ export async function fetchDiagnosisHistoryApi(cropFilter = null) {
           : Array.isArray(data)
           ? data
           : [];
-        return { success: true, total: list.length, history: list };
+        return { success: true, total: list.length, history: list, authRequired: false };
       }
+
+      // Keep the local history available, but do not disguise an auth failure
+      // as a normal empty cloud history.
+      if (res.status === 401 || res.status === 403) authRequired = true;
     } catch (_) {}
   }
 
-  // Fallback to local storage if offline
+  // Local history is device-specific and is not a substitute for authenticated cloud sync.
   try {
     const raw = localStorage.getItem("agri_nirvana_diag_history");
     if (raw) {
@@ -396,10 +401,10 @@ export async function fetchDiagnosisHistoryApi(cropFilter = null) {
           return c === cropFilter;
         });
       }
-      return { success: true, total: list.length, history: list };
+      return { success: true, total: list.length, history: list, authRequired };
     }
   } catch (_) {}
-  return { success: true, total: 0, history: [] };
+  return { success: true, total: 0, history: [], authRequired };
 }
 
 export async function deleteDiagnosisApi(id) {
