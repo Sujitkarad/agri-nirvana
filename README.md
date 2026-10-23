@@ -34,73 +34,36 @@ The current engineering direction prioritizes **trustworthy AI diagnostics over 
 
 ## ✨ Current Capabilities
 
-### 🤖 AI Crop Diagnostics
+### 🤖 Crop Image Diagnostics
+- Upload or capture a crop image and request an AI-supported assessment from the configured backend.
+- Review confidence, uncertainty notices, and saved device/cloud diagnosis history where available.
+- Offline mode checks image quality only; it does not infer a disease.
+- Results are advisory and require field or agricultural-extension confirmation. Chemical treatment guidance remains disabled until product-label and crop-specific validation is available.
 
-The diagnostic pipeline is the core AI feature.
+### 🌦️ Farm Weather
+- Current conditions and forecasts using the configured weather service.
+- Agricultural context for rainfall, heat, humidity, wind, and field activity.
+- Weather-driven rules are decision-support signals, not guarantees of disease occurrence or safe pesticide application.
 
-### 🌦️ Real-Time Farm Weather Intelligence
+### 🛰️ Field Intelligence Scenario Preview
+- Explore preset field scenarios and their visual overlays.
+- Scenario values are illustrative examples, not verified satellite imagery, live NDVI measurements, surveyed boundaries, or executable drone flight plans.
+- Drone control, autonomous missions, and operational export are not part of the current application.
 
-- Live agro-meteorological intelligence powered by Open-Meteo with zero API key dependencies.
-- Real-time farm telemetry: Temperature, Feels-like, Relative Humidity, Wind Speed, Direction, Gusts, and Precipitation.
-- Next 24-hour hourly forecast timeline with weather conditions and precipitation chance.
-- 7-Day agricultural outlook including maximum/minimum temperatures, rain sums ($mm$), and FAO-56 Reference Evapotranspiration ($ET_0$).
-- 5 deterministic agricultural rules:
-  - **Best Field Activity Window**: Dynamic *Good / Caution / Poor* spray and operational window based on wind drift thresholds ($> 18\text{ km/h}$) and rain wash-off risk.
-  - **Rain & Moisture Outlook**: Field surface moisture accumulation indicators.
-  - **Irrigation Management**: Data-driven water balance guidance comparing incoming precipitation against $ET_0$.
-  - **Heat & Solar Radiation Stress**: Warnings for heat spikes and excessive solar radiation.
-  - **Disease-Favorable Weather Signal**: Transparent micro-climate risk indicators (humidity $>80\%$ and moderate temperatures favoring fungal development) with explicit symptom-verification disclaimers.
-- Fast backend TTL caching ($10\text{ minutes}$) with coordinate rounding deduplication and direct browser-fallback resilience.
+### 🌱 Soil Nutrient Planning Estimate
+- Compare generic crop nutrient defaults across a selected crop and land area.
+- Outputs are planning estimates, not soil-test-based fertilizer prescriptions. Confirm real input decisions with a soil test and a local KVK/agricultural-extension officer.
 
-### 🚁 3D Drone & Field Avionics
+### 🏪 Mandi Price View
+- Query the configured mandi API and filter the returned market records.
+- When the API is unavailable, the interface labels preset prices as static references and warns that they are not today's verified prices.
+- Trend, arrival, and “best price” badges are hidden for fallback records. No farmer listing, trade execution, payment, or buyer-broadcast service is provided.
 
-- Autonomous drone survey flyover and waypoint mission visualization.
-- Precision multi-spectral field index simulation (NDVI/NDRE vegetation stress).
-- Interactive 3D terrain and flight path controls for field scouting.
+### 💬 Agricultural AI Assistant
+- Ask agriculture-related questions and request explanations of available diagnostic context.
+- The assistant is not a substitute for a validated crop classifier, local agronomist, or official product label.
 
-The application includes a farmer-facing conversational assistant connected to the backend AI layer.
-
-The assistant is designed to:
-
-- explain crop-diagnostic results in simpler language;
-- answer agriculture-related questions;
-- use supplied diagnostic context when available;
-- avoid inventing disease diagnoses when no authoritative diagnostic result exists;
-- keep privileged provider credentials on the server side.
-
-### 🌱 Field & Agronomy Tools
-
-The frontend includes several agriculture-oriented workflows, including:
-
-- field intelligence;
-- crop and disease information;
-- NPK/fertilizer calculation interfaces;
-- outbreak/risk visualization concepts;
-- yield analytics;
-- farmer-oriented agronomy workflows.
-
-Some existing field-intelligence and visualization experiences remain demonstration-oriented and must not be interpreted as certified measurements unless backed by validated data sources.
-
-### 🏪 Market Intelligence
-
-The platform contains market/mandi-oriented workflows for:
-
-- APMC/e-NAM-style price presentation;
-- crop price comparison;
-- harvest listing concepts;
-- buyer/market-linkage workflows.
-
-Where data is simulated, historical, pre-processed, or demonstration-only, it must be labelled accordingly and should not be presented as a guaranteed live market feed.
-
-### 💳 Farmer Finance & Sustainability Concepts
-
-The application also contains prototype interfaces for:
-
-- Kisan credit/eligibility concepts;
-- parametric weather-insurance simulations;
-- sustainability and water/carbon impact visualization.
-
-These are product concepts, not banking, underwriting, or certified environmental accounting systems.
+The current UI intentionally excludes simulated subscription activation, mock outbreak broadcasting, and the local-only produce marketplace. Those workflows should return only when backed by real services, verified data, and appropriate security controls.
 
 ---
 

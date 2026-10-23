@@ -24,7 +24,6 @@ import {
   fetchSupportedCrops,
   analyzeCropImageApi,
   analyzeCropSymptomsApi,
-  fetchDiagnosisHistoryApi,
   initFarmerSessionApi
 } from "../../services/diagnosisApi";
 
@@ -32,7 +31,6 @@ import CropSelector from "./CropSelector";
 import CropImageUploader from "./CropImageUploader";
 import AnalysisProgressScreen from "./AnalysisProgressScreen";
 import DiagnosisResultCard from "./DiagnosisResultCard";
-import LowConfidenceNotice from "./LowConfidenceNotice";
 import DiagnosisHistoryView from "./DiagnosisHistoryView";
 import DiseaseLeaf3DModel from "../DiseaseLeaf3DModel";
 
@@ -44,9 +42,7 @@ export default function CropDiagnosticsWorkspace({
   theme = "dark",
   t = {},
   selectedField = null,
-  showToast = () => {},
-  setMonthlyScansCount = () => {},
-  handleSimulatePurchase = () => {}
+  showToast = () => {}
 }) {
   const isDark = theme === "cyber" || theme === "dark" || theme === "monochrome";
 
@@ -198,7 +194,6 @@ export default function CropDiagnosticsWorkspace({
         }
 
         setWorkflowState("result");
-        setMonthlyScansCount((c) => c + 1);
 
         // Save to local storage history
         try {

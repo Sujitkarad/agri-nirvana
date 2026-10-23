@@ -1,5 +1,14 @@
-import React, { useState, useEffect } from "react";
-import { History, Filter, Trash2, Calendar, TrendingUp, Sparkles, AlertCircle, ArrowUpRight, Leaf } from "lucide-react";
+import { useState, useEffect } from "react";
+import {
+  History,
+  Filter,
+  Trash2,
+  Calendar,
+  TrendingUp,
+  Sparkles,
+  AlertCircle,
+  Leaf
+} from "lucide-react";
 import { fetchDiagnosisHistoryApi, deleteDiagnosisItemApi } from "../../services/diagnosisApi";
 
 export default function DiagnosisHistoryView({

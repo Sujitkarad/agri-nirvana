@@ -1,4 +1,5 @@
-// MOCK & PRE-PROCESSED AGRI DATASET — Kaggle & Internet Agriculture Market Telemetry
+// App translations, generic crop nutrient defaults, and static mandi reference values.
+// Reference prices are not live observations and must never be presented as current market data.
 
 export const LANGUAGES = [
   { code: "en", name: "English", flag: "🇬🇧" },
@@ -18,16 +19,16 @@ export const TRANSLATIONS = {
     navDiag: "AI Diagnostics",
     navSat: "Farm Weather",
     navCalc: "NPK & Agronomy",
-    navMap: "Outbreak Radar",
-    navMarket: "Agri Marketplace",
+
+
     navMandi: "e-NAM Market Linkage",
-    navBot: "3D AI Vegetable & Price Bot",
-    navFintech: "Kisan Credit & Insurance",
-    navESG: "Carbon & Sustainability",
-    navGov: "AgriStack Alignment",
-    navAdmin: "VC Investor Pitch",
-    navPricing: "Tier Access & Features",
-    navAnalytics: "Yield Analytics",
+
+
+
+
+
+
+
     heroTitle: "Precision Agronomy & Instant AI Diagnostics",
     heroSub: "Diagnose crop diseases from a photo, understand what’s affecting your crop, and get practical, evidence-based guidance — all in one simple platform.",
     scanTitle: "Crop Health AI Diagnostics",
@@ -83,16 +84,16 @@ export const TRANSLATIONS = {
     navDiag: "एआई निदान",
     navSat: "मौसम पूर्वानुमान",
     navCalc: "एनपीके और उर्वरक",
-    navMap: "प्रकोप रडार",
-    navMarket: "कृषि बाज़ार",
+
+
     navMandi: "ई-नाम मंडी भाव",
-    navBot: "3D एआई सब्ज़ी एवं मंडी बोट",
-    navFintech: "किसान क्रेडिट और बीमा",
-    navESG: "कार्बन और स्थिरता",
-    navGov: "एग्रीस्टैक संरेखण",
-    navAdmin: "निवेशक डैशबोर्ड",
-    navPricing: "सुविधाएं और प्लान",
-    navAnalytics: "उपज विश्लेषण",
+
+
+
+
+
+
+
     heroTitle: "सटीक कृषि और त्वरित एआई फसल निदान",
     heroSub: "फोटो से फसल रोगों का निदान करें, समझें कि आपकी फसल को क्या प्रभावित कर रहा है, और साक्ष्य-आधारित व्यावहारिक मार्गदर्शन पाएं — सब एक सरल मंच पर।",
     scanTitle: "फसल स्वास्थ्य एआई निदान",
@@ -148,16 +149,16 @@ export const TRANSLATIONS = {
     navDiag: "AI रोग निदान",
     navSat: "शेती हवामान",
     navCalc: "NPK खत प्रमाण",
-    navMap: "कीड-रोग नकाशा",
-    navMarket: "कृषी बाजारपेठ",
+
+
     navMandi: "e-NAM बाजार भाव",
-    navBot: "3D AI भाजीपाला बोट",
-    navFintech: "किसान क्रेडिट व विमा",
-    navESG: "कार्बन व पर्यावरण",
-    navGov: "AgriStack शासन जोडणी",
-    navAdmin: "गुंतवणूकदार डैशबोर्ड",
-    navPricing: "फीचर्स व स्तर",
-    navAnalytics: "उत्पादन विश्लेषण",
+
+
+
+
+
+
+
     heroTitle: "अचूक शेती आणि झटपट AI पीक आरोग्य तपासणी",
     heroSub: "फोटोवरून पिकांचे रोग ओळखा, पिकाला काय त्रास होतोय ते समजून घ्या आणि पुराव्यावर आधारित अचूक मार्गदर्शन मिळवा — सर्व एकाच सोप्या प्लॅटफॉर्मवर.",
     scanTitle: "पीक आरोग्य AI तपासणी",
@@ -213,16 +214,16 @@ export const TRANSLATIONS = {
     navDiag: "AI నిర్ధారణ",
     navSat: "వ్యవసాయ వాతావరణం",
     navCalc: "ఎరువుల లెక్కింపు",
-    navMap: "వ్యాధి నివారణ రడార్",
-    navMarket: "వ్యవసాయ మార్కెట్",
+
+
     navMandi: "e-NAM మార్కెట్ ధరలు",
-    navBot: "3D AI కూరగాయల ధరల బాట్",
-    navFintech: "కిసాన్ క్రెడిట్ & బీమా",
-    navESG: "కార్బన్ & పర్యావరణం",
-    navGov: "AgriStack అనుసంధానం",
-    navAdmin: "ఇన్వెస్టర్ డ్యాష్‌బోర్డ్",
-    navPricing: "ప్లాన్స్ & ఫీచర్లు",
-    navAnalytics: "దిగుబడి విశ్లేషణ",
+
+
+
+
+
+
+
     heroTitle: "ఖచ్చితమైన వ్యవసాయం & AI పంట వ్యాధి నిర్ధారణ",
     heroSub: "రైతులందరికీ 100% ఉచిత ఓపెన్ యాక్సెస్ ప్లాట్‌ఫారమ్.",
     scanTitle: "పంట ఆరోగ్య AI పరిశీలన",
@@ -278,16 +279,16 @@ export const TRANSLATIONS = {
     navDiag: "AI நோய் கண்டறிதல்",
     navSat: "பண்ணை வானிலை",
     navCalc: "உரக் கணக்கீடு",
-    navMap: "நோய் வரைபடம்",
-    navMarket: "வேளாண் சந்தை",
+
+
     navMandi: "e-NAM சந்தை விலை",
-    navBot: "3D AI காய்கறி விலை பாட்",
-    navFintech: "கிசான் கடன் & காப்பீடு",
-    navESG: "கார்பன் & சுற்றுச்சூழல்",
-    navGov: "AgriStack அரசு இணைப்பு",
-    navAdmin: "முதலீட்டாளர் டாஷ்போர்டு",
-    navPricing: "திட்டங்கள் & வசதிகள்",
-    navAnalytics: "மகசூல் பகுப்பாய்வு",
+
+
+
+
+
+
+
     heroTitle: "துல்லிய வேளாண்மை மற்றும் உடனடி AI நோய் கண்டறிதல்",
     heroSub: "அனைத்து விவசாயிகளுக்கும் 100% இலவச தளம்.",
     scanTitle: "பயிர் ஆரோக்கிய AI ஆய்வு",
@@ -343,16 +344,16 @@ export const TRANSLATIONS = {
     navDiag: "AI ਬਿਮਾਰੀ ਜਾਂਚ",
     navSat: "ਖੇਤੀਬਾੜੀ ਮੌਸਮ",
     navCalc: "ਖਾਦ ਕੈਲਕੁਲੇਟਰ",
-    navMap: "ਬਿਮਾਰੀ ਅਲਰਟ",
-    navMarket: "ਖੇਤੀ ਮਾਰਕੀਟ",
+
+
     navMandi: "e-NAM ਮੰਡੀ ਭਾਅ",
-    navBot: "3D AI ਸਬਜ਼ੀ ਰੇਟ ਬੋਟ",
-    navFintech: "ਕਿਸਾਨ ਕ੍ਰੈਡਿਟ ਅਤੇ ਬੀਮਾ",
-    navESG: "ਕਾਰਬਨ ਅਤੇ ਵਾਤਾਵਰਣ",
-    navGov: "AgriStack ਸਰਕਾਰੀ ਤਾਲਮੇਲ",
-    navAdmin: "ਨਿਵੇਸ਼ਕ ਡੈਸ਼ਬੋਰਡ",
-    navPricing: "ਪਲਾਨ ਅਤੇ ਫੀਚਰ",
-    navAnalytics: "ਝਾੜ ਵਿਸ਼ਲੇਸ਼ਣ",
+
+
+
+
+
+
+
     heroTitle: "ਸਹੀ ਖੇਤੀਬਾੜੀ ਅਤੇ ਤੁਰੰਤ AI ਫਸਲ ਜਾਂਚ",
     heroSub: "ਸਾਰੇ ਕਿਸਾਨਾਂ ਲਈ 100% ਮੁਫਤ ਓਪਨ-ਐਕਸੈਸ ਪਲੇਟਫਾਰਮ।",
     scanTitle: "ਫਸਲ ਸਿਹਤ AI ਜਾਂਚ",
@@ -402,242 +403,6 @@ export const TRANSLATIONS = {
   }
 };
 
-export const SUBSCRIPTION_PLANS = [
-  {
-    id: "free",
-    name: "Free Farmer Tier",
-    priceINR: 0,
-    scanLimitMonthly: 3,
-    badge: "Free Access",
-    features: [
-      "3 AI Leaf Disease Scans / Month",
-      "Standard Audio Advisory",
-      "NPK Fertilizer Calculator",
-      "Regional Outbreak Alerts"
-    ],
-    gatedFeatures: []
-  },
-  {
-    id: "pro",
-    name: "Pro Agronomist Tier (Free Access)",
-    priceINR: 0,
-    scanLimitMonthly: 9999,
-    popular: true,
-    badge: "100% Free Upgrade",
-    features: [
-      "Unlimited AI Vision Leaf Scans",
-      "Farm Weather & 7-Day Agricultural Forecasts",
-      "10cm Soil Sensors Telemetry",
-      "3D Interactive Hugging Face Bot",
-      "Priority Multi-Lingual Audio Guidance"
-    ],
-    gatedFeatures: []
-  },
-  {
-    id: "fpo",
-    name: "FPO & Cooperative Admin (Free Access)",
-    priceINR: 0,
-    scanLimitMonthly: 99999,
-    badge: "Free Enterprise",
-    features: [
-      "Multi-Farmer Parcel Dashboard (up to 500 farms)",
-      "Bulk Diagnostic PDF & CSV Reports",
-      "Custom Outbreak Risk Alerts",
-      "Direct Buyer Procurement Portal",
-      "Investor Revenue Commission Tracking"
-    ],
-    gatedFeatures: []
-  }
-];
-
-// EXPANDED KAGGLE & APMC VEGETABLE & CROP DATASET
-export const KAGGLE_VEGETABLE_PRICES = [
-  { id: "v1", crop: "Onion (लाल कांदा / Nashik Red)", category: "Vegetables", priceKg: 24.2, priceQuintal: 2420, mandi: "Kopargaon APMC Onion Yard", trend: "+6.1%", arrival: "3850 Qtl", status: "High Demand", bestSellingWindow: "6:00 AM - 9:30 AM" },
-  { id: "v2", crop: "Soybean (पिवळा सोयाबीन / JS-335)", category: "Oilseeds", priceKg: 45.2, priceQuintal: 4520, mandi: "Kopargaon APMC Grain Yard", trend: "+1.3%", arrival: "1420 Qtl", status: "High Demand", bestSellingWindow: "8:00 AM - 11:30 AM" },
-  { id: "v3", crop: "Sugarcane (ऊस / Co 86032)", category: "Cash Crops", priceKg: 3.15, priceQuintal: 315, mandi: "Kopargaon Cane Yard", trend: "+1.6%", arrival: "5200 Tonnes", status: "High Demand", bestSellingWindow: "All Day Mill Gate" },
-  { id: "v4", crop: "Wheat (Lokwan / Sharbati)", category: "Cereals", priceKg: 26.4, priceQuintal: 2640, mandi: "Kopargaon Main APMC", trend: "+1.7%", arrival: "950 Qtl", status: "Stable", bestSellingWindow: "8:30 AM - 12:00 PM" },
-  { id: "v5", crop: "Pomegranate (भगवा डाळिंब)", category: "Fruits", priceKg: 92.0, priceQuintal: 9200, mandi: "Kopargaon-Rahata Fruit Yard", trend: "+4.5%", arrival: "320 Qtl", status: "High Demand", bestSellingWindow: "7:00 AM - 10:00 AM" },
-  { id: "v6", crop: "Maize (पिवळी मका / Hybrid)", category: "Cereals", priceKg: 21.8, priceQuintal: 2180, mandi: "Kopargaon Sub-Market Yard", trend: "+1.4%", arrival: "1180 Qtl", status: "Stable", bestSellingWindow: "8:00 AM - 11:00 AM" },
-  { id: "v7", crop: "Cotton (मध्यम लांब धागा)", category: "Cash Crops", priceKg: 73.8, priceQuintal: 7380, mandi: "Kopargaon Cotton Yard", trend: "-0.4%", arrival: "680 Qtl", status: "Stable", bestSellingWindow: "9:00 AM - 1:00 PM" },
-  { id: "v8", crop: "Chickpea / Gram (हरभरा)", category: "Pulses", priceKg: 58.5, priceQuintal: 5850, mandi: "Kopargaon Main APMC", trend: "+1.2%", arrival: "540 Qtl", status: "High Demand", bestSellingWindow: "8:30 AM - 11:30 AM" },
-  { id: "v9", crop: "Tomato (Hybrid A-Grade)", category: "Vegetables", priceKg: 28.5, priceQuintal: 2850, mandi: "Kopargaon Vegetable Yard", trend: "+8.2%", arrival: "450 Qtl", status: "High Demand", bestSellingWindow: "6:00 AM - 8:30 AM" },
-  { id: "v10", crop: "Green Chilli (G-4 Spiced)", category: "Vegetables", priceKg: 54.0, priceQuintal: 5400, mandi: "Kopargaon Vegetable Yard", trend: "+10.5%", arrival: "160 Qtl", status: "High Demand", bestSellingWindow: "6:00 AM - 8:00 AM" },
-  { id: "v11", crop: "Ginger (Fresh Malabar)", category: "Vegetables", priceKg: 110.0, priceQuintal: 11000, mandi: "Kopargaon APMC", trend: "+5.4%", arrival: "85 Qtl", status: "High Demand", bestSellingWindow: "5:30 AM - 7:30 AM" },
-  { id: "v12", crop: "Garlic (Desi)", category: "Vegetables", priceKg: 135.0, priceQuintal: 13500, mandi: "Kopargaon Main Yard", trend: "+3.2%", arrival: "110 Qtl", status: "High Demand", bestSellingWindow: "6:00 AM - 8:00 AM" },
-  { id: "v13", crop: "Brinjal / Eggplant", category: "Vegetables", priceKg: 24.0, priceQuintal: 2400, mandi: "Kopargaon Vegetable Yard", trend: "0%", arrival: "280 Qtl", status: "Stable", bestSellingWindow: "6:30 AM - 8:30 AM" },
-  { id: "v14", crop: "Cauliflower (Snowball)", category: "Vegetables", priceKg: 22.0, priceQuintal: 2200, mandi: "Kopargaon Vegetable Yard", trend: "-2.5%", arrival: "420 Qtl", status: "Stable", bestSellingWindow: "7:00 AM - 9:00 AM" },
-  { id: "v15", crop: "Potato (Jyoti Variety)", category: "Vegetables", priceKg: 21.0, priceQuintal: 2100, mandi: "Kopargaon Sub-Market Yard", trend: "+1.5%", arrival: "650 Qtl", status: "Stable", bestSellingWindow: "7:00 AM - 9:30 AM" }
-];
-
-// DYNAMIC HUGGING FACE AGRI-BOT INFERENCE ENGINE
-export async function queryHuggingFaceAgriBot(promptText, userLang = "en", selectedModel = "Mistral-7B") {
-  const queryLower = promptText.toLowerCase();
-
-  // Search Kaggle dataset for matched crop
-  const matchedVeg = KAGGLE_VEGETABLE_PRICES.find((v) =>
-    queryLower.includes(v.crop.toLowerCase().split(" ")[0]) ||
-    queryLower.includes(v.crop.toLowerCase())
-  );
-
-  if (matchedVeg || queryLower.includes("price") || queryLower.includes("rate") || queryLower.includes("mandi") || queryLower.includes("भाव") || queryLower.includes("दर") || queryLower.includes("रेट")) {
-    const target = matchedVeg || KAGGLE_VEGETABLE_PRICES[0];
-    return {
-      source: `Hugging Face API (${selectedModel}) + Kaggle Real-Time APMC Feed`,
-      text: `🍅 **3D Live Market Analytics for ${target.crop}**:\n\n• **Modal Mandi Price**: ₹${target.priceKg}/kg (₹${target.priceQuintal}/Quintal)\n• **Nearest Trading Yard**: ${target.mandi}\n• **Market Sentiment**: ${target.trend} (${target.status})\n• **Daily Arrival**: ${target.arrival}\n• **Best Auction Time Window**: ${target.bestSellingWindow}\n\n💡 *Hugging Face AI Advice*: Price trend is ${target.trend} due to current arrival volume (${target.arrival}). Recommended to schedule transport early morning to lock the peak auction rate at ${target.mandi}.`,
-      tableData: KAGGLE_VEGETABLE_PRICES.filter(v => v.category === target.category).slice(0, 5)
-    };
-  }
-
-  if (queryLower.includes("fertilizer") || queryLower.includes("urea") || queryLower.includes("npk") || queryLower.includes("dap") || queryLower.includes("खाद")) {
-    return {
-      source: `Hugging Face API (${selectedModel}) + ICAR Agronomy Engine`,
-      text: `🧪 **3D AI Agronomy & NPK Recommendation**:\n\nFor optimal crop biomass and fruit set:\n• **Nitrogen (N)**: 120 kg/acre (apply 2.5 bags Urea in 3 split doses)\n• **Phosphorus (P)**: 60 kg/acre (apply 1.3 bags DAP at sowing)\n• **Potash (K)**: 40 kg/acre (apply 0.8 bags MOP at flowering)\n\n🌿 *Micro-Nutrient Tip*: Add Zinc Sulphate 21% (5 kg/acre) to prevent leaf chlorosis and increase chlorophyll synthesis by 28%.`,
-    };
-  }
-
-  if (queryLower.includes("blight") || queryLower.includes("disease") || queryLower.includes("pest") || queryLower.includes("fungus") || queryLower.includes("कीड़ा") || queryLower.includes("रोग")) {
-    return {
-      source: `Hugging Face API (${selectedModel}) + ResNet-50 Vision Diagnostics`,
-      text: `🌿 **3D Pathology & Leaf Protection Protocol**:\n\n• **Organic Intervention**: Spray Neem Oil 10,000 PPM (5 ml/L water) + 2ml bio-soap binder. Repeat after 5 days.\n• **Chemical Fungicide**: Apply Copper Oxychloride 50% WP (2.5 g/L) or Carbendazim 50 WP (1 g/L).\n• **Field Micro-Climate Action**: Lower relative humidity by pruning dense bottom leaves up to 15cm from soil level.`,
-    };
-  }
-
-  return {
-    source: `Hugging Face API (${selectedModel}) + Open-Access Ag-NLP Dataset`,
-    text: `🌾 **Greetings from Agri Nirvana's 3D AI Assistant!**\n\nI am connected to Hugging Face AI models and real-time Kopargaon APMC mandi feeds. Ask me anything:\n\n1. *"What is today's Onion or Soybean rate in Kopargaon APMC?"*\n2. *"Show me Sugarcane and Wheat rates at Kopargaon Mandi."*\n3. *"Calculate NPK fertilizer dose for Wheat."*\n4. *"How to cure Late Blight fungus organically?"*`,
-    tableData: KAGGLE_VEGETABLE_PRICES.slice(0, 5)
-  };
-}
-
-export const AGRI_PRODUCTS = [
-  {
-    id: "prod-1",
-    name: "Neem Gold 10,000 PPM Bio-Pesticide",
-    brand: "IFFCO Urban & Agro",
-    category: "Organic Bio-Control",
-    priceINR: 380,
-    unit: "1 Liter Bottle",
-    rating: 4.8,
-    linkedDiseaseId: "tomato-late-blight",
-    dealerName: "Kopargaon Shetkari Krushi Seva Kendra (1.5 km, Shirdi Rd)",
-    stock: "In Stock (45 units)",
-    commissionRate: 0.07,
-    imageUrl: "https://images.unsplash.com/photo-1615485290382-441e4d049cb5?auto=format&fit=crop&w=400&q=80"
-  },
-  {
-    id: "prod-2",
-    name: "Blitox Copper Oxychloride 50% WP",
-    brand: "Tata Rallis India",
-    category: "Fungicide",
-    priceINR: 420,
-    unit: "500g Pack",
-    rating: 4.9,
-    linkedDiseaseId: "tomato-late-blight",
-    dealerName: "Godavari Bio-Agrotech Kendra (2.2 km, Station Rd, Kopargaon)",
-    stock: "In Stock (18 units)",
-    commissionRate: 0.065,
-    imageUrl: "https://images.unsplash.com/photo-1585314062340-f1a5a7c9328d?auto=format&fit=crop&w=400&q=80"
-  },
-  {
-    id: "prod-3",
-    name: "Trichoderma Viride Bio-Fungicide",
-    brand: "Anand Agro Care",
-    category: "Bio-Control Agent",
-    priceINR: 240,
-    unit: "1 kg Pack",
-    rating: 4.8,
-    linkedDiseaseId: "rice-leaf-blast",
-    dealerName: "Kopargaon Taluka Sahakari Kharedi Vikri Sangh (0.8 km, APMC Yard)",
-    stock: "In Stock (50 units)",
-    commissionRate: 0.08,
-    imageUrl: "https://images.unsplash.com/photo-1530595467537-0b5996c41f2d?auto=format&fit=crop&w=400&q=80"
-  },
-  {
-    id: "prod-4",
-    name: "Streptocycline Antibiotic + Copper WP",
-    brand: "Hindustan Antibiotics",
-    category: "Bactericide",
-    priceINR: 195,
-    unit: "6g Sachet x 5",
-    rating: 4.9,
-    linkedDiseaseId: "cotton-bacterial-blight",
-    dealerName: "Mahalaxmi Krushi Seva Agency (2.8 km, Yeola Naka, Kopargaon)",
-    stock: "In Stock (80 units)",
-    commissionRate: 0.06,
-    imageUrl: "https://images.unsplash.com/photo-1605000797499-95a51c5269ae?auto=format&fit=crop&w=400&q=80"
-  },
-  {
-    id: "prod-5",
-    name: "Dhanuka Saaf Carbendazim + Mancozeb",
-    brand: "Dhanuka Agritech",
-    category: "Broad Spectrum Fungicide",
-    priceINR: 310,
-    unit: "500g Pack",
-    rating: 4.8,
-    linkedDiseaseId: "corn-maize-rust",
-    dealerName: "Samarth Krishi Vikas Kendra (1.9 km, Kopargaon)",
-    stock: "In Stock (35 units)",
-    commissionRate: 0.07,
-    imageUrl: "https://images.unsplash.com/photo-1551754655-cd27e38d2076?auto=format&fit=crop&w=400&q=80"
-  },
-  {
-    id: "prod-6",
-    name: "IFFCO Nano Urea Liquid (4% N)",
-    brand: "IFFCO Ltd",
-    category: "Nano Fertilizer",
-    priceINR: 225,
-    unit: "500 ml Bottle (Equals 1 Urea Bag)",
-    rating: 4.9,
-    linkedDiseaseId: "wheat-healthy",
-    dealerName: "IFFCO Kisan Seva Kendra (0.5 km, Kopargaon Mandi Sub-Yard)",
-    stock: "In Stock (120 units)",
-    commissionRate: 0.05,
-    imageUrl: "https://images.unsplash.com/photo-1574943320219-553eb213f72d?auto=format&fit=crop&w=400&q=80"
-  },
-  {
-    id: "prod-7",
-    name: "IFFCO Nano DAP Liquid (8% N, 16% P)",
-    brand: "IFFCO Ltd",
-    category: "Nano Fertilizer",
-    priceINR: 600,
-    unit: "500 ml Bottle (Equals 50kg Granular DAP)",
-    rating: 4.9,
-    linkedDiseaseId: "wheat-healthy",
-    dealerName: "IFFCO Kisan Seva Kendra (0.5 km, Kopargaon Mandi Sub-Yard)",
-    stock: "In Stock (90 units)",
-    commissionRate: 0.05,
-    imageUrl: "https://images.unsplash.com/photo-1592417817098-8f3d6eb19657?auto=format&fit=crop&w=400&q=80"
-  },
-  {
-    id: "prod-8",
-    name: "Mahadhan 19:19:19 100% Water Soluble NPK",
-    brand: "Mahadhan Smart Chem",
-    category: "Fertilizer",
-    priceINR: 155,
-    unit: "1 kg Pack (Drip / Foliar Grade)",
-    rating: 4.8,
-    linkedDiseaseId: "wheat-healthy",
-    dealerName: "Ganesh Fertilizer & Seed Corp (3.1 km, Kopargaon)",
-    stock: "In Stock (65 units)",
-    commissionRate: 0.06,
-    imageUrl: "https://images.unsplash.com/photo-1585314062340-f1a5a7c9328d?auto=format&fit=crop&w=400&q=80"
-  },
-  {
-    id: "prod-9",
-    name: "Coragen Chlorantraniliprole 18.5% SC",
-    brand: "FMC India",
-    category: "Insecticide & Pest Control",
-    priceINR: 1680,
-    unit: "150 ml Bottle (Sugarcane & Maize Borer)",
-    rating: 4.9,
-    linkedDiseaseId: "corn-maize-rust",
-    dealerName: "Kopargaon Shetkari Krushi Seva Kendra (1.5 km, Shirdi Rd)",
-    stock: "In Stock (24 units)",
-    commissionRate: 0.05,
-    imageUrl: "https://images.unsplash.com/photo-1605000797499-95a51c5269ae?auto=format&fit=crop&w=400&q=80"
-  }
-];
-
 export const MANDI_PRICES_FEED = [
   {
     id: "mandi-kopargaon-onion",
@@ -648,11 +413,6 @@ export const MANDI_PRICES_FEED = [
     minPriceINR: 1850,
     maxPriceINR: 2780,
     unit: "₹ / Quintal",
-    trend: "+ ₹140 (6.1% Up)",
-    trendDirection: "up",
-    arrival: "3,850 Qtl",
-    isBestPrice: true,
-    lastUpdated: "Today 11:30 AM"
   },
   {
     id: "mandi-kopargaon-soybean",
@@ -663,11 +423,6 @@ export const MANDI_PRICES_FEED = [
     minPriceINR: 4300,
     maxPriceINR: 4680,
     unit: "₹ / Quintal",
-    trend: "+ ₹60 (1.3% Up)",
-    trendDirection: "up",
-    arrival: "1,420 Qtl",
-    isBestPrice: true,
-    lastUpdated: "Today 11:15 AM"
   },
   {
     id: "mandi-kopargaon-sugarcane",
@@ -678,11 +433,6 @@ export const MANDI_PRICES_FEED = [
     minPriceINR: 3050,
     maxPriceINR: 3280,
     unit: "₹ / Tonne",
-    trend: "+ ₹50 (1.6% Up)",
-    trendDirection: "up",
-    arrival: "5,200 Tonnes",
-    isBestPrice: true,
-    lastUpdated: "Today 10:45 AM"
   },
   {
     id: "mandi-kopargaon-wheat",
@@ -693,11 +443,6 @@ export const MANDI_PRICES_FEED = [
     minPriceINR: 2480,
     maxPriceINR: 2820,
     unit: "₹ / Quintal",
-    trend: "+ ₹45 (1.7% Up)",
-    trendDirection: "up",
-    arrival: "950 Qtl",
-    isBestPrice: false,
-    lastUpdated: "Today 12:00 PM"
   },
   {
     id: "mandi-kopargaon-maize",
@@ -708,11 +453,6 @@ export const MANDI_PRICES_FEED = [
     minPriceINR: 2020,
     maxPriceINR: 2310,
     unit: "₹ / Quintal",
-    trend: "+ ₹30 (1.4% Up)",
-    trendDirection: "up",
-    arrival: "1,180 Qtl",
-    isBestPrice: false,
-    lastUpdated: "Today 10:30 AM"
   },
   {
     id: "mandi-kopargaon-pomegranate",
@@ -723,11 +463,6 @@ export const MANDI_PRICES_FEED = [
     minPriceINR: 7500,
     maxPriceINR: 11400,
     unit: "₹ / Quintal",
-    trend: "+ ₹400 (4.5% Up)",
-    trendDirection: "up",
-    arrival: "320 Qtl",
-    isBestPrice: true,
-    lastUpdated: "Today 09:45 AM"
   },
   {
     id: "mandi-kopargaon-cotton",
@@ -738,11 +473,6 @@ export const MANDI_PRICES_FEED = [
     minPriceINR: 7150,
     maxPriceINR: 7550,
     unit: "₹ / Quintal",
-    trend: "- ₹30 (0.4% Down)",
-    trendDirection: "down",
-    arrival: "680 Qtl",
-    isBestPrice: false,
-    lastUpdated: "Today 11:00 AM"
   },
   {
     id: "mandi-kopargaon-chana",
@@ -753,296 +483,8 @@ export const MANDI_PRICES_FEED = [
     minPriceINR: 5600,
     maxPriceINR: 6050,
     unit: "₹ / Quintal",
-    trend: "+ ₹70 (1.2% Up)",
-    trendDirection: "up",
-    arrival: "540 Qtl",
-    isBestPrice: true,
-    lastUpdated: "Today 11:45 AM"
   }
 ];
-
-export const DIRECT_BUYERS_LIST = [
-  {
-    id: "buyer-1",
-    name: "Sahyadri Farmer Producer Co. (FPO) - Kopargaon Hub",
-    type: "Cooperative Aggregator",
-    buyingCrops: ["Onion", "Soybean", "Wheat", "Pomegranate"],
-    targetQtyQuintals: 250,
-    offeredPriceINR: 2550,
-    distanceKm: 2.5,
-    contactPerson: "Sunil Deshmukh (FPO Director)",
-    rating: 4.9,
-    verifiedBadge: "Govt Recognized FPO • Kopargaon",
-    shopAddress: "APMC Market Yard, Shirdi Road, Kopargaon, Maharashtra 423601",
-    mapsQuery: "APMC Market Yard Kopargaon Maharashtra"
-  },
-  {
-    id: "buyer-2",
-    name: "Godavari Biorefineries Ltd (Cane & Agronomy Division)",
-    type: "Agro-Industrial Processor",
-    buyingCrops: ["Sugarcane", "Maize", "Bio-Residue"],
-    targetQtyQuintals: 1200,
-    offeredPriceINR: 3150,
-    distanceKm: 4.2,
-    contactPerson: "Dattatraya Shinde (Cane Manager)",
-    rating: 4.9,
-    verifiedBadge: "e-NAM Certified Industrial Buyer",
-    shopAddress: "Godavari Biorefineries Ltd, Sakarwadi, Kopargaon, Maharashtra 423601",
-    mapsQuery: "Godavari Biorefineries Ltd Kopargaon Maharashtra"
-  },
-  {
-    id: "buyer-3",
-    name: "Mahalaxmi Agro Export Pvt Ltd (Kopargaon Yard)",
-    type: "Export Aggregator",
-    buyingCrops: ["Pomegranate (Bhagwa)", "Onion (Nashik Red)"],
-    targetQtyQuintals: 150,
-    offeredPriceINR: 9400,
-    distanceKm: 3.8,
-    contactPerson: "Pravin Patil (Export Head)",
-    rating: 4.8,
-    verifiedBadge: "APEDA & e-NAM Registered Exporter",
-    shopAddress: "Yeola Naka, APMC Sub-Yard, Kopargaon, Maharashtra 423601",
-    mapsQuery: "APMC Market Yard Kopargaon Maharashtra"
-  },
-  {
-    id: "buyer-4",
-    name: "BigBasket Nashik-Kopargaon Fresh Collection Center",
-    type: "Institutional Retailer",
-    buyingCrops: ["Tomato", "Vegetables", "Green Chilli"],
-    targetQtyQuintals: 80,
-    offeredPriceINR: 3100,
-    distanceKm: 5.4,
-    contactPerson: "Rajesh Sharma (Procurement Head)",
-    rating: 4.8,
-    verifiedBadge: "e-NAM Verified Corporate Buyer",
-    shopAddress: "Kopargaon - Shirdi Highway, Near Toll Plaza, Kopargaon, Maharashtra 423601",
-    mapsQuery: "Kopargaon Shirdi Highway Kopargaon Maharashtra"
-  }
-];
-
-
-export const CROP_DISEASE_DATASETS = [
-  {
-    id: "tomato-late-blight",
-    crop: "Tomato",
-    diseaseName: "Late Blight",
-    pathogen: "Phytophthora infestans",
-    severity: "High",
-    confidence: 96,
-    imageUrl: "https://images.unsplash.com/photo-1592417817098-8f3d6eb19657?auto=format&fit=crop&w=600&q=80",
-    symptoms: "Water-soaked dark lesions on leaf edges with pale green halos, rapidly leading to stem collapse in high humidity.",
-    audioAdvisoryText: "Tomato Late Blight detected with 96% accuracy. High risk of crop loss. Apply Neem oil 5ml per liter immediately for organic control or Copper Oxychloride 50 WP 2.5 grams per liter for chemical intervention within 24 hours.",
-    remedies: {
-      organic: {
-        title: "Neem & Garlic Emulsion Treatment",
-        dosage: "5 ml Neem Oil (10,000 ppm) + 2 ml mild soap solution per liter of water.",
-        instructions: "Spray thoroughly during early morning (before 9 AM). Ensure bottom side of leaves are coated. Repeat after 5 days.",
-        expectedRecovery: "3–5 days"
-      },
-      chemical: {
-        title: "Copper Oxychloride 50% WP",
-        dosage: "2.5 grams per liter of water (approx 500g per acre in 200L water).",
-        instructions: "Systemic foliar spray. Wear protective mask and gloves. Do not harvest within 7 days of spray.",
-        expectedRecovery: "24–48 hours to stop fungal spreading"
-      },
-      prevention: {
-        title: "Drip & Aeration Management",
-        dosage: "Prune bottom 15cm leaves.",
-        instructions: "Avoid overhead sprinkler irrigation. Maintain 45cm spacing between rows to enhance air velocity and reduce leaf surface moisture duration.",
-        expectedRecovery: "Long term prevention"
-      }
-    }
-  },
-  {
-    id: "rice-leaf-blast",
-    crop: "Paddy / Rice",
-    diseaseName: "Blast Disease",
-    pathogen: "Magnaporthe oryzae",
-    severity: "High",
-    confidence: 94,
-    imageUrl: "https://images.unsplash.com/photo-1530595467537-0b5996c41f2d?auto=format&fit=crop&w=600&q=80",
-    symptoms: "Spindle-shaped elliptical lesions with ash-gray centers and brownish reddish margins on leaves.",
-    audioAdvisoryText: "Rice Leaf Blast detected with 94% confidence. Spindle shaped spots present. Avoid excess Nitrogen fertilizer. Spray Tricyclazole 75 WP at 0.6g per liter.",
-    remedies: {
-      organic: {
-        title: "Pseudomonas fluorescens Bio-Control",
-        dosage: "10 grams per liter (1 kg per acre in foliar spray).",
-        instructions: "Mix with 200L of water per acre. Bio-agent colonizes leaf surface and inhibits spore germination.",
-        expectedRecovery: "4–6 days"
-      },
-      chemical: {
-        title: "Tricyclazole 75% WP",
-        dosage: "0.6g per liter of water (120g per acre).",
-        instructions: "Spray at first appearance of blast lesions. Ensures systemic protective barrier across tillers.",
-        expectedRecovery: "48 hours"
-      },
-      prevention: {
-        title: "Nitrogen Balancing & Field Drainage",
-        dosage: "Split N dosage into 3 equal applications.",
-        instructions: "Temporarily drain standing water for 48 hours to aerate soil roots and reduce atmospheric humidity around tillers.",
-        expectedRecovery: "Preventive"
-      }
-    }
-  },
-  {
-    id: "cotton-bacterial-blight",
-    crop: "Cotton",
-    diseaseName: "Bacterial Blight / Angular Spot",
-    pathogen: "Xanthomonas citri pv. malvacearum",
-    severity: "Medium",
-    confidence: 91,
-    imageUrl: "https://images.unsplash.com/photo-1605000797499-95a51c5269ae?auto=format&fit=crop&w=600&q=80",
-    symptoms: "Small angular translucent water-soaked spots bounded by leaf veins on lower canopy.",
-    audioAdvisoryText: "Cotton Bacterial Blight identified. 91% confidence. Apply Streptocycline 100 ppm along with Copper Oxychloride for effective bacterial suppress.",
-    remedies: {
-      organic: {
-        title: "Fermented Cow Dung & Butter-milk Extract",
-        dosage: "10% concentration spray (10L extract in 100L water).",
-        instructions: "Spray every 7 days. Rich in beneficial lactic acid bacteria that suppress Xanthomonas expansion.",
-        expectedRecovery: "5–7 days"
-      },
-      chemical: {
-        title: "Streptocycline + Copper Oxychloride",
-        dosage: "6g Streptocycline + 500g Copper Oxychloride in 200L water per acre.",
-        instructions: "Mix thoroughly and spray uniform mist across canopy during late afternoon.",
-        expectedRecovery: "3 days"
-      },
-      prevention: {
-        title: "Resistant Cultivar & Crop Sanitation",
-        dosage: "Remove infected plant debris.",
-        instructions: "Destroy previous season cotton stalks. Ensure seed acid-delinting before next sowing cycle.",
-        expectedRecovery: "Seasonal"
-      }
-    }
-  },
-  {
-    id: "corn-maize-rust",
-    crop: "Maize / Corn",
-    diseaseName: "Common Rust",
-    pathogen: "Puccinia sorghi",
-    severity: "Medium",
-    confidence: 93,
-    imageUrl: "https://images.unsplash.com/photo-1551754655-cd27e38d2076?auto=format&fit=crop&w=600&q=80",
-    symptoms: "Oval or elongated cinnamon-brown pustules scattered across both leaf surfaces.",
-    audioAdvisoryText: "Maize Common Rust detected. 93% match. Apply Mancozeb 75 WP at 2 grams per liter to safeguard leaf photosynthesis area.",
-    remedies: {
-      organic: {
-        title: "Sulphur Dust / Liquid Sulphur 80% WDG",
-        dosage: "3g per liter of water.",
-        instructions: "Sulfur acts as a natural fungicide preventer. Apply when leaf surface temperature is under 32°C.",
-        expectedRecovery: "4–5 days"
-      },
-      chemical: {
-        title: "Mancozeb 75% WP / Propiconazole 25% EC",
-        dosage: "2g Mancozeb or 1ml Propiconazole per liter of water.",
-        instructions: "Spray high volume mist when rust pustules cover more than 5% of top leaves.",
-        expectedRecovery: "2–3 days"
-      },
-      prevention: {
-        title: "Crop Rotation & Clean Tillage",
-        dosage: "Rotate with Legumes (Soybean/Groundnut).",
-        instructions: "Deep plow residual stover after harvest to bury fungal spores.",
-        expectedRecovery: "Next Season"
-      }
-    }
-  },
-  {
-    id: "wheat-healthy",
-    crop: "Wheat",
-    diseaseName: "Healthy Crop (No Disease)",
-    pathogen: "Normal Cellular Matrix",
-    severity: "Healthy",
-    confidence: 98,
-    imageUrl: "https://images.unsplash.com/photo-1574943320219-553eb213f72d?auto=format&fit=crop&w=600&q=80",
-    symptoms: "Vibrant chlorophyll green pigment, uniform leaf margin, zero necrotic spots or fungal sporulation.",
-    audioAdvisoryText: "Great news! Your crop leaf is healthy with 98% confidence. Maintain current micro-nutrient spray and balanced nitrogen application.",
-    remedies: {
-      organic: {
-        title: "Bio-Stimulant Foliar Boost",
-        dosage: "2ml Seaweed Extract per liter of water.",
-        instructions: "Enhances chlorophyll density and abiotic stress resistance during flowering stage.",
-        expectedRecovery: "Maintenance"
-      },
-      chemical: {
-        title: "Balanced Micronutrient Spray",
-        dosage: "1g Zinc Sulphate + 0.5g Boron per liter.",
-        instructions: "Maintains optimal leaf health during grain filling stage.",
-        expectedRecovery: "Optimal Growth"
-      },
-      prevention: {
-        title: "Routine Field Monitoring",
-        dosage: "Check field every 4 days.",
-        instructions: "Keep field perimeter free of wild grassy weeds that act as disease vectors.",
-        expectedRecovery: "Ongoing"
-      }
-    }
-  }
-];
-
-export const SATELLITE_FIELDS = [
-  {
-    id: "field-1",
-    name: "North Parcel - Wheat (Block A)",
-    acreage: 4.2,
-    crop: "Wheat",
-    sowingDate: "2026-05-15",
-    healthStatus: "Optimal",
-    ndviScore: 0.76,
-    soilMoisture: "32%",
-    soilTemp: "22.4°C",
-    soilEC: "1.4 dS/m",
-    nitrogenIndex: "Optimal (42 kg/ha)",
-    coordinates: "21.1458° N, 79.0882° E",
-    ndviColor: "#10B981"
-  },
-  {
-    id: "field-2",
-    name: "South Parcel - Tomatoes (Block B)",
-    acreage: 2.8,
-    crop: "Tomato",
-    sowingDate: "2026-06-02",
-    healthStatus: "Attention Needed",
-    ndviScore: 0.48,
-    soilMoisture: "19%",
-    soilTemp: "27.8°C",
-    soilEC: "2.1 dS/m",
-    nitrogenIndex: "Low (18 kg/ha)",
-    coordinates: "21.1410° N, 79.0915° E",
-    ndviColor: "#F59E0B"
-  },
-  {
-    id: "field-3",
-    name: "East Orchard - Citrus & Cotton",
-    acreage: 6.5,
-    crop: "Cotton",
-    sowingDate: "2026-04-20",
-    healthStatus: "Good",
-    ndviScore: 0.68,
-    soilMoisture: "28%",
-    soilTemp: "24.1°C",
-    soilEC: "1.2 dS/m",
-    nitrogenIndex: "Moderate (34 kg/ha)",
-    coordinates: "21.1512° N, 79.0810° E",
-    ndviColor: "#3B82F6"
-  }
-];
-
-export const WEATHER_TELEMETRY = {
-  location: "Kopargaon (अहिल्यानगर), Maharashtra",
-  temp: "29°C",
-  condition: "Partly Cloudy",
-  humidity: "68%",
-  windSpeed: "12 km/h NW",
-  rainProbability: "35%",
-  uvIndex: "6 (Moderate)",
-  forecast: [
-    { day: "Today", temp: "29°C", humidity: "68%", alert: "Moderate humidity - monitor for fungus" },
-    { day: "Mon", temp: "31°C", humidity: "62%", alert: "High solar radiation - ensure drip timing" },
-    { day: "Tue", temp: "27°C", humidity: "82%", alert: "Rain expected 14mm - hold foliar spray" },
-    { day: "Wed", temp: "26°C", humidity: "85%", alert: "Post-rain fungal risk high" },
-    { day: "Thu", temp: "30°C", humidity: "70%", alert: "Good day for fertilizer top-dressing" }
-  ]
-};
 
 export const CROPS_CONFIG = [
   { id: "wheat", name: "Wheat", targetYieldAcre: 2.2, defaultN: 120, defaultP: 60, defaultK: 40 },
@@ -1053,293 +495,3 @@ export const CROPS_CONFIG = [
   { id: "soybean", name: "Soybean", targetYieldAcre: 1.2, defaultN: 30, defaultP: 80, defaultK: 40 }
 ];
 
-export const OUTBREAK_CLUSTERS = [
-  { id: "ob-1", disease: "Late Blight", distance: "2.4 km away", farmsAffected: 14, severity: "High", lat: "21.148", lng: "79.085", crop: "Tomato" },
-  { id: "ob-2", disease: "Leaf Blast", distance: "4.8 km away", farmsAffected: 8, severity: "Medium", lat: "21.139", lng: "79.098", crop: "Rice" },
-  { id: "ob-3", disease: "Bacterial Blight", distance: "7.1 km away", farmsAffected: 19, severity: "High", lat: "21.160", lng: "79.072", crop: "Cotton" },
-  { id: "ob-4", disease: "Yellow Mosaic Virus", distance: "11.2 km away", farmsAffected: 5, severity: "Low", lat: "21.120", lng: "79.110", crop: "Soybean" }
-];
-
-// REAL-TIME PATHOGEN SPORULATION RISK CALCULATOR BASED ON WEATHER DATA
-export function calculateFungalRisk(tempC = 28, humidityPct = 75, diseaseId = "tomato-late-blight") {
-  let riskScore = 40;
-  
-  if (diseaseId.includes("blight") || diseaseId.includes("late")) {
-    if (humidityPct > 80 && tempC >= 15 && tempC <= 25) riskScore = 92;
-    else if (humidityPct > 70) riskScore = 75;
-    else riskScore = 45;
-  } else if (diseaseId.includes("mildew")) {
-    if (humidityPct > 65 && tempC >= 20 && tempC <= 30) riskScore = 88;
-    else riskScore = 55;
-  } else if (diseaseId.includes("blast") || diseaseId.includes("rust")) {
-    if (humidityPct > 82) riskScore = 95;
-    else if (humidityPct > 70) riskScore = 70;
-    else riskScore = 40;
-  } else {
-    // Healthy or general
-    if (humidityPct > 85) riskScore = 65;
-    else riskScore = 20;
-  }
-
-  const riskLevel = riskScore >= 80 ? "Critical Outbreak Risk" : riskScore >= 60 ? "Moderate Fungal Risk" : "Low Pathogen Activity";
-  const idealSprayWindow = humidityPct > 80 
-    ? "Delay spray — High humidity & dew point will cause chemical run-off." 
-    : "Optimal Spray Window: 6:00 AM – 9:00 AM (Low atmospheric turbulence)";
-
-  return { riskScore, riskLevel, idealSprayWindow };
-}
-
-// AUTHENTIC CLIENT-SIDE CANVAS IMAGE PIXEL CLASSIFIER & METRICS ENGINE
-export async function classifyCropLeafImage(imageSrc, cropHint = "Tomato") {
-  return new Promise((resolve) => {
-    if (!imageSrc) {
-      resolve(CROP_DISEASE_DATASETS[0]);
-      return;
-    }
-
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.src = imageSrc;
-
-    img.onload = () => {
-      try {
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d");
-        canvas.width = Math.min(img.width || 400, 400);
-        canvas.height = Math.min(img.height || 300, 300);
-
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const data = imgData.data;
-
-        let totalPixels = data.length / 4;
-        let necroticCount = 0;
-        let chlorosisCount = 0;
-        let greenCount = 0;
-        let whiteCount = 0;
-        let rustCount = 0;
-
-        let totalR = 0, totalG = 0, totalB = 0;
-        const rBins = new Array(8).fill(0);
-        const gBins = new Array(8).fill(0);
-        const bBins = new Array(8).fill(0);
-
-        for (let i = 0; i < data.length; i += 4) {
-          const r = data[i];
-          const g = data[i + 1];
-          const b = data[i + 2];
-
-          totalR += r;
-          totalG += g;
-          totalB += b;
-
-          rBins[Math.min(7, Math.floor(r / 32))]++;
-          gBins[Math.min(7, Math.floor(g / 32))]++;
-          bBins[Math.min(7, Math.floor(b / 32))]++;
-
-          const total = r + g + b || 1;
-          const rNorm = r / total;
-          const gNorm = g / total;
-          const bNorm = b / total;
-
-          const isDarkNecrotic = (r > g * 0.85 && rNorm > 0.35 && gNorm < 0.45) || (r < 65 && g < 65 && b < 65);
-          const isChlorosis = gNorm > 0.4 && rNorm > 0.38 && bNorm < 0.25;
-          const isWhiteMildew = r > 195 && g > 195 && b > 195;
-          const isRustSpot = r > 160 && g < 110 && b < 60;
-          const isHealthyGreen = gNorm > rNorm && gNorm > bNorm && g > 65;
-
-          if (isDarkNecrotic) necroticCount++;
-          else if (isRustSpot) rustCount++;
-          else if (isWhiteMildew) whiteCount++;
-          else if (isChlorosis) chlorosisCount++;
-          else if (isHealthyGreen) greenCount++;
-        }
-
-        const necroticPct = Math.round((necroticCount / totalPixels) * 100);
-        const chlorosisPct = Math.round((chlorosisCount / totalPixels) * 100);
-        const greenPct = Math.max(10, Math.round((greenCount / totalPixels) * 100));
-        const whitePct = Math.round((whiteCount / totalPixels) * 100);
-        const rustPct = Math.round((rustCount / totalPixels) * 100);
-
-        // Chlorophyll SPAD Score Calculation (0-60 SPAD)
-        const avgG = totalG / totalPixels;
-        const avgR = totalR / totalPixels;
-        const spadIndex = Math.min(58, Math.max(12, Math.round((avgG / (avgR || 1)) * 24)));
-
-        let matchedTemplate = CROP_DISEASE_DATASETS[0];
-
-        if (necroticPct < 6 && chlorosisPct < 10 && whitePct < 5 && rustPct < 4) {
-          matchedTemplate = CROP_DISEASE_DATASETS.find(d => d.severity === "Healthy") || CROP_DISEASE_DATASETS[4];
-        } else if (whitePct > 10) {
-          matchedTemplate = {
-            id: "powdery-mildew",
-            crop: cropHint,
-            diseaseName: "Powdery Mildew",
-            pathogen: "Erysiphe cichoracearum",
-            severity: "Moderate",
-            confidence: 93,
-            imageUrl: imageSrc,
-            symptoms: `AI Pixel Analysis detected white powdery talc-like mycelium spots covering ${whitePct}% of leaf surface.`,
-            audioAdvisoryText: `Powdery Mildew detected on ${cropHint} with 93% precision. Spray Wettable Sulfur 3 grams per liter of water immediately.`,
-            remedies: {
-              organic: {
-                title: "Baking Soda & Potassium Bicarbonate Spray",
-                dosage: "5g Baking Soda + 5ml Horticultural Oil per 1L water",
-                instructions: "Changes leaf pH to alkaline, inhibiting fungal spore germination.",
-                expectedRecovery: "3–4 days"
-              },
-              chemical: {
-                title: "Wettable Sulfur 80% WDG / Hexaconazole",
-                dosage: "3g Wettable Sulfur or 1ml Hexaconazole 5% EC per 1L water",
-                instructions: "Foliar mist application. Repeat after 7 days if weather remains humid.",
-                expectedRecovery: "48 hours"
-              },
-              prevention: {
-                title: "Canopy Airflow Management",
-                dosage: "Prune dense overlapping leaves",
-                instructions: "Ensure sunlight penetration into inner canopy.",
-                expectedRecovery: "Continuous"
-              }
-            }
-          };
-        } else if (necroticPct > 12 || rustPct > 5) {
-          const matchedDataset = CROP_DISEASE_DATASETS.find(d => d.crop.toLowerCase().includes(cropHint.toLowerCase()) || cropHint.toLowerCase().includes(d.crop.toLowerCase()));
-          matchedTemplate = matchedDataset || CROP_DISEASE_DATASETS[0];
-        }
-
-        // Dynamically enhance metrics
-        const confidenceScore = Math.min(98, Math.max(89, Math.round(92 + (necroticPct % 7))));
-        const severityRating = necroticPct > 20 ? "Critical" : necroticPct > 10 ? "High" : necroticPct > 4 ? "Moderate" : "Healthy";
-
-        resolve({
-          ...matchedTemplate,
-          imageUrl: imageSrc,
-          crop: cropHint || matchedTemplate.crop,
-          confidence: confidenceScore,
-          severity: severityRating,
-          metrics: {
-            healthyPercent: greenPct,
-            necroticPercent: necroticPct,
-            chlorosisPercent: chlorosisPct,
-            whitePercent: whitePct,
-            rustPercent: rustPct,
-            spadIndex,
-            plantStressScore: Math.min(95, Math.max(5, (necroticPct * 2) + chlorosisPct))
-          },
-          spectrumData: {
-            rHistogram: rBins.map(v => Math.round((v / totalPixels) * 100)),
-            gHistogram: gBins.map(v => Math.round((v / totalPixels) * 100)),
-            bHistogram: bBins.map(v => Math.round((v / totalPixels) * 100)),
-          }
-        });
-      } catch (err) {
-        console.error("Leaf pixel classification fallback:", err);
-        resolve(CROP_DISEASE_DATASETS[0]);
-      }
-    };
-
-    img.onerror = () => resolve(CROP_DISEASE_DATASETS[0]);
-  });
-}
-
-// ON-DEVICE IMAGE QUALITY & FLORA VALIDATION ENGINE
-export async function validateUploadedLeafImage(imageSrc) {
-  return new Promise((resolve) => {
-    if (!imageSrc) {
-      resolve({ isValid: true, warningMessage: null });
-      return;
-    }
-
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.src = imageSrc;
-
-    img.onload = () => {
-      try {
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d");
-        canvas.width = Math.min(img.width || 200, 200);
-        canvas.height = Math.min(img.height || 200, 200);
-
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const data = imgData.data;
-
-        let totalBrightness = 0;
-        let floraPigmentCount = 0;
-        let totalPixels = data.length / 4;
-
-        for (let i = 0; i < data.length; i += 4) {
-          const r = data[i];
-          const g = data[i + 1];
-          const b = data[i + 2];
-
-          const brightness = (r + g + b) / 3;
-          totalBrightness += brightness;
-
-          const total = r + g + b || 1;
-          const gNorm = g / total;
-          const rNorm = r / total;
-
-          // Green leaf, brown spot, or yellow chlorotic foliage check
-          if ((gNorm > 0.35 && g > 40) || (rNorm > 0.38 && r > 40 && g > 30)) {
-            floraPigmentCount++;
-          }
-        }
-
-        const avgBrightness = totalBrightness / totalPixels;
-        const floraRatio = floraPigmentCount / totalPixels;
-
-        if (avgBrightness < 30) {
-          resolve({ isValid: false, warningMessage: "Photo is too dark. Please take under natural morning light or turn on flash." });
-        } else if (avgBrightness > 235) {
-          resolve({ isValid: false, warningMessage: "Photo is overexposed / washed out. Avoid direct harsh glare on leaf surface." });
-        } else if (floraRatio < 0.15) {
-          resolve({ isValid: false, warningMessage: "No plant leaf detected. Please center a crop leaf, stem, or fruit in the camera frame." });
-        } else {
-          resolve({ isValid: true, warningMessage: null });
-        }
-      } catch (err) {
-        resolve({ isValid: true, warningMessage: null });
-      }
-    };
-
-    img.onerror = () => resolve({ isValid: true, warningMessage: null });
-  });
-}
-
-// FRAC (FUNGICIDE RESISTANCE ACTION COMMITTEE) CODE REGISTRY & ROTATION BUILDER
-export const FRAC_CHEMICAL_REGISTRY = [
-  {
-    groupCode: "FRAC 11",
-    groupName: "Strobilurins (QoI Fungicides)",
-    activeIngredients: ["Azoxystrobin", "Pyraclostrobin", "Trifloxystrobin"],
-    modeOfAction: "Respiration inhibitor (Complex III cytochrome b)",
-    resistanceRisk: "High Risk — Requires alternating non-cross-resistant modes of action.",
-    maxSpraysPerSeason: 2,
-  },
-  {
-    groupCode: "FRAC 3",
-    groupName: "Triazoles (DMI Fungicides)",
-    activeIngredients: ["Tebuconazole", "Propiconazole", "Difenoconazole", "Hexaconazole"],
-    modeOfAction: "C14-demethylase inhibitor in sterol biosynthesis",
-    resistanceRisk: "Medium Risk — Shift in sensitivity monitored across fungal strains.",
-    maxSpraysPerSeason: 3,
-  },
-  {
-    groupCode: "FRAC M05",
-    groupName: "Multi-site Contact Protectants",
-    activeIngredients: ["Chlorothalonil", "Copper Oxychloride", "Mancozeb"],
-    modeOfAction: "Multi-site contact activity affecting fungal cell wall enzymes",
-    resistanceRisk: "Low Risk — No target site mutation reported. Ideal for tank mixing.",
-    maxSpraysPerSeason: 6,
-  },
-  {
-    groupCode: "FRAC 4",
-    groupName: "Phenylamides (PA Fungicides)",
-    activeIngredients: ["Metalaxyl", "Mefenoxam"],
-    modeOfAction: "RNA Polymerase I nucleic acid synthesis inhibitor",
-    resistanceRisk: "High Risk — Specific for Oomycetes (Late Blight). Must mix with Mancozeb.",
-    maxSpraysPerSeason: 2,
-  }
-];

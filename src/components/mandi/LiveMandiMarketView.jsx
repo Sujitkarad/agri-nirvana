@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   TrendingUp,
   TrendingDown,
@@ -8,12 +8,9 @@ import {
   MapPin,
   Clock,
   Award,
-  PlusCircle,
   Building2,
   CheckCircle2,
-  ArrowUpRight,
-  ArrowDownRight,
-  SlidersHorizontal,
+  ArrowUpRight
 } from "lucide-react";
 import { fetchMandiPrices, fetchMandiSummary } from "../../services/mandiService";
 
@@ -29,20 +26,6 @@ const COMMODITY_TABS = [
 export default function LiveMandiMarketView({
   isDark = true,
   t = {},
-  produceFormCrop,
-  setProduceFormCrop,
-  produceQuantity,
-  setProduceQuantity,
-  produceExpectedPrice,
-  setProduceExpectedPrice,
-  produceFormQty,
-  setProduceFormQty,
-  produceFormPrice,
-  setProduceFormPrice,
-  produceMandi,
-  setProduceMandi,
-  handleProduceSubmit,
-  produceSuccess,
 }) {
   const [selectedCommodity, setSelectedCommodity] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -51,25 +34,6 @@ export default function LiveMandiMarketView({
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState("");
   const [dataSource, setDataSource] = useState("unknown");
-  const [localMandiTarget, setLocalMandiTarget] = useState("Kopargaon APMC Main Yard");
-
-  const qtyValue = produceQuantity !== undefined ? produceQuantity : (produceFormQty !== undefined ? produceFormQty : 25);
-  const handleQtyChange = (val) => {
-    if (setProduceQuantity) setProduceQuantity(val);
-    if (setProduceFormQty) setProduceFormQty(Number(val));
-  };
-
-  const priceValue = produceExpectedPrice !== undefined ? produceExpectedPrice : (produceFormPrice !== undefined ? produceFormPrice : 3200);
-  const handlePriceChange = (val) => {
-    if (setProduceExpectedPrice) setProduceExpectedPrice(val);
-    if (setProduceFormPrice) setProduceFormPrice(Number(val));
-  };
-
-  const mandiTargetValue = produceMandi !== undefined ? produceMandi : localMandiTarget;
-  const handleMandiChange = (val) => {
-    if (setProduceMandi) setProduceMandi(val);
-    setLocalMandiTarget(val);
-  };
 
   const loadData = async (comm = selectedCommodity) => {
     setLoading(true);
@@ -112,8 +76,9 @@ export default function LiveMandiMarketView({
   }, [prices, searchQuery]);
 
   const bestMandiItem = useMemo(() => {
+    if (dataSource === "static_reference_not_live") return null;
     return prices.find((m) => m.isBestPrice) || prices[0] || null;
-  }, [prices]);
+  }, [prices, dataSource]);
 
   return (
     <div className="space-y-6">
@@ -143,11 +108,11 @@ export default function LiveMandiMarketView({
                 <div className="flex flex-wrap items-center gap-2 mt-0.5">
                   <span className={`inline-flex items-center gap-1 text-[11px] font-mono ${dataSource === "static_reference_not_live" ? "text-amber-400" : "text-emerald-400"}`}>
                     <span className={`h-2 w-2 rounded-full ${dataSource === "static_reference_not_live" ? "bg-amber-400" : "bg-emerald-400 animate-pulse"}`} />
-                    {dataSource === "static_reference_not_live" ? "Static reference data — not live" : "Open Government Data (Agmarknet Portal)"}
+                    {dataSource === "static_reference_not_live" ? "Static reference data — not live" : dataSource === "unknown" ? "Checking mandi feed" : "Open Government Data (Agmarknet Portal)"}
                   </span>
                   <span className="text-slate-500">•</span>
                   <span className={`text-[11px] font-mono ${isDark ? "text-slate-400" : "text-slate-600"}`}>
-                    Updated {lastUpdated || "Just now"}
+                    {dataSource === "static_reference_not_live" ? "Feed checked" : "Updated"} {lastUpdated || "just now"}
                   </span>
                 </div>
               </div>
@@ -357,7 +322,7 @@ export default function LiveMandiMarketView({
                           <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
                             {mandi.commodity}
                           </span>
-                          {mandi.isBestPrice && (
+                          {dataSource !== "static_reference_not_live" && mandi.isBestPrice && (
                             <span className="text-[9px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1.5 py-0.5 rounded">
                               ⭐ Regional Peak
                             </span>
@@ -401,7 +366,7 @@ export default function LiveMandiMarketView({
                     <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-400">
                       <span className="flex items-center gap-1">
                         <MapPin size={12} className="text-emerald-400" />
-                        {mandi.district}, {mandi.state}
+                        {mandi.district || "Local market area"}, {mandi.state || "Maharashtra"}
                       </span>
                       {mandi.distanceKm > 0 && (
                         <span>• {mandi.distanceKm} km away</span>
@@ -425,7 +390,7 @@ export default function LiveMandiMarketView({
                         <span className="text-2xl font-mono font-black text-emerald-400">
                           ₹{mandi.modalPriceINR.toLocaleString()}
                         </span>
-                        <span className="text-[11px] text-slate-400 font-mono">/ Quintal</span>
+                        <span className="text-[11px] text-slate-400 font-mono">{mandi.unit ? mandi.unit.replace("₹ / ", "/ ") : "/ Quintal"}</span>
                         <span className="text-[11px] font-mono text-slate-500">
                           (₹{mandi.priceKg}/kg)
                         </span>
@@ -436,7 +401,7 @@ export default function LiveMandiMarketView({
                     </div>
 
                     <div className="text-right">
-                      {mandi.arrival && (
+                      {dataSource !== "static_reference_not_live" && mandi.arrival && (
                         <div className="text-xs font-mono">
                           <span className="text-[10px] text-slate-400 block">Daily Arrivals</span>
                           <span className={`font-bold ${isDark ? "text-emerald-300" : "text-emerald-800"}`}>
@@ -452,108 +417,6 @@ export default function LiveMandiMarketView({
           </div>
         )}
 
-        {/* PRODUCE LISTING FORM */}
-        <div
-          className={`mt-8 rounded-2xl border p-6 ${
-            isDark ? "border-emerald-900/60 bg-[#04160f]" : "border-slate-200 bg-slate-50"
-          }`}
-        >
-          <h3
-            className={`text-base font-black mb-4 flex items-center gap-2 ${
-              isDark ? "text-white" : "text-slate-900"
-            }`}
-          >
-            <PlusCircle size={18} className="text-emerald-500" />
-            {t.listProduce || "List Your Produce on e-NAM / Direct Buyer Channel"}
-          </h3>
-          <form onSubmit={handleProduceSubmit} className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-            <div>
-              <label className="block font-bold mb-1">Crop Type</label>
-              <select
-                value={produceFormCrop}
-                onChange={(e) => setProduceFormCrop(e.target.value)}
-                className={`w-full rounded-xl border p-2.5 outline-none font-bold ${
-                  isDark
-                    ? "border-emerald-900 bg-[#04160f] text-white"
-                    : "border-slate-300 bg-white text-slate-800"
-                }`}
-              >
-                <option value="Wheat">Wheat (गहू / Lokwan, Sharbati)</option>
-                <option value="Onion">Onion (लाल कांदा / Nashik Red)</option>
-                <option value="Soybean">Soybean (पिवळा सोयाबीन / JS-335)</option>
-                <option value="Cotton">Cotton (कापूस / Shankar-6)</option>
-                <option value="Tomato">Tomato (टोमॅटो / Desi / Hybrid)</option>
-                <option value="Sugarcane">Sugarcane (ऊस / Co 86032)</option>
-                <option value="Maize">Maize (पिवळी मका)</option>
-                <option value="Pomegranate">Pomegranate (भगवा डाळिंब)</option>
-                <option value="Chickpea">Chickpea / Gram (हरभरा)</option>
-              </select>
-            </div>
-            <div>
-              <label className="block font-bold mb-1">Quantity (Quintals)</label>
-              <input
-                type="number"
-                min="1"
-                step="0.5"
-                placeholder="e.g. 50"
-                value={qtyValue}
-                onChange={(e) => handleQtyChange(e.target.value)}
-                className={`w-full rounded-xl border p-2.5 outline-none font-bold ${
-                  isDark
-                    ? "border-emerald-900 bg-[#04160f] text-white"
-                    : "border-slate-300 bg-white text-slate-800"
-                }`}
-                required
-              />
-            </div>
-            <div>
-              <label className="block font-bold mb-1">Expected Price (₹ / Quintal)</label>
-              <input
-                type="number"
-                min="100"
-                placeholder="e.g. 2600"
-                value={priceValue}
-                onChange={(e) => handlePriceChange(e.target.value)}
-                className={`w-full rounded-xl border p-2.5 outline-none font-bold ${
-                  isDark
-                    ? "border-emerald-900 bg-[#04160f] text-white"
-                    : "border-slate-300 bg-white text-slate-800"
-                }`}
-                required
-              />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="block font-bold mb-1">Target APMC Trading Yard</label>
-              <input
-                type="text"
-                placeholder="e.g. Kopargaon APMC Main Yard / Lasalgaon APMC"
-                value={mandiTargetValue}
-                onChange={(e) => handleMandiChange(e.target.value)}
-                className={`w-full rounded-xl border p-2.5 outline-none font-bold ${
-                  isDark
-                    ? "border-emerald-900 bg-[#04160f] text-white"
-                    : "border-slate-300 bg-white text-slate-800"
-                }`}
-                required
-              />
-            </div>
-            <div className="sm:col-span-1 flex items-end">
-              <button
-                type="submit"
-                className="w-full rounded-xl bg-emerald-500 px-4 py-2.5 font-black text-slate-950 hover:bg-emerald-400 transition shadow-md glow-emerald cursor-pointer"
-              >
-                {t.submitListing || "Submit Listing"}
-              </button>
-            </div>
-          </form>
-
-          {produceSuccess && (
-            <div className="mt-4 rounded-xl border border-emerald-500/40 bg-emerald-500/15 p-3 text-xs text-emerald-400 font-bold animate-fade-in flex items-center gap-2">
-              <CheckCircle2 size={16} />
-              <span>{produceSuccess}</span>
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );

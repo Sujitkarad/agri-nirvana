@@ -1,7 +1,6 @@
 /**
  * Agri Nirvana - Data.gov.in Agmarknet Market Intelligence Frontend Service.
- * Fetches real-time mandi prices and daily momentum trends (+ / - ₹/quintal)
- * for flagship commodities: Wheat, Onion, Soybean, Cotton, Tomato.
+ * Reads the configured mandi API and provides clearly labelled static references when it is unavailable.
  */
 
 import { MANDI_PRICES_FEED } from "../data/agriData";
@@ -42,15 +41,21 @@ export async function fetchMandiPrices(commodity = null, state = null) {
     console.warn("[mandiService] Live market API unavailable; showing static reference data only:", err);
     // This feed is not live or independently verified. Never synthesize price movement.
     let fallback = MANDI_PRICES_FEED.map((item) => {
+      const reference = { ...item };
+      ["trend", "trendDirection", "arrival", "isBestPrice", "lastUpdated", "bestSellingWindow"].forEach((key) => delete reference[key]);
       const modal = item.modalPriceINR || null;
+      const denominator = item.unit === "₹ / Tonne" ? 1000 : 100;
       return {
-        ...item,
+        ...reference,
+        commodity: item.commodity || item.crop,
+        district: item.district || "Kopargaon region",
+        state: item.state || "Maharashtra",
         diffINR: null,
         percentChange: null,
         prevModalPriceINR: null,
-        trend: "Reference only — live feed unavailable",
+        trend: "Static reference",
         trendDirection: "unknown",
-        priceKg: modal == null ? null : (modal / 100).toFixed(2),
+        priceKg: modal == null ? null : (modal / denominator).toFixed(2),
         source: "static_reference_not_live",
         isLive: false,
         dataWarning: "Static reference value, not today's verified mandi price. Confirm with the APMC/Agmarknet before making a sale decision.",

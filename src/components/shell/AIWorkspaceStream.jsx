@@ -1,21 +1,16 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   Bot,
   User,
   Volume2,
   Copy,
   Check,
-  Share2,
   Sparkles,
   ChevronDown,
   ChevronUp,
   Cpu,
-  ExternalLink,
-  MessageSquare,
   ArrowRight,
-  TrendingUp,
-  Table,
-  ShieldCheck
+  Table
 } from "lucide-react";
 
 export default function AIWorkspaceStream({

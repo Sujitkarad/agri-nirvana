@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useId } from "react";
+import { useState, useEffect, useId } from "react";
 import {
   Sun,
   Cloud,
@@ -9,7 +9,6 @@ import {
   CloudFog,
   Wind,
   Droplets,
-  Thermometer,
   Compass,
   MapPin,
   RefreshCw,
