@@ -241,15 +241,15 @@ class ProductionInferenceEngine:
             base_info=info,
         )
 
-        ipm = advisory.get("ipm", {}) or {}
+        ipm = dict(advisory.get("ipm", {}) or {})
         biological = ipm.get("tier_1_biological", []) or []
-        chemical = ipm.get("tier_2_chemical", []) or []
         cultural = ipm.get("tier_3_cultural", []) or []
         bio = biological[0] if biological else {}
-        chem = chemical[0] if chemical else {}
+        # Do not expose unvalidated chemical product/dose recommendations to farmers.
+        # Crop registration, formulation, label rate, PHI and local applicability need validation.
+        ipm["tier_2_chemical"] = []
 
-        default_organic = info.get("treatment_organic", ["Neem Oil (10,000 PPM) @ 3-5 ml/L"])[0]
-        default_chemical = info.get("treatment_chemical", ["Copper Hydroxide 77% WP @ 2 g/L"])[0]
+        default_organic = info.get("treatment_organic", ["Consult local KVK for crop-specific biological options"])[0]
 
         treatment_plan = {
             "organic": {
@@ -258,12 +258,13 @@ class ProductionInferenceEngine:
                 "applicationSchedule": bio.get("application_timing", "Early morning foliar spray at 7-10 day intervals")
             },
             "chemical": {
-                "name": chem.get("active_ingredient") or default_chemical,
-                "dosage": chem.get("dosage", "2-2.5 g/L"),
-                "dose_15L_tank": chem.get("dose_ml_per_15L", 37.5),
-                "frac_code": chem.get("frac_code", "FRAC M03 / Group 11"),
-                "rotation_partner": info.get("structured_chemical", {}).get("rotation_partner", "Saaf (Carbendazim + Mancozeb)"),
-                "safetyIntervalDays": info.get("structured_chemical", {}).get("phi_days", 7)
+                "name": "Withheld pending crop/product registration and label verification",
+                "dosage": "Not provided",
+                "dose_15L_tank": None,
+                "frac_code": None,
+                "rotation_partner": None,
+                "safetyIntervalDays": None,
+                "warning": "Use only a product registered for this crop and target disease; follow its exact label and local KVK/agriculture-extension guidance."
             },
             "preventive": {
                 "cultural": cultural[0] if cultural else "Avoid prolonged foliar wetness; scout fields weekly.",
@@ -303,7 +304,7 @@ class ProductionInferenceEngine:
             "provenance": {
                 "source": used_model_source,
                 "confidence_is_calibrated": getattr(self, "_is_calibrated", False),
-                "treatment_allowed": not healthy,
+                "treatment_allowed": False,
                 "crop_probability_mass": round(confidence, 4)
             },
             "treatmentPlan": treatment_plan,
