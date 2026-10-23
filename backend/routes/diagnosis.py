@@ -109,7 +109,7 @@ async def analyze_crop_leaf(
     prediction["provenance"] = {
         "source": prediction.get("provenance", {}).get("source", "real_ml_inference") if prediction.get("status") == "success" else "abstention",
         "confidence_is_calibrated": True if getattr(inference_engine, "_is_calibrated", False) else False,
-        "treatment_allowed": prediction.get("status") == "success",
+        "treatment_allowed": False,  # Product registration and label-dose validation are not implemented.
     }
 
     if prediction["is_low_confidence"] and abstain:
