@@ -9,6 +9,7 @@ export default function DiagnosisHistoryView({
 }) {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [authRequired, setAuthRequired] = useState(false);
   const [selectedCropFilter, setSelectedCropFilter] = useState("All");
   const [sortBy, setSortBy] = useState("newest"); // "newest" | "oldest"
 
@@ -18,8 +19,10 @@ export default function DiagnosisHistoryView({
       const res = await fetchDiagnosisHistoryApi(selectedCropFilter);
       const list = Array.isArray(res) ? res : (res?.history || []);
       setHistory(list);
+      setAuthRequired(Boolean(res?.authRequired));
     } catch (_) {
       setHistory([]);
+      setAuthRequired(false);
     } finally {
       setLoading(false);
     }
@@ -45,6 +48,20 @@ export default function DiagnosisHistoryView({
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {authRequired && (
+        <div
+          role="status"
+          className="flex items-start gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-100"
+        >
+          <AlertCircle size={18} className="mt-0.5 shrink-0 text-amber-400" />
+          <div>
+            <p className="font-bold">Cloud history requires secure sign-in</p>
+            <p className="mt-1 text-xs leading-relaxed text-amber-100/80">
+              Secure sign-in is not configured on this deployment yet. You can still view diagnoses saved on this device, but cloud history and cross-device sync are unavailable.
+            </p>
+          </div>
+        </div>
+      )}
       {/* HEADER & CONTROLS */}
       <div className={`rounded-3xl p-6 border flex flex-wrap items-center justify-between gap-4 ${
         isDark ? "border-emerald-800/40 bg-[#072017]" : "border-slate-200 bg-white shadow-xl"
