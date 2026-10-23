@@ -108,14 +108,18 @@ def get_current_user_required(authorization: Optional[str] = Header(None)) -> Di
 
 @router.post("/session")
 async def create_farmer_session(req: SessionRequest):
-    user_id = req.farmerId.strip() or "farmer_anonymous"
-    token = create_access_token(user_id=user_id, extra={"phone": req.phone, "name": req.name})
-    return {
-        "success": True,
-        "token_type": "bearer",
-        "access_token": token,
-        "user": {"userId": user_id, "phone": req.phone, "name": req.name},
-    }
+    """Fail closed until a verified identity/OTP flow is integrated.
+
+    A caller-selected farmerId, phone number, or name is not proof of identity.
+    Do not mint a bearer token from these unverified client-supplied values.
+    """
+    raise HTTPException(
+        status_code=503,
+        detail=(
+            "Secure sign-in is not configured. The session endpoint is disabled "
+            "until verified phone/OTP or an external identity provider is integrated."
+        ),
+    )
 
 
 @router.get("/me")
