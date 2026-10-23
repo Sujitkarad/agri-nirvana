@@ -17,7 +17,10 @@ import {
   PlusCircle,
   Radar,
   Compass,
-  Home,
+  Home
+} from "lucide-react";
+
+import {
   TRANSLATIONS,
   CROP_DISEASE_DATASETS,
   CROPS_CONFIG,
