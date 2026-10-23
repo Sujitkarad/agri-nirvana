@@ -298,7 +298,7 @@ class ProductionInferenceEngine:
             "farmer_summary": advisory.get("farmer_summary", ""),
             "likely_cause": advisory.get("likely_cause", info.get("likely_cause", "")),
             "immediate_precautions": advisory.get("immediate_precautions", info.get("immediate_precautions", [])),
-            "structured_chemical": info.get("structured_chemical", {}),
+            "structured_chemical": {"status": "withheld", "reason": "Product registration and label-dose validation are not implemented."},
             "regional_terms": info.get("regional_terms", {}),
             "verification_note": info.get("verification_note", "Confirm the exact product, label dose and registration status with a local KVK/agri extension officer before application."),
             "provenance": {
