@@ -3,12 +3,8 @@ import {
   Sparkles,
   History,
   Cpu,
-  FileText,
-  ShoppingCart,
   UserCheck,
-  Landmark,
   MessageSquare,
-  Mic,
   Send,
   RotateCw,
   AlertTriangle,
@@ -20,7 +16,6 @@ import {
   Volume2,
   VolumeX,
   Download,
-  Maximize2,
   Leaf
 } from "lucide-react";
 
