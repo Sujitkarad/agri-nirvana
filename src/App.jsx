@@ -2,16 +2,9 @@ import React, { useState, useEffect, useRef } from "react";
 import {
   Leaf,
   Camera,
-  Globe,
-  Wifi,
-  WifiOff,
-  Volume2,
   Sparkles,
   ShieldAlert,
-  ChevronDown,
-  Layers,
   Sun,
-  Moon,
   Calculator,
   MapPin,
   X,
@@ -21,27 +14,10 @@ import {
   Check,
   Award,
   Bot,
-  Send,
-  Search,
   PlusCircle,
   Radar,
-  Maximize2,
-  Minimize2,
-  ChevronUp,
-  Mic,
-  MicOff,
-  Paperclip,
-  ArrowUpRight,
-  Cpu,
-  Radio,
-  Activity,
   Compass,
   Home,
-  CloudSun
-} from "lucide-react";
-
-import {
-  LANGUAGES,
   TRANSLATIONS,
   CROP_DISEASE_DATASETS,
   CROPS_CONFIG,
@@ -51,7 +27,6 @@ import {
   DIRECT_BUYERS_LIST,
   MANDI_PRICES_FEED,
   KAGGLE_VEGETABLE_PRICES,
-  queryHuggingFaceAgriBot,
   classifyCropLeafImage
 } from "./data/agriData";
 import { generateAIChatResponse } from "./services/aiChatbotEngine";
@@ -73,73 +48,6 @@ import AIWorkspaceStream from "./components/shell/AIWorkspaceStream";
 import CommandPaletteModal from "./components/shell/CommandPaletteModal";
 
 // 3D ANIMATED AI BOT AVATAR COMPONENT (MiniMax / Hailuo Style)
-function AgriBot3DAvatar({ isDiagnoseing, isSpeaking, selectedModel }) {
-  return (
-    <div className="relative flex flex-col items-center justify-center py-2">
-      <div className="relative h-40 w-40 [perspective:1000px] flex items-center justify-center">
-        {/* Ambient Halo */}
-        <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-emerald-500/20 via-cyan-500/10 to-transparent blur-xl animate-pulse" />
-
-        {/* Orbit Ring 1 */}
-        <div className={`absolute inset-0 rounded-full border-2 border-emerald-500/40 border-t-emerald-300 border-b-cyan-400 animate-spin ${
-          isDiagnoseing ? "duration-700 border-amber-400" : "duration-3000"
-        }`} style={{ transformStyle: "preserve-3d", transform: "rotateX(65deg) rotateY(15deg)" }} />
-
-        {/* Orbit Ring 2 */}
-        <div className={`absolute inset-2 rounded-full border-2 border-cyan-500/40 border-r-emerald-300 border-l-teal-200 animate-spin ${
-          isSpeaking ? "duration-500 border-emerald-300 shadow-[0_0_20px_#10b981]" : "duration-4000"
-        }`} style={{ transformStyle: "preserve-3d", transform: "rotateX(25deg) rotateY(65deg)" }} />
-
-        {/* Orbit Ring 3 (Particle Dashes) */}
-        <div className="absolute inset-4 rounded-full border border-dashed border-emerald-400/50 animate-spin duration-7000"
-             style={{ transformStyle: "preserve-3d", transform: "rotateX(45deg) rotateZ(45deg)" }} />
-
-        {/* Central Core Holographic Sphere */}
-        <div className={`relative h-20 w-20 rounded-full bg-gradient-to-tr from-emerald-600 via-teal-400 to-cyan-300 shadow-[0_0_35px_#10b981] flex items-center justify-center transition-all duration-500 ${
-          isDiagnoseing ? "scale-110 shadow-[0_0_50px_#f59e0b] from-amber-500 via-orange-400 to-yellow-300" : ""
-        } ${
-          isSpeaking ? "scale-105 shadow-[0_0_50px_#34d399] from-emerald-400 via-teal-300 to-cyan-200" : ""
-        }`}>
-          {isSpeaking ? (
-            <div className="flex items-center gap-1">
-              <span className="w-1 bg-white rounded-full audio-wave-bar" />
-              <span className="w-1 bg-white rounded-full audio-wave-bar" />
-              <span className="w-1 bg-white rounded-full audio-wave-bar" />
-              <span className="w-1 bg-white rounded-full audio-wave-bar" />
-              <span className="w-1 bg-white rounded-full audio-wave-bar" />
-            </div>
-          ) : (
-            <div className="flex items-center gap-2.5">
-              <div className={`h-3 w-3 rounded-full bg-slate-950 shadow-inner transition-all ${
-                isDiagnoseing ? "animate-ping bg-amber-200" : ""
-              }`} />
-              <div className={`h-3 w-3 rounded-full bg-slate-950 shadow-inner transition-all ${
-                isDiagnoseing ? "animate-ping bg-amber-200" : ""
-              }`} />
-            </div>
-          )}
-          <div className="absolute -inset-1 rounded-full border border-emerald-300/50 animate-ping opacity-75" />
-        </div>
-
-        {/* Holographic Atmospheric Particles */}
-        <div className="absolute -top-2 -left-2 h-2.5 w-2.5 rounded-full bg-emerald-400 animate-bounce opacity-90 shadow-[0_0_10px_#34d399]" />
-        <div className="absolute -bottom-1 -right-2 h-2 w-2 rounded-full bg-cyan-400 animate-ping opacity-90 shadow-[0_0_10px_#22d3ee]" />
-        <div className="absolute top-1/2 -right-4 h-2 w-2 rounded-full bg-amber-400 animate-pulse opacity-90 shadow-[0_0_10px_#f59e0b]" />
-      </div>
-
-      <div className="mt-2 flex items-center gap-2 rounded-full border border-emerald-500/40 bg-emerald-950/90 backdrop-blur-md px-3.5 py-1 text-[10px] font-mono font-bold text-emerald-300 shadow-lg">
-        <span className={`h-2 w-2 rounded-full ${
-          isDiagnoseing ? "bg-amber-400 animate-ping" : isSpeaking ? "bg-cyan-400 animate-pulse" : "bg-emerald-400"
-        }`} />
-        <span>
-          {isDiagnoseing ? "3D AI REASONING..." : isSpeaking ? "AUDIO STREAMING ACTIVE" : "3D AI ONLINE (42ms)"}
-        </span>
-      </div>
-      <p className="text-[10px] text-emerald-400/90 font-mono mt-0.5 font-bold">{selectedModel}</p>
-    </div>
-  );
-}
-
 export default function App() {
   // Theme & Navigation State (1st theme: Golden Harvest)
   const [theme, setTheme] = useState("harvest");
