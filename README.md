@@ -425,8 +425,8 @@ Weather context should support agricultural decisions but must not be treated as
 - [ ] Publish measured validation/test metrics
 - [ ] Expand real Indian field/OOD evaluation
 - [ ] Near-duplicate and farm/session-level leakage detection
-- [ ] Production weather API integration
-- [ ] Farm weather intelligence dashboard
+- [x] Farm weather dashboard UI and provider-backed forecast workflow
+- [ ] Production monitoring, reliability fallbacks, and end-to-end validation for weather services
 - [ ] Stronger mobile/low-connectivity workflow
 - [ ] Full end-to-end QA
 - [ ] Production security review
@@ -439,9 +439,9 @@ Weather context should support agricultural decisions but must not be treated as
 
 - The production EfficientNetV2-L architecture is implemented, but a deployed checkpoint must be trained and evaluated before making accuracy claims.
 - Field performance may differ substantially from laboratory-style datasets.
-- Existing market, field, finance, insurance, and visualization modules can contain demonstration/pre-processed data and should not automatically be interpreted as live official feeds.
+- The field preview uses illustrative presets; fallback mandi prices are static references, not verified current quotes. Treat data as live only when the configured provider confirms its source and freshness.
 - Agricultural recommendations require local agronomic verification and applicable product-label/regulatory checks.
-- Weather intelligence is planned as the replacement for the current satellite-focused user experience; it should only be described as live after a real provider integration is operational.
+- The weather dashboard is available, but operational decisions still require local verification. Provider outages and cached/fallback values must be disclosed clearly.
 
 ---
 
