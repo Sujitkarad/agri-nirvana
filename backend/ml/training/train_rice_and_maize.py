@@ -272,6 +272,7 @@ def main():
     parser.add_argument("--output", type=str, default=str(DEFAULT_OUTPUT_PATH), help="Checkpoint output path")
     parser.add_argument("--epochs", type=int, default=12, help="Number of training epochs")
     parser.add_argument("--batch-size", type=int, default=16, help="Training batch size")
+    parser.add_argument("--lr", type=float, default=1e-3, help="Initial learning rate")
     args = parser.parse_args()
     train_model(
         data_dir=Path(args.data),
